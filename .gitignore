@@ -44,6 +44,8 @@ xcuserdata/
 *.xcuserstate
 *.xcbkptlist
 .build/
+*.xcframework/
+.llama_build_tmp/
 
 # GGUF Model Weights & Large Binary Assets
 *.gguf

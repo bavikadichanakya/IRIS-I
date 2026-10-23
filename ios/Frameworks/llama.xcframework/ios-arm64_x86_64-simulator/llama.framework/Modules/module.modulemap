@@ -1,9 +1,0 @@
-module llama [system] {
-    header "llama.h"
-    header "ggml.h"
-    header "ggml-cpu.h"
-    header "ggml-backend.h"
-    header "ggml-metal.h"
-    header "ggml-alloc.h"
-    export *
-}

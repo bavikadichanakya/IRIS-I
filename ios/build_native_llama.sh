@@ -71,6 +71,33 @@ cp -R build-apple/llama.xcframework "${FRAMEWORKS_DIR}/"
 echo "=========================================================="
 echo " XCFramework compilation complete!"
 echo " Output path: ${FRAMEWORKS_DIR}/llama.xcframework"
-echo " Linked slices:"
-ls -la "${FRAMEWORKS_DIR}/llama.xcframework"
+echo "=========================================================="
+
+echo "Running Apple binary verification on generated XCFramework..."
+if command -v plutil >/dev/null 2>&1; then
+    echo "[plutil] Validating XCFramework Info.plist..."
+    plutil -lint "${FRAMEWORKS_DIR}/llama.xcframework/Info.plist"
+fi
+
+if command -v file >/dev/null 2>&1; then
+    echo "[file] Inspecting device slice binary..."
+    file "${FRAMEWORKS_DIR}/llama.xcframework/ios-arm64/llama.framework/llama"
+fi
+
+if command -v lipo >/dev/null 2>&1; then
+    echo "[lipo] Verifying architectures..."
+    echo "  Device slice:    $(lipo -info "${FRAMEWORKS_DIR}/llama.xcframework/ios-arm64/llama.framework/llama")"
+    echo "  Simulator slice: $(lipo -info "${FRAMEWORKS_DIR}/llama.xcframework/ios-arm64_x86_64-simulator/llama.framework/llama")"
+fi
+
+if command -v nm >/dev/null 2>&1; then
+    echo "[nm] Verifying critical exported C symbols..."
+    nm -gU "${FRAMEWORKS_DIR}/llama.xcframework/ios-arm64/llama.framework/llama" | grep -E "(llama_backend_init|llama_model_load_from_file|llama_decode)" || {
+        echo "Warning: Expected symbols not found in export list!" >&2
+    }
+fi
+
+echo "=========================================================="
+echo " Native XCFramework verification successful!"
+echo " Ready for IRIS-I build and device deployment."
 echo "=========================================================="

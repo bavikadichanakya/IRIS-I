@@ -10,30 +10,52 @@ import Foundation
 public final class ModelCatalog: Sendable {
     public static let shared = ModelCatalog()
 
-    // 1. BASELINE: 3B Q4_K_M profile (Supported on iPhone 17 Base, A19, 8GB)
+    // 1. PRIMARY BASELINE: Qwen 2.5 3B Instruct (Supported on iPhone 17 Base, A19, 8GB)
     public let baseline3B = ModelManifest(
-        id: "iris-baseline-3b",
-        displayName: "IRIS-3B Baseline (Abliterated)",
+        id: "iris-baseline-qwen-3b",
+        displayName: "IRIS-3B (Qwen 2.5 Instruct / Abliterated)",
+        modelFamily: .qwen2_5,
+        chatTemplate: .chatML,
         parameterScale: .threeB,
         quantization: "Q4_K_M",
         profileTier: .baseline,
-        filename: "iris-3b-q4km.gguf",
+        filename: "qwen2.5-3b-instruct-q4_k_m.gguf",
         estimatedSizeBytes: 1_950_000_000, // ~1.95 GB
         defaultContextSize: 2048,
         maxContextSize: 4096,
         expectedSHA256: nil, // Must be supplied by verified artifact manifest or import
         verifiedDownloadURL: nil, // Kept nil until independently verified against trusted release
-        summary: "Primary supported local model for iPhone 17 (A19). Fast reasoning, low memory pressure, reliable structured tool calling."
+        summary: "Primary supported local model for iPhone 17 (A19). Qwen 2.5 architecture, ChatML template, fast reasoning, low memory pressure, reliable structured tool calling."
     )
 
-    // 2. EXPERIMENTAL: 7B Q4_K_M profile (Experimental evaluation only)
+    // 2. GENERIC ENGINE SMOKE TEST: Llama 3.2 3B Instruct (Engine smoke test only)
+    public let smokeTestLlama3B = ModelManifest(
+        id: "iris-smoketest-llama-3b",
+        displayName: "Llama 3.2 3B Instruct (Engine Smoke Test Only)",
+        modelFamily: .llama3,
+        chatTemplate: .llama3,
+        parameterScale: .threeB,
+        quantization: "Q4_K_M",
+        profileTier: .baseline,
+        filename: "llama-3.2-3b-instruct-q4_k_m.gguf",
+        estimatedSizeBytes: 2_020_000_000, // ~2.02 GB
+        defaultContextSize: 2048,
+        maxContextSize: 4096,
+        expectedSHA256: nil,
+        verifiedDownloadURL: nil,
+        summary: "Generic engine smoke test profile. Used to verify engine compatibility against standard Meta Llama 3.2 GGUF artifacts."
+    )
+
+    // 3. EXPERIMENTAL: Qwen 2.5 7B Instruct (Experimental evaluation only)
     public let experimental7B = ModelManifest(
-        id: "iris-experimental-7b",
-        displayName: "IRIS-7B Experimental (Abliterated)",
+        id: "iris-experimental-qwen-7b",
+        displayName: "IRIS-7B (Qwen 2.5 Instruct / Abliterated)",
+        modelFamily: .qwen2_5,
+        chatTemplate: .chatML,
         parameterScale: .sevenB,
         quantization: "Q4_K_M",
         profileTier: .experimental,
-        filename: "iris-7b-q4km.gguf",
+        filename: "qwen2.5-7b-instruct-q4_k_m.gguf",
         estimatedSizeBytes: 4_350_000_000, // ~4.35 GB
         defaultContextSize: 2048,
         maxContextSize: 3072,
@@ -43,7 +65,7 @@ public final class ModelCatalog: Sendable {
     )
 
     public var allProfiles: [ModelManifest] {
-        [baseline3B, experimental7B]
+        [baseline3B, smokeTestLlama3B, experimental7B]
     }
 
     public func profile(for id: String) -> ModelManifest? {
