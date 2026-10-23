@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <!--
+      NOTE on com.apple.developer.kernel.extended-virtual-addressing:
+      This is a restricted Apple entitlement requiring special developer portal approval.
+      Do not enable by default as it breaks physical device signing for standard developer accounts.
+      Baseline 3B Q4_K_M (~2.0 GB) runs within standard iOS per-process limits on 8 GB iPhone 17.
+    -->
+</dict>
+</plist>
