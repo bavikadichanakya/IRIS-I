@@ -1,0 +1,232 @@
+<img width="128" align="right" alt="Logo" src="https://github.com/user-attachments/assets/df5f2840-2f92-4991-aa57-252747d7182e" />
+
+# Heretic: Fully automatic censorship removal for language models<br><br>[![Discord](https://img.shields.io/discord/1447831134212984903?color=5865F2&label=discord&labelColor=black&logo=discord&logoColor=white&style=for-the-badge)](https://discord.gg/gdXc48gSyT) [![Matrix](https://img.shields.io/badge/Matrix-black?logo=matrix&style=for-the-badge)](https://matrix.to/#/#heretic:matrix.org) [![Follow us on Hugging Face](https://huggingface.co/datasets/huggingface/badges/resolve/main/follow-us-on-hf-md-dark.svg)](https://huggingface.co/heretic-org) [![Codeberg mirror](https://img.shields.io/badge/Codeberg%20mirror-black?logo=codeberg&style=for-the-badge)](https://codeberg.org/p-e-w/heretic)
+
+[![#1 Repository of the Day](https://trendshift.io/api/badge/repositories/20538)](https://trendshift.io/repositories/20538)
+
+Heretic is a tool that removes censorship (aka "safety alignment") from
+transformer-based language models without expensive post-training.
+It combines an advanced implementation of directional ablation, also known
+as "abliteration" ([Arditi et al. 2024](https://arxiv.org/abs/2406.11717),
+Lai 2025 ([1](https://huggingface.co/blog/grimjim/projected-abliteration),
+[2](https://huggingface.co/blog/grimjim/norm-preserving-biprojected-abliteration))),
+with a TPE-based parameter optimizer powered by [Optuna](https://optuna.org/).
+
+This approach enables Heretic to work **completely automatically.** Heretic
+finds high-quality abliteration parameters by co-minimizing the number of
+refusals and the KL divergence from the original model. This results in a
+decensored model that retains as much of the original model's intelligence
+as possible. Using Heretic does not require an understanding of transformer
+internals. In fact, anyone who knows how to run a command-line program
+can use Heretic to decensor language models.
+
+Heretic supports most dense models, including many multimodal models,
+several different MoE architectures, and even some hybrid models like Qwen3.5.
+Pure state-space models and certain other research architectures are not yet
+supported out of the box.
+
+<img width="650" height="715" alt="Screenshot" src="https://github.com/user-attachments/assets/d71a5efa-d6be-4705-a817-63332afb2d15" />
+
+&nbsp;
+
+Running unsupervised with the default configuration, Heretic can produce
+decensored models that rival the quality of abliterations created manually
+by human experts:
+
+| Model | Refusals for "harmful" prompts | KL divergence from original model for "harmless" prompts |
+| :--- | ---: | ---: |
+| [google/gemma-3-12b-it](https://huggingface.co/google/gemma-3-12b-it) (original) | 97/100 | 0 *(by definition)* |
+| [mlabonne/gemma-3-12b-it-abliterated-v2](https://huggingface.co/mlabonne/gemma-3-12b-it-abliterated-v2) | 3/100 | 1.04 |
+| [huihui-ai/gemma-3-12b-it-abliterated](https://huggingface.co/huihui-ai/gemma-3-12b-it-abliterated) | 3/100 | 0.45 |
+| **[p-e-w/gemma-3-12b-it-heretic](https://huggingface.co/p-e-w/gemma-3-12b-it-heretic) (ours)** | **3/100** | **0.16** |
+
+The Heretic version, generated without any human effort, achieves the same
+level of refusal suppression as other abliterations, but at a much lower
+KL divergence, indicating less damage to the original model's capabilities.
+*(You can reproduce those numbers using Heretic's built-in evaluation functionality,
+e.g. `heretic --model google/gemma-3-12b-it --evaluate-model p-e-w/gemma-3-12b-it-heretic`.
+Note that the exact values might be platform- and hardware-dependent.
+The table above was compiled using PyTorch 2.8 on an RTX 5090.)*
+
+Of course, mathematical metrics and automated benchmarks never tell the whole
+story, and are no substitute for human evaluation. Models generated with
+Heretic have been well-received by users (links and emphasis added):
+
+> "I was skeptical before, but I just downloaded
+> [**GPT-OSS 20B Heretic**](https://huggingface.co/p-e-w/gpt-oss-20b-heretic)
+> model and holy shit. It gives properly formatted long responses to sensitive topics,
+> using the exact uncensored words that you would expect from an uncensored model,
+> produces markdown format tables with details and whatnot. Looks like this is
+> the best abliterated version of this model so far..."
+> [*(Link to comment)*](https://old.reddit.com/r/LocalLLaMA/comments/1oymku1/heretic_fully_automatic_censorship_removal_for/np6tba6/)
+
+> "[**Heretic GPT 20b**](https://huggingface.co/p-e-w/gpt-oss-20b-heretic)
+> seems to be the best uncensored model I have tried yet. It doesn't destroy a
+> the model's intelligence and it is answering prompts normally would be
+> rejected by the base model."
+> [*(Link to comment)*](https://old.reddit.com/r/LocalLLaMA/comments/1oymku1/heretic_fully_automatic_censorship_removal_for/npe9jng/)
+
+> "[[**Qwen3-4B-Instruct-2507-heretic**](https://huggingface.co/p-e-w/Qwen3-4B-Instruct-2507-heretic)]
+> Has been the best unquantized abliterated model that I have been able to run on 16gb vram."
+> [*(Link to comment)*](https://old.reddit.com/r/LocalLLaMA/comments/1phjxca/im_calling_these_people_out_right_now/nt06tji/)
+
+Heretic models have also been independently benchmarked using standard metrics
+like MMLU and GSM8K, and have been found to compare favorably with models
+produced by competing abliteration tools:
+[1](https://old.reddit.com/r/LocalLLaMA/comments/1sojjoc/abliterlitics_benchmark_and_tensor_analysis/),
+[2](https://old.reddit.com/r/LocalLLaMA/comments/1sy18lx/abliterlitics_benchmarks_and_tensor_comparison/).
+
+The community has created and published
+[well over 5000](https://huggingface.co/models?other=heretic)
+models with Heretic.
+
+
+## Usage
+
+Prepare a Python 3.10+ environment with PyTorch 2.2+ installed as appropriate
+for your hardware. Then run:
+
+```sh
+pip install -U heretic-llm
+heretic Qwen/Qwen3-4B-Instruct-2507
+```
+
+Replace `Qwen/Qwen3-4B-Instruct-2507` with whatever model you want to decensor.
+
+> [!IMPORTANT]
+>
+> While PyTorch 2.2 is the minimum version of PyTorch needed for Heretic to work,
+> some models and configurations might require features only found in
+> later versions. For example, loading MXFP4-quantized models like gpt-oss
+> uses `torch.accelerator`, which was added in PyTorch 2.6.
+
+> [!TIP]
+>
+> Heretic uses [uv](https://docs.astral.sh/uv/) for dependency management,
+> and the repository includes a `uv.lock` file pinning every package version.
+> If you already use uv (and you probably should!), you can just clone the repo
+> and run Heretic with `uv run heretic`, which ensures that your dependencies
+> match those used by the developers, improving reliability and security.
+
+The process is fully automatic and does not require configuration; however,
+Heretic has a variety of configuration parameters that can be changed for
+greater control. Run `heretic --help` to see available command-line options,
+or look at [`config.default.toml`](config.default.toml) if you prefer to use
+a configuration file.
+
+At the start of a program run, Heretic benchmarks the system to determine
+the optimal batch size to make the most of the available hardware.
+On an RTX 3090, with the default configuration, decensoring
+[Qwen3-4B-Instruct-2507](https://huggingface.co/Qwen/Qwen3-4B-Instruct-2507)
+takes about 20-30 minutes. Note that Heretic supports model quantization with
+bitsandbytes, which can drastically reduce the amount of VRAM required to process
+models. Set the `quantization` option to `bnb_4bit` to enable quantization.
+
+After Heretic has finished decensoring a model, you are given the option to
+save the model, upload it to Hugging Face, chat with it to test how well it works,
+run standard benchmarks on it, or any combination of those actions.
+
+
+## How Heretic works
+
+Heretic implements a parametrized variant of directional ablation. For each
+supported transformer component (currently, attention out-projection and
+MLP down-projection), it identifies the associated matrices in each transformer
+layer, and orthogonalizes them with respect to the relevant "residual direction",
+inhibiting the expression of that direction in the result of multiplications
+with that matrix.
+
+Residual directions are computed for each layer as a difference-of-means between
+the first-token residuals for "harmful" and "harmless" example prompts.
+
+The ablation process is controlled by several optimizable parameters:
+
+* `direction_index`: Either the index of a residual direction, or the special
+  value `per layer`, indicating that each layer should be ablated using the
+  residual direction associated with that layer.
+* `max_weight`, `max_weight_position`, `min_weight`, and `min_weight_distance`:
+  For each component, these parameters describe the shape and position of the
+  ablation weight kernel over the layers. The following diagram illustrates this:
+
+<img width="800" height="500" alt="Explanation" src="https://github.com/user-attachments/assets/82e4b84e-5a82-4faf-b918-ac642f9e4892" />
+
+&nbsp;
+
+Heretic's main innovations over existing abliteration systems are:
+
+* The shape of the ablation weight kernel is highly flexible, which, combined with
+  automatic parameter optimization, can improve the compliance/quality tradeoff.
+  Non-constant ablation weights were previously explored by Maxime Labonne in
+  [gemma-3-12b-it-abliterated-v2](https://huggingface.co/mlabonne/gemma-3-12b-it-abliterated-v2).
+* The residual direction index is a float rather than an integer. For non-integral
+  values, the two nearest residual direction vectors are linearly interpolated.
+  This unlocks a vast space of additional directions beyond the ones identified
+  by the difference-of-means computation, and often enables the optimization
+  process to find a better direction than that belonging to any individual layer.
+* Ablation parameters are chosen separately for each component. I have found that
+  MLP interventions tend to be more damaging to the model than attention interventions,
+  so using different ablation weights can squeeze out some extra performance.
+
+
+## Prior art
+
+I'm aware of the following publicly available implementations of abliteration
+techniques:
+
+* [AutoAbliteration](https://huggingface.co/posts/mlabonne/714992455492422)
+* [abliterator.py](https://github.com/FailSpy/abliterator)
+* [wassname's Abliterator](https://github.com/wassname/abliterator)
+* [ErisForge](https://github.com/Tsadoq/ErisForge)
+* [Removing refusals with HF Transformers](https://github.com/Sumandora/remove-refusals-with-transformers)
+* [deccp](https://github.com/AUGMXNT/deccp)
+
+Note that Heretic was written from scratch, and does not reuse code from
+any of those projects.
+
+
+## Acknowledgments
+
+The development of Heretic was informed by:
+
+* [The original abliteration paper (Arditi et al. 2024)](https://arxiv.org/abs/2406.11717)
+* [Maxime Labonne's article on abliteration](https://huggingface.co/blog/mlabonne/abliteration),
+  as well as some details from the model cards of his own abliterated models (see above)
+* Jim Lai's articles describing ["projected abliteration"](https://huggingface.co/blog/grimjim/projected-abliteration)
+  and ["norm-preserving biprojected abliteration"](https://huggingface.co/blog/grimjim/norm-preserving-biprojected-abliteration)
+
+
+## Citation
+
+If you use Heretic for your research, please cite it using the following BibTeX entry:
+
+```bibtex
+@misc{heretic,
+  author = {Weidmann, Philipp Emanuel},
+  title = {Heretic: Fully automatic censorship removal for language models},
+  year = {2025},
+  publisher = {GitHub},
+  journal = {GitHub repository},
+  howpublished = {\url{https://github.com/p-e-w/heretic}}
+}
+```
+
+
+## License
+
+Copyright &copy; 2025-2026  Philipp Emanuel Weidmann (<pew@worldwidemann.com>) + contributors
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU Affero General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU Affero General Public License for more details.
+
+You should have received a copy of the GNU Affero General Public License
+along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+**By contributing to this project, you agree to release your
+contributions under the same license.**
