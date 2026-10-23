@@ -17,9 +17,15 @@ let package = Package(
     ],
     dependencies: [],
     targets: [
+        .binaryTarget(
+            name: "llama",
+            path: "Frameworks/llama.xcframework"
+        ),
         .target(
             name: "IRIS_ICore",
-            dependencies: [],
+            dependencies: [
+                .target(name: "llama")
+            ],
             path: "IRIS-I",
             exclude: ["Resources", "App"],
             cSettings: [
@@ -28,7 +34,10 @@ let package = Package(
         ),
         .testTarget(
             name: "IRIS_ITests",
-            dependencies: ["IRIS_ICore"],
+            dependencies: [
+                "IRIS_ICore",
+                .target(name: "llama")
+            ],
             path: "Tests/IRIS_ITests"
         )
     ]

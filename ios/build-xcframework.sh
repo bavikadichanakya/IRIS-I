@@ -166,8 +166,12 @@ setup_framework_structure() {
     cp ggml/include/ggml-cpu.h     ${header_path}
     cp ggml/include/ggml-blas.h    ${header_path}
     cp ggml/include/gguf.h         ${header_path}
-    cp tools/mtmd/mtmd.h           ${header_path}
-    cp tools/mtmd/mtmd-helper.h    ${header_path}
+    if [[ -f "tools/mtmd/mtmd.h" ]]; then
+        cp tools/mtmd/mtmd.h       ${header_path}
+    fi
+    if [[ -f "tools/mtmd/mtmd-helper.h" ]]; then
+        cp tools/mtmd/mtmd-helper.h ${header_path}
+    fi
 
     if [[ "$GGML_METAL_EMBED_LIBRARY" == "OFF" ]]; then
         if [[ "$platform" == "macos" ]]; then
@@ -290,7 +294,7 @@ combine_static_libraries() {
         output_lib="${build_dir}/framework/${framework_name}.framework/${framework_name}"
     fi
 
-    local libs=(
+    local candidate_libs=(
         "${base_dir}/${build_dir}/src/${release_dir}/libllama.a"
         "${base_dir}/${build_dir}/ggml/src/${release_dir}/libggml.a"
         "${base_dir}/${build_dir}/ggml/src/${release_dir}/libggml-base.a"
@@ -300,6 +304,13 @@ combine_static_libraries() {
         "${base_dir}/${build_dir}/tools/mtmd/${release_dir}/libmtmd.a"
         "${base_dir}/${build_dir}/vendor/hash/${release_dir}/libvendor-hash.a"
     )
+
+    local libs=()
+    for lib in "${candidate_libs[@]}"; do
+        if [[ -f "$lib" ]]; then
+            libs+=("$lib")
+        fi
+    done
 
     # Create temporary directory for processing
     local temp_dir="${base_dir}/${build_dir}/temp"

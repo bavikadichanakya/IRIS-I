@@ -32,6 +32,8 @@
 		A20000022C00000100000001 /* ModelLifecycleTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B20000022C00000100000001 /* ModelLifecycleTests.swift */; };
 		A20000032C00000100000001 /* CancellationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B20000032C00000100000001 /* CancellationTests.swift */; };
 		A20000042C00000100000001 /* RealEngineIntegrationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B20000042C00000100000001 /* RealEngineIntegrationTests.swift */; };
+		A10000202C00000100000001 /* llama.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = B10000202C00000100000001 /* llama.xcframework */; };
+		A20000202C00000100000001 /* llama.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = B10000202C00000100000001 /* llama.xcframework */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -82,6 +84,7 @@
 		B20000022C00000100000001 /* ModelLifecycleTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModelLifecycleTests.swift; sourceTree = "<group>"; };
 		B20000032C00000100000001 /* CancellationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CancellationTests.swift; sourceTree = "<group>"; };
 		B20000042C00000100000001 /* RealEngineIntegrationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RealEngineIntegrationTests.swift; sourceTree = "<group>"; };
+		B10000202C00000100000001 /* llama.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; name = llama.xcframework; path = Frameworks/llama.xcframework; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -89,6 +92,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				A10000202C00000100000001 /* llama.xcframework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -96,6 +100,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				A20000202C00000100000001 /* llama.xcframework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -107,6 +112,7 @@
 			children = (
 				G10000022C00000100000001 /* IRIS-I */,
 				G20000012C00000100000001 /* Tests */,
+				G40000012C00000100000001 /* Frameworks */,
 				G30000012C00000100000001 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -230,6 +236,14 @@
 				B20000042C00000100000001 /* RealEngineIntegrationTests.swift */,
 			);
 			path = Tests/IRIS_ITests;
+			sourceTree = "<group>";
+		};
+		G40000012C00000100000001 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				B10000202C00000100000001 /* llama.xcframework */,
+			);
+			name = Frameworks;
 			sourceTree = "<group>";
 		};
 		G30000012C00000100000001 /* Products */ = {
