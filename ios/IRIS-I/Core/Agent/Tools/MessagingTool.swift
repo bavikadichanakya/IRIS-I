@@ -6,7 +6,9 @@
 //
 
 import Foundation
+#if canImport(UIKit)
 import UIKit
+#endif
 
 public struct MessagingTool: IRISAgentTool {
     public let name = "MessagingTool"
@@ -64,6 +66,7 @@ public struct MessagingTool: IRISAgentTool {
             )
         }
 
+        #if canImport(UIKit)
         let opened = await MainActor.run {
             if UIApplication.shared.canOpenURL(smsURL) {
                 UIApplication.shared.open(smsURL)
@@ -71,6 +74,9 @@ public struct MessagingTool: IRISAgentTool {
             }
             return false
         }
+        #else
+        let opened = false
+        #endif
 
         let duration = (CFAbsoluteTimeGetCurrent() - startTime) * 1000.0
 

@@ -8,7 +8,9 @@
 //
 
 import Foundation
+#if canImport(UIKit)
 import UIKit
+#endif
 
 public struct ShortcutsTool: IRISAgentTool {
     public let name = "ShortcutsTool"
@@ -64,6 +66,7 @@ public struct ShortcutsTool: IRISAgentTool {
             )
         }
 
+        #if canImport(UIKit)
         let opened = await MainActor.run {
             if UIApplication.shared.canOpenURL(url) {
                 UIApplication.shared.open(url)
@@ -71,6 +74,9 @@ public struct ShortcutsTool: IRISAgentTool {
             }
             return false
         }
+        #else
+        let opened = false
+        #endif
 
         let duration = (CFAbsoluteTimeGetCurrent() - startTime) * 1000.0
 

@@ -7,7 +7,9 @@
 //
 
 import Foundation
+#if canImport(UIKit)
 import UIKit
+#endif
 
 public struct SystemInfoTool: IRISAgentTool {
     public let name = "SystemInfoTool"
@@ -73,6 +75,7 @@ public struct SystemInfoTool: IRISAgentTool {
             )
 
         case "battery":
+            #if canImport(UIKit)
             UIDevice.current.isBatteryMonitoringEnabled = true
             let level = Int(UIDevice.current.batteryLevel * 100)
             let stateStr: String
@@ -82,6 +85,10 @@ public struct SystemInfoTool: IRISAgentTool {
             case .unplugged: stateStr = "Unplugged (On Battery)"
             default: stateStr = "Unknown"
             }
+            #else
+            let level = 100
+            let stateStr = "External Power"
+            #endif
             let duration = (CFAbsoluteTimeGetCurrent() - startTime) * 1000.0
 
             let batteryMsg = level >= 0 ? "Battery is at \(level)%, status: \(stateStr)." : "Battery level unavailable in simulator."

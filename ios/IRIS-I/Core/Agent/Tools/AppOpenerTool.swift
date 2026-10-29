@@ -6,7 +6,9 @@
 //
 
 import Foundation
+#if canImport(UIKit)
 import UIKit
+#endif
 
 public struct AppOpenerTool: IRISAgentTool {
     public let name = "AppOpenerTool"

@@ -7,7 +7,9 @@
 //
 
 import Foundation
+#if canImport(UIKit)
 import UIKit
+#endif
 
 public struct AppLaunchDescriptor: Sendable {
     public let appName: String
@@ -124,6 +126,7 @@ public actor AppLaunchRegistry {
 
         // 1. Special Case: iOS System Settings via official public API
         if lowName == "settings" || lowName == "app settings" {
+            #if canImport(UIKit)
             guard let settingsURL = URL(string: UIApplication.openSettingsURLString) else {
                 throw AppLaunchError.systemLaunchFailed("Invalid settings URL")
             }
@@ -133,6 +136,9 @@ public actor AppLaunchRegistry {
             } else {
                 throw AppLaunchError.systemLaunchFailed(UIApplication.openSettingsURLString)
             }
+            #else
+            throw AppLaunchError.systemLaunchFailed("UIKit unavailable on this platform")
+            #endif
         }
 
         // 2. Reject private schemes like App-Prefs:
@@ -164,17 +170,18 @@ public actor AppLaunchRegistry {
             throw AppLaunchError.systemLaunchFailed(targetString)
         }
 
-        // 5. Pre-flight check with canOpenURL
+        // 5. Pre-flight check with canOpenURL & launch via UIApplication
+        #if canImport(UIKit)
         let canOpen = UIApplication.shared.canOpenURL(targetURL)
         guard canOpen else {
             throw AppLaunchError.appNotInstalled(appName: descriptor.appName, appStoreURL: descriptor.appStoreURL)
         }
 
-        // 6. Launch via UIApplication
         let opened = await UIApplication.shared.open(targetURL)
         guard opened else {
             throw AppLaunchError.systemLaunchFailed(targetString)
         }
+        #endif
 
         return targetURL
     }

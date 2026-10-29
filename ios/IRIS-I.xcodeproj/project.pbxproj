@@ -34,6 +34,41 @@
 		A20000042C00000100000001 /* RealEngineIntegrationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B20000042C00000100000001 /* RealEngineIntegrationTests.swift */; };
 		A10000202C00000100000001 /* llama.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = B10000202C00000100000001 /* llama.xcframework */; };
 		A20000202C00000100000001 /* llama.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = B10000202C00000100000001 /* llama.xcframework */; };
+		A10000302C00000100000001 /* FastIntentRouter.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000302C00000100000001 /* FastIntentRouter.swift */; };
+		A10000312C00000100000001 /* ReActOrchestrator.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000312C00000100000001 /* ReActOrchestrator.swift */; };
+		A10000322C00000100000001 /* ChatMLPromptFormatter.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000322C00000100000001 /* ChatMLPromptFormatter.swift */; };
+		A10000332C00000100000001 /* Llama3PromptFormatter.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000332C00000100000001 /* Llama3PromptFormatter.swift */; };
+		A10000342C00000100000001 /* PromptTemplateFormatter.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000342C00000100000001 /* PromptTemplateFormatter.swift */; };
+		A10000352C00000100000001 /* ToolCallParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000352C00000100000001 /* ToolCallParser.swift */; };
+		A10000362C00000100000001 /* IRISAgentTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000362C00000100000001 /* IRISAgentTool.swift */; };
+		A10000372C00000100000001 /* AppLaunchRegistry.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000372C00000100000001 /* AppLaunchRegistry.swift */; };
+		A10000382C00000100000001 /* ToolRegistry.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000382C00000100000001 /* ToolRegistry.swift */; };
+		A10000392C00000100000001 /* ConfirmationTicket.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000392C00000100000001 /* ConfirmationTicket.swift */; };
+		A100003A2C00000100000001 /* PermissionLevel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100003A2C00000100000001 /* PermissionLevel.swift */; };
+		A100003B2C00000100000001 /* PermissionManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100003B2C00000100000001 /* PermissionManager.swift */; };
+		A100003C2C00000100000001 /* AppOpenerTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100003C2C00000100000001 /* AppOpenerTool.swift */; };
+		A100003D2C00000100000001 /* EventKitTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100003D2C00000100000001 /* EventKitTool.swift */; };
+		A100003E2C00000100000001 /* MailTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100003E2C00000100000001 /* MailTool.swift */; };
+		A100003F2C00000100000001 /* MessagingTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100003F2C00000100000001 /* MessagingTool.swift */; };
+		A10000402C00000100000001 /* ShortcutsTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000402C00000100000001 /* ShortcutsTool.swift */; };
+		A10000412C00000100000001 /* SystemInfoTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000412C00000100000001 /* SystemInfoTool.swift */; };
+		A10000422C00000100000001 /* WebSearchTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000422C00000100000001 /* WebSearchTool.swift */; };
+		A10000432C00000100000001 /* ConnectorProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000432C00000100000001 /* ConnectorProtocol.swift */; };
+		A10000442C00000100000001 /* KeychainHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000442C00000100000001 /* KeychainHelper.swift */; };
+		A10000452C00000100000001 /* GmailConnector.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000452C00000100000001 /* GmailConnector.swift */; };
+		A10000462C00000100000001 /* AssistantChatView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000462C00000100000001 /* AssistantChatView.swift */; };
+		A10000472C00000100000001 /* GmailConnectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000472C00000100000001 /* GmailConnectionView.swift */; };
+		A10000482C00000100000001 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000482C00000100000001 /* SettingsView.swift */; };
+		A20000302C00000100000001 /* AppLaunchRegistryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B20000302C00000100000001 /* AppLaunchRegistryTests.swift */; };
+		A20000312C00000100000001 /* EventKitToolTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B20000312C00000100000001 /* EventKitToolTests.swift */; };
+		A20000322C00000100000001 /* FastIntentRouterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B20000322C00000100000001 /* FastIntentRouterTests.swift */; };
+		A20000332C00000100000001 /* GmailConnectorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B20000332C00000100000001 /* GmailConnectorTests.swift */; };
+		A20000342C00000100000001 /* MailToolTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B20000342C00000100000001 /* MailToolTests.swift */; };
+		A20000352C00000100000001 /* ReActOrchestratorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B20000352C00000100000001 /* ReActOrchestratorTests.swift */; };
+		A20000362C00000100000001 /* SecurityPermissionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B20000362C00000100000001 /* SecurityPermissionTests.swift */; };
+		A20000372C00000100000001 /* SystemInfoToolTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B20000372C00000100000001 /* SystemInfoToolTests.swift */; };
+		A20000382C00000100000001 /* ToolCallParserTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B20000382C00000100000001 /* ToolCallParserTests.swift */; };
+		A20000392C00000100000001 /* WebSearchToolTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B20000392C00000100000001 /* WebSearchToolTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -85,6 +120,41 @@
 		B20000032C00000100000001 /* CancellationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CancellationTests.swift; sourceTree = "<group>"; };
 		B20000042C00000100000001 /* RealEngineIntegrationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RealEngineIntegrationTests.swift; sourceTree = "<group>"; };
 		B10000202C00000100000001 /* llama.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; name = llama.xcframework; path = Frameworks/llama.xcframework; sourceTree = "<group>"; };
+		B10000302C00000100000001 /* FastIntentRouter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FastIntentRouter.swift; sourceTree = "<group>"; };
+		B10000312C00000100000001 /* ReActOrchestrator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReActOrchestrator.swift; sourceTree = "<group>"; };
+		B10000322C00000100000001 /* ChatMLPromptFormatter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatMLPromptFormatter.swift; sourceTree = "<group>"; };
+		B10000332C00000100000001 /* Llama3PromptFormatter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Llama3PromptFormatter.swift; sourceTree = "<group>"; };
+		B10000342C00000100000001 /* PromptTemplateFormatter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromptTemplateFormatter.swift; sourceTree = "<group>"; };
+		B10000352C00000100000001 /* ToolCallParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ToolCallParser.swift; sourceTree = "<group>"; };
+		B10000362C00000100000001 /* IRISAgentTool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IRISAgentTool.swift; sourceTree = "<group>"; };
+		B10000372C00000100000001 /* AppLaunchRegistry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppLaunchRegistry.swift; sourceTree = "<group>"; };
+		B10000382C00000100000001 /* ToolRegistry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ToolRegistry.swift; sourceTree = "<group>"; };
+		B10000392C00000100000001 /* ConfirmationTicket.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConfirmationTicket.swift; sourceTree = "<group>"; };
+		B100003A2C00000100000001 /* PermissionLevel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PermissionLevel.swift; sourceTree = "<group>"; };
+		B100003B2C00000100000001 /* PermissionManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PermissionManager.swift; sourceTree = "<group>"; };
+		B100003C2C00000100000001 /* AppOpenerTool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppOpenerTool.swift; sourceTree = "<group>"; };
+		B100003D2C00000100000001 /* EventKitTool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EventKitTool.swift; sourceTree = "<group>"; };
+		B100003E2C00000100000001 /* MailTool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MailTool.swift; sourceTree = "<group>"; };
+		B100003F2C00000100000001 /* MessagingTool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MessagingTool.swift; sourceTree = "<group>"; };
+		B10000402C00000100000001 /* ShortcutsTool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShortcutsTool.swift; sourceTree = "<group>"; };
+		B10000412C00000100000001 /* SystemInfoTool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SystemInfoTool.swift; sourceTree = "<group>"; };
+		B10000422C00000100000001 /* WebSearchTool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebSearchTool.swift; sourceTree = "<group>"; };
+		B10000432C00000100000001 /* ConnectorProtocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConnectorProtocol.swift; sourceTree = "<group>"; };
+		B10000442C00000100000001 /* KeychainHelper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeychainHelper.swift; sourceTree = "<group>"; };
+		B10000452C00000100000001 /* GmailConnector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GmailConnector.swift; sourceTree = "<group>"; };
+		B10000462C00000100000001 /* AssistantChatView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistantChatView.swift; sourceTree = "<group>"; };
+		B10000472C00000100000001 /* GmailConnectionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GmailConnectionView.swift; sourceTree = "<group>"; };
+		B10000482C00000100000001 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		B20000302C00000100000001 /* AppLaunchRegistryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppLaunchRegistryTests.swift; sourceTree = "<group>"; };
+		B20000312C00000100000001 /* EventKitToolTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EventKitToolTests.swift; sourceTree = "<group>"; };
+		B20000322C00000100000001 /* FastIntentRouterTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FastIntentRouterTests.swift; sourceTree = "<group>"; };
+		B20000332C00000100000001 /* GmailConnectorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GmailConnectorTests.swift; sourceTree = "<group>"; };
+		B20000342C00000100000001 /* MailToolTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MailToolTests.swift; sourceTree = "<group>"; };
+		B20000352C00000100000001 /* ReActOrchestratorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReActOrchestratorTests.swift; sourceTree = "<group>"; };
+		B20000362C00000100000001 /* SecurityPermissionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SecurityPermissionTests.swift; sourceTree = "<group>"; };
+		B20000372C00000100000001 /* SystemInfoToolTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SystemInfoToolTests.swift; sourceTree = "<group>"; };
+		B20000382C00000100000001 /* ToolCallParserTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ToolCallParserTests.swift; sourceTree = "<group>"; };
+		B20000392C00000100000001 /* WebSearchToolTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebSearchToolTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -141,6 +211,8 @@
 		G10000042C00000100000001 /* Core */ = {
 			isa = PBXGroup;
 			children = (
+				G10000302C00000100000001 /* Agent */,
+				G10000382C00000100000001 /* Connectors */,
 				G10000082C00000100000001 /* ModelManager */,
 				G10000092C00000100000001 /* System */,
 				G100000A2C00000100000001 /* Engine */,
@@ -195,6 +267,9 @@
 		G10000052C00000100000001 /* Views */ = {
 			isa = PBXGroup;
 			children = (
+				B10000462C00000100000001 /* AssistantChatView.swift */,
+				B10000472C00000100000001 /* GmailConnectionView.swift */,
+				B10000482C00000100000001 /* SettingsView.swift */,
 				B10000122C00000100000001 /* TelemetryBarView.swift */,
 				B10000132C00000100000001 /* ModelProfileCard.swift */,
 				B10000142C00000100000001 /* BenchmarkResultsView.swift */,
@@ -230,6 +305,16 @@
 		G20000012C00000100000001 /* Tests */ = {
 			isa = PBXGroup;
 			children = (
+				B20000302C00000100000001 /* AppLaunchRegistryTests.swift */,
+				B20000312C00000100000001 /* EventKitToolTests.swift */,
+				B20000322C00000100000001 /* FastIntentRouterTests.swift */,
+				B20000332C00000100000001 /* GmailConnectorTests.swift */,
+				B20000342C00000100000001 /* MailToolTests.swift */,
+				B20000352C00000100000001 /* ReActOrchestratorTests.swift */,
+				B20000362C00000100000001 /* SecurityPermissionTests.swift */,
+				B20000372C00000100000001 /* SystemInfoToolTests.swift */,
+				B20000382C00000100000001 /* ToolCallParserTests.swift */,
+				B20000392C00000100000001 /* WebSearchToolTests.swift */,
 				B20000012C00000100000001 /* ModelIntegrityTests.swift */,
 				B20000022C00000100000001 /* ModelLifecycleTests.swift */,
 				B20000032C00000100000001 /* CancellationTests.swift */,
@@ -253,6 +338,107 @@
 				E20000012C00000100000001 /* IRIS-ITests.xctest */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+
+		G10000312C00000100000001 /* Dispatch */ = {
+			isa = PBXGroup;
+			children = (
+				B10000302C00000100000001 /* FastIntentRouter.swift */,
+				B10000312C00000100000001 /* ReActOrchestrator.swift */,
+			);
+			path = Dispatch;
+			sourceTree = "<group>";
+		};
+		G10000322C00000100000001 /* Formatters */ = {
+			isa = PBXGroup;
+			children = (
+				B10000322C00000100000001 /* ChatMLPromptFormatter.swift */,
+				B10000332C00000100000001 /* Llama3PromptFormatter.swift */,
+				B10000342C00000100000001 /* PromptTemplateFormatter.swift */,
+			);
+			path = Formatters;
+			sourceTree = "<group>";
+		};
+		G10000332C00000100000001 /* Parser */ = {
+			isa = PBXGroup;
+			children = (
+				B10000352C00000100000001 /* ToolCallParser.swift */,
+			);
+			path = Parser;
+			sourceTree = "<group>";
+		};
+		G10000342C00000100000001 /* Protocols */ = {
+			isa = PBXGroup;
+			children = (
+				B10000362C00000100000001 /* IRISAgentTool.swift */,
+			);
+			path = Protocols;
+			sourceTree = "<group>";
+		};
+		G10000352C00000100000001 /* Registry */ = {
+			isa = PBXGroup;
+			children = (
+				B10000372C00000100000001 /* AppLaunchRegistry.swift */,
+				B10000382C00000100000001 /* ToolRegistry.swift */,
+			);
+			path = Registry;
+			sourceTree = "<group>";
+		};
+		G10000362C00000100000001 /* Security */ = {
+			isa = PBXGroup;
+			children = (
+				B10000392C00000100000001 /* ConfirmationTicket.swift */,
+				B100003A2C00000100000001 /* PermissionLevel.swift */,
+				B100003B2C00000100000001 /* PermissionManager.swift */,
+			);
+			path = Security;
+			sourceTree = "<group>";
+		};
+		G10000372C00000100000001 /* Tools */ = {
+			isa = PBXGroup;
+			children = (
+				B100003C2C00000100000001 /* AppOpenerTool.swift */,
+				B100003D2C00000100000001 /* EventKitTool.swift */,
+				B100003E2C00000100000001 /* MailTool.swift */,
+				B100003F2C00000100000001 /* MessagingTool.swift */,
+				B10000402C00000100000001 /* ShortcutsTool.swift */,
+				B10000412C00000100000001 /* SystemInfoTool.swift */,
+				B10000422C00000100000001 /* WebSearchTool.swift */,
+			);
+			path = Tools;
+			sourceTree = "<group>";
+		};
+		G10000302C00000100000001 /* Agent */ = {
+			isa = PBXGroup;
+			children = (
+				G10000312C00000100000001 /* Dispatch */,
+				G10000322C00000100000001 /* Formatters */,
+				G10000332C00000100000001 /* Parser */,
+				G10000342C00000100000001 /* Protocols */,
+				G10000352C00000100000001 /* Registry */,
+				G10000362C00000100000001 /* Security */,
+				G10000372C00000100000001 /* Tools */,
+			);
+			path = Agent;
+			sourceTree = "<group>";
+		};
+		G10000392C00000100000001 /* Gmail */ = {
+			isa = PBXGroup;
+			children = (
+				B10000452C00000100000001 /* GmailConnector.swift */,
+			);
+			path = Gmail;
+			sourceTree = "<group>";
+		};
+		G10000382C00000100000001 /* Connectors */ = {
+			isa = PBXGroup;
+			children = (
+				B10000432C00000100000001 /* ConnectorProtocol.swift */,
+				B10000442C00000100000001 /* KeychainHelper.swift */,
+				G10000392C00000100000001 /* Gmail */,
+			);
+			path = Connectors;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -334,6 +520,31 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				A10000302C00000100000001 /* FastIntentRouter.swift in Sources */,
+				A10000312C00000100000001 /* ReActOrchestrator.swift in Sources */,
+				A10000322C00000100000001 /* ChatMLPromptFormatter.swift in Sources */,
+				A10000332C00000100000001 /* Llama3PromptFormatter.swift in Sources */,
+				A10000342C00000100000001 /* PromptTemplateFormatter.swift in Sources */,
+				A10000352C00000100000001 /* ToolCallParser.swift in Sources */,
+				A10000362C00000100000001 /* IRISAgentTool.swift in Sources */,
+				A10000372C00000100000001 /* AppLaunchRegistry.swift in Sources */,
+				A10000382C00000100000001 /* ToolRegistry.swift in Sources */,
+				A10000392C00000100000001 /* ConfirmationTicket.swift in Sources */,
+				A100003A2C00000100000001 /* PermissionLevel.swift in Sources */,
+				A100003B2C00000100000001 /* PermissionManager.swift in Sources */,
+				A100003C2C00000100000001 /* AppOpenerTool.swift in Sources */,
+				A100003D2C00000100000001 /* EventKitTool.swift in Sources */,
+				A100003E2C00000100000001 /* MailTool.swift in Sources */,
+				A100003F2C00000100000001 /* MessagingTool.swift in Sources */,
+				A10000402C00000100000001 /* ShortcutsTool.swift in Sources */,
+				A10000412C00000100000001 /* SystemInfoTool.swift in Sources */,
+				A10000422C00000100000001 /* WebSearchTool.swift in Sources */,
+				A10000432C00000100000001 /* ConnectorProtocol.swift in Sources */,
+				A10000442C00000100000001 /* KeychainHelper.swift in Sources */,
+				A10000452C00000100000001 /* GmailConnector.swift in Sources */,
+				A10000462C00000100000001 /* AssistantChatView.swift in Sources */,
+				A10000472C00000100000001 /* GmailConnectionView.swift in Sources */,
+				A10000482C00000100000001 /* SettingsView.swift in Sources */,
 				A10000012C00000100000001 /* IRIS_IApp.swift in Sources */,
 				A10000022C00000100000001 /* ContentView.swift in Sources */,
 				A10000032C00000100000001 /* ModelManifest.swift in Sources */,
@@ -362,6 +573,16 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				A20000302C00000100000001 /* AppLaunchRegistryTests.swift in Sources */,
+				A20000312C00000100000001 /* EventKitToolTests.swift in Sources */,
+				A20000322C00000100000001 /* FastIntentRouterTests.swift in Sources */,
+				A20000332C00000100000001 /* GmailConnectorTests.swift in Sources */,
+				A20000342C00000100000001 /* MailToolTests.swift in Sources */,
+				A20000352C00000100000001 /* ReActOrchestratorTests.swift in Sources */,
+				A20000362C00000100000001 /* SecurityPermissionTests.swift in Sources */,
+				A20000372C00000100000001 /* SystemInfoToolTests.swift in Sources */,
+				A20000382C00000100000001 /* ToolCallParserTests.swift in Sources */,
+				A20000392C00000100000001 /* WebSearchToolTests.swift in Sources */,
 				A20000012C00000100000001 /* ModelIntegrityTests.swift in Sources */,
 				A20000022C00000100000001 /* ModelLifecycleTests.swift in Sources */,
 				A20000032C00000100000001 /* CancellationTests.swift in Sources */,

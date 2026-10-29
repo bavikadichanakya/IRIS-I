@@ -2,12 +2,15 @@
 //  SettingsView.swift
 //  IRIS-I
 //
-//  Application settings and account connection screen.
+//  Application settings, model residency introspection, and account connections.
 //
 
 import SwiftUI
 
 public struct SettingsView: View {
+    @State private var activeManifest: ModelManifest?
+    @State private var runnerState: ModelLifecycleState = .uninstalled
+
     public init() {}
 
     public var body: some View {
@@ -53,16 +56,56 @@ public struct SettingsView: View {
                     }
                 }
 
-                Section(header: Text("Local Intelligence")) {
+                Section(header: Text("Local Intelligence Configuration")) {
                     HStack {
                         Image(systemName: "cpu")
                             .foregroundColor(.purple)
                         VStack(alignment: .leading, spacing: 2) {
-                            Text("Default Model")
+                            Text("Configured Baseline Profile")
                                 .font(.subheadline)
-                            Text("SmolLM3-3B (On-Device via Apple Silicon Metal)")
+                            Text("Qwen 2.5 3B Instruct (ChatML / Q4_K_M)")
                                 .font(.caption2)
                                 .foregroundColor(.secondary)
+                        }
+                        Spacer()
+                        Text("A19 Pinned")
+                            .font(.caption2)
+                            .foregroundColor(.secondary)
+                    }
+
+                    HStack {
+                        Image(systemName: "memorychip")
+                            .foregroundColor(activeManifest != nil ? .green : .gray)
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("Active Memory Residency")
+                                .font(.subheadline)
+                            if let manifest = activeManifest {
+                                Text("\(manifest.displayName) (\(manifest.quantization))")
+                                    .font(.caption2)
+                                    .foregroundColor(.green)
+                            } else {
+                                Text("No model loaded (Standby / Cold)")
+                                    .font(.caption2)
+                                    .foregroundColor(.secondary)
+                            }
+                        }
+                        Spacer()
+                        if activeManifest != nil {
+                            Text("Loaded")
+                                .font(.caption2.bold())
+                                .padding(.horizontal, 6)
+                                .padding(.vertical, 2)
+                                .background(Color.green.opacity(0.15))
+                                .foregroundColor(.green)
+                                .cornerRadius(6)
+                        } else {
+                            Text("Cold")
+                                .font(.caption2.bold())
+                                .padding(.horizontal, 6)
+                                .padding(.vertical, 2)
+                                .background(Color.gray.opacity(0.15))
+                                .foregroundColor(.secondary)
+                                .cornerRadius(6)
                         }
                     }
 
@@ -84,6 +127,14 @@ public struct SettingsView: View {
                 }
             }
             .navigationTitle("Settings")
+            .task {
+                let manifest = await LocalModelRunner.shared.currentManifest
+                let state = await LocalModelRunner.shared.state
+                await MainActor.run {
+                    self.activeManifest = manifest
+                    self.runnerState = state
+                }
+            }
         }
     }
 }

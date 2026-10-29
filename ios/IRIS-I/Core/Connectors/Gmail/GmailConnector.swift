@@ -18,13 +18,51 @@ public struct OAuthConfiguration: Sendable {
     public let tokenEndpoint: URL
     public let revocationEndpoint: URL
 
-    public static let standard = OAuthConfiguration(
-        clientId: ProcessInfo.processInfo.environment["GMAIL_CLIENT_ID"] ?? "1082345678901-iris-assistant-ios.apps.googleusercontent.com",
-        redirectUri: ProcessInfo.processInfo.environment["GMAIL_REDIRECT_URI"] ?? "com.googleusercontent.apps.1082345678901-iris-assistant-ios:/oauth2redirect/google",
-        authorizationEndpoint: URL(string: "https://accounts.google.com/o/oauth2/v2/auth")!,
-        tokenEndpoint: URL(string: "https://oauth2.googleapis.com/token")!,
-        revocationEndpoint: URL(string: "https://oauth2.googleapis.com/revoke")!
-    )
+    public var isConfigured: Bool {
+        !clientId.isEmpty &&
+        !clientId.contains("placeholder") &&
+        !clientId.contains("1082345678901") &&
+        !clientId.contains("$(")
+    }
+
+    /// Derives the custom URL callback scheme from redirect URI (or reversed client ID)
+    public var callbackScheme: String {
+        if let url = URL(string: redirectUri), let scheme = url.scheme, !scheme.isEmpty {
+            return scheme
+        }
+        let cleaned = clientId.replacingOccurrences(of: ".apps.googleusercontent.com", with: "")
+        return "com.googleusercontent.apps.\(cleaned)"
+    }
+
+    public static func load(keychain: KeychainHelper = .shared) -> OAuthConfiguration {
+        // 1. User keychain override (configured in-app via Settings screen)
+        if let customClientId = keychain.get(forKey: "custom_gmail_client_id"), !customClientId.isEmpty {
+            let customRedirect = keychain.get(forKey: "custom_gmail_redirect_uri")
+            let redirect = (customRedirect != nil && !customRedirect!.isEmpty)
+                ? customRedirect!
+                : "com.googleusercontent.apps." + customClientId.replacingOccurrences(of: ".apps.googleusercontent.com", with: "") + ":/oauth2redirect/google"
+            return OAuthConfiguration(clientId: customClientId, redirectUri: redirect)
+        }
+
+        // 2. Process environment (e.g. CI runner or launch arguments)
+        if let envClientId = ProcessInfo.processInfo.environment["GMAIL_CLIENT_ID"], !envClientId.isEmpty {
+            let envRedirect = ProcessInfo.processInfo.environment["GMAIL_REDIRECT_URI"] ?? ("com.googleusercontent.apps." + envClientId.replacingOccurrences(of: ".apps.googleusercontent.com", with: "") + ":/oauth2redirect/google")
+            return OAuthConfiguration(clientId: envClientId, redirectUri: envRedirect)
+        }
+
+        // 3. Info.plist (Xcode build setting)
+        if let plistClientId = Bundle.main.object(forInfoDictionaryKey: "GmailClientID") as? String,
+           !plistClientId.isEmpty, !plistClientId.contains("$(") {
+            let plistRedirect = (Bundle.main.object(forInfoDictionaryKey: "GmailRedirectURI") as? String) ?? ("com.googleusercontent.apps." + plistClientId.replacingOccurrences(of: ".apps.googleusercontent.com", with: "") + ":/oauth2redirect/google")
+            return OAuthConfiguration(clientId: plistClientId, redirectUri: plistRedirect)
+        }
+
+        // Unconfigured state: requires user or environment configuration
+        return OAuthConfiguration(
+            clientId: "",
+            redirectUri: "com.googleusercontent.apps.unconfigured:/oauth2redirect/google"
+        )
+    }
 
     public init(
         clientId: String,
@@ -56,7 +94,11 @@ public actor GmailConnector: AccountConnector, MailProviderProtocol {
 
     private let keychain: KeychainHelper
     private let session: URLSession
-    public let oauthConfig: OAuthConfiguration
+    private let customOAuthConfig: OAuthConfiguration?
+
+    public var oauthConfig: OAuthConfiguration {
+        customOAuthConfig ?? OAuthConfiguration.load(keychain: keychain)
+    }
 
     private let tokenKey = "gmail_access_token"
     private let refreshTokenKey = "gmail_refresh_token"
@@ -70,11 +112,22 @@ public actor GmailConnector: AccountConnector, MailProviderProtocol {
     public init(
         keychain: KeychainHelper = .shared,
         session: URLSession = .shared,
-        oauthConfig: OAuthConfiguration = .standard
+        oauthConfig: OAuthConfiguration? = nil
     ) {
         self.keychain = keychain
         self.session = session
-        self.oauthConfig = oauthConfig
+        self.customOAuthConfig = oauthConfig
+    }
+
+    /// Allows user or test to provide client ID and custom redirect URI dynamically.
+    public func saveClientConfiguration(clientId: String, redirectUri: String? = nil) {
+        keychain.set(clientId, forKey: "custom_gmail_client_id")
+        if let redirect = redirectUri, !redirect.isEmpty {
+            keychain.set(redirect, forKey: "custom_gmail_redirect_uri")
+        } else {
+            let reversed = clientId.replacingOccurrences(of: ".apps.googleusercontent.com", with: "")
+            keychain.set("com.googleusercontent.apps.\(reversed):/oauth2redirect/google", forKey: "custom_gmail_redirect_uri")
+        }
     }
 
     // MARK: - AccountConnector State
@@ -138,7 +191,14 @@ public actor GmailConnector: AccountConnector, MailProviderProtocol {
     // MARK: - Mobile OAuth 2.0 PKCE Flow
 
     /// Generates the authorization URL with PKCE parameters and records the expected state.
-    public func startAuthorizationFlow() -> URL {
+    public func startAuthorizationFlow() throws -> URL {
+        let config = self.oauthConfig
+        guard config.isConfigured else {
+            throw NSError(domain: "GmailConnector", code: 400, userInfo: [
+                NSLocalizedDescriptionKey: "Google OAuth Client ID is not configured. Please enter your Google Cloud iOS Client ID in Settings or provide GMAIL_CLIENT_ID in your build configuration."
+            ])
+        }
+
         let verifier = generateCodeVerifier()
         let challenge = generateCodeChallenge(from: verifier)
         let state = generateRandomString(length: 24)
@@ -146,10 +206,10 @@ public actor GmailConnector: AccountConnector, MailProviderProtocol {
         self.pendingCodeVerifier = verifier
         self.pendingAuthState = state
 
-        var components = URLComponents(url: oauthConfig.authorizationEndpoint, resolvingAgainstBaseURL: false)!
+        var components = URLComponents(url: config.authorizationEndpoint, resolvingAgainstBaseURL: false)!
         components.queryItems = [
-            URLQueryItem(name: "client_id", value: oauthConfig.clientId),
-            URLQueryItem(name: "redirect_uri", value: oauthConfig.redirectUri),
+            URLQueryItem(name: "client_id", value: config.clientId),
+            URLQueryItem(name: "redirect_uri", value: config.redirectUri),
             URLQueryItem(name: "response_type", value: "code"),
             URLQueryItem(name: "scope", value: Self.scopes.joined(separator: " ")),
             URLQueryItem(name: "code_challenge", value: challenge),
@@ -159,22 +219,34 @@ public actor GmailConnector: AccountConnector, MailProviderProtocol {
             URLQueryItem(name: "prompt", value: "consent")
         ]
 
-        return components.url!
+        guard let url = components.url else {
+            throw URLError(.badURL)
+        }
+        return url
     }
 
     /// Exchanges an authorization code for OAuth tokens after verifying state and PKCE verifier.
     public func handleAuthorizationRedirect(url: URL) async throws {
+        let config = self.oauthConfig
+
+        // 1. Validate callback scheme matches configured redirect URI
+        if let scheme = url.scheme, scheme != config.callbackScheme {
+            throw NSError(domain: "GmailConnector", code: -6, userInfo: [
+                NSLocalizedDescriptionKey: "Redirect callback scheme mismatch: expected '\(config.callbackScheme)', received '\(scheme)'."
+            ])
+        }
+
         guard let components = URLComponents(url: url, resolvingAgainstBaseURL: false),
               let queryItems = components.queryItems else {
             throw NSError(domain: "GmailConnector", code: -1, userInfo: [NSLocalizedDescriptionKey: "Invalid redirect URL."])
         }
 
-        // Check for OAuth error from provider
+        // 2. Check for OAuth error from provider
         if let error = queryItems.first(where: { $0.name == "error" })?.value {
             throw NSError(domain: "GmailConnector", code: -2, userInfo: [NSLocalizedDescriptionKey: "Authorization failed: \(error)"])
         }
 
-        // Validate state parameter to protect against CSRF attacks
+        // 3. Validate state parameter to protect against CSRF attacks
         guard let returnedState = queryItems.first(where: { $0.name == "state" })?.value,
               let expectedState = self.pendingAuthState,
               returnedState == expectedState else {
@@ -189,7 +261,7 @@ public actor GmailConnector: AccountConnector, MailProviderProtocol {
             throw NSError(domain: "GmailConnector", code: -5, userInfo: [NSLocalizedDescriptionKey: "Missing PKCE code verifier."])
         }
 
-        // Exchange authorization code for tokens
+        // 4. Exchange authorization code for tokens
         try await exchangeCodeForTokens(code: code, verifier: verifier)
     }
 

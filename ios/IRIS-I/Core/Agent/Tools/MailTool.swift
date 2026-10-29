@@ -9,7 +9,9 @@
 //
 
 import Foundation
+#if canImport(UIKit)
 import UIKit
+#endif
 
 public struct MailTool: IRISAgentTool {
     public let name = "MailTool"
@@ -167,6 +169,7 @@ public struct MailTool: IRISAgentTool {
                 )
             }
 
+            #if canImport(UIKit)
             let opened = await MainActor.run {
                 if UIApplication.shared.canOpenURL(mailURL) {
                     UIApplication.shared.open(mailURL)
@@ -174,6 +177,9 @@ public struct MailTool: IRISAgentTool {
                 }
                 return false
             }
+            #else
+            let opened = false
+            #endif
 
             let duration = (CFAbsoluteTimeGetCurrent() - startTime) * 1000.0
 

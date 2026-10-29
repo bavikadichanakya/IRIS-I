@@ -61,8 +61,8 @@ export GGML_BLAS_DEFAULT=ON
 export IOS_MIN_OS_VERSION=17.0
 export MACOS_MIN_OS_VERSION=14.0
 
-echo "Compiling slices: ios-device (arm64 Metal) & ios-sim (arm64/x86_64)..."
-./build-xcframework.sh ios-device ios-sim
+echo "Compiling slices: ios-device (arm64 Metal), ios-sim (arm64/x86_64) & macos (arm64/x86_64)..."
+./build-xcframework.sh macos ios-device ios-sim
 
 echo "Installing generated XCFramework to ${FRAMEWORKS_DIR}/llama.xcframework..."
 rm -rf "${FRAMEWORKS_DIR}/llama.xcframework"
@@ -88,6 +88,9 @@ if command -v lipo >/dev/null 2>&1; then
     echo "[lipo] Verifying architectures..."
     echo "  Device slice:    $(lipo -info "${FRAMEWORKS_DIR}/llama.xcframework/ios-arm64/llama.framework/llama")"
     echo "  Simulator slice: $(lipo -info "${FRAMEWORKS_DIR}/llama.xcframework/ios-arm64_x86_64-simulator/llama.framework/llama")"
+    if [ -f "${FRAMEWORKS_DIR}/llama.xcframework/macos-arm64_x86_64/llama.framework/llama" ]; then
+        echo "  macOS slice:     $(lipo -info "${FRAMEWORKS_DIR}/llama.xcframework/macos-arm64_x86_64/llama.framework/llama")"
+    fi
 fi
 
 if command -v nm >/dev/null 2>&1; then

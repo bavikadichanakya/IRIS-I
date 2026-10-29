@@ -3,7 +3,8 @@
 //  IRIS_ITests
 //
 //  Verifies GmailConnector state transitions, credential isolation, PKCE generation,
-//  state validation, message parsing with full MIME body & timestamp, and disconnect cleanup.
+//  state validation, callback scheme matching, error handling, message parsing with
+//  full MIME body & timestamp, and disconnect cleanup.
 //
 
 import XCTest
@@ -45,6 +46,10 @@ final class GmailConnectorTests: XCTestCase {
     var testKeychain: KeychainHelper!
     var connector: GmailConnector!
     var mockSession: URLSession!
+    let mockOAuthConfig = OAuthConfiguration(
+        clientId: "test-client-123.apps.googleusercontent.com",
+        redirectUri: "com.googleusercontent.apps.test-client-123:/oauth2redirect/google"
+    )
 
     override func setUp() {
         super.setUp()
@@ -54,7 +59,11 @@ final class GmailConnectorTests: XCTestCase {
         config.protocolClasses = [MockURLProtocol.self]
         mockSession = URLSession(configuration: config)
 
-        connector = GmailConnector(keychain: testKeychain, session: mockSession)
+        connector = GmailConnector(
+            keychain: testKeychain,
+            session: mockSession,
+            oauthConfig: mockOAuthConfig
+        )
     }
 
     override func tearDown() {
@@ -122,8 +131,8 @@ final class GmailConnectorTests: XCTestCase {
         XCTAssertNil(testKeychain.get(forKey: "gmail_refresh_token"))
     }
 
-    func testPKCEAuthorizationURLGeneration() async {
-        let authURL = await connector.startAuthorizationFlow()
+    func testPKCEAuthorizationURLGeneration() async throws {
+        let authURL = try await connector.startAuthorizationFlow()
         let urlString = authURL.absoluteString
 
         XCTAssertTrue(urlString.contains("response_type=code"))
@@ -133,16 +142,67 @@ final class GmailConnectorTests: XCTestCase {
         XCTAssertTrue(urlString.contains("gmail.readonly"))
     }
 
-    func testAuthorizationRedirectRejectsStateMismatch() async {
-        _ = await connector.startAuthorizationFlow()
+    func testAuthorizationRedirectRejectsStateMismatch() async throws {
+        _ = try await connector.startAuthorizationFlow()
 
-        let tamperedRedirect = URL(string: "com.googleusercontent.apps.test:/oauth2redirect/google?code=auth_code_123&state=tampered_state_456")!
+        let tamperedRedirect = URL(string: "com.googleusercontent.apps.test-client-123:/oauth2redirect/google?code=auth_code_123&state=tampered_state_456")!
 
         do {
             try await connector.handleAuthorizationRedirect(url: tamperedRedirect)
             XCTFail("State mismatch must fail authorization redirect")
         } catch {
             XCTAssertTrue(error.localizedDescription.contains("state mismatch"))
+        }
+    }
+
+    func testAuthorizationRedirectRejectsSchemeMismatch() async throws {
+        _ = try await connector.startAuthorizationFlow()
+
+        let invalidSchemeRedirect = URL(string: "some.other.scheme:/oauth2redirect?code=123&state=abc")!
+
+        do {
+            try await connector.handleAuthorizationRedirect(url: invalidSchemeRedirect)
+            XCTFail("Scheme mismatch must fail authorization redirect")
+        } catch {
+            XCTAssertTrue(error.localizedDescription.contains("scheme mismatch"))
+        }
+    }
+
+    func testOAuthErrorInRedirectThrows() async throws {
+        _ = try await connector.startAuthorizationFlow()
+
+        let errorRedirect = URL(string: "com.googleusercontent.apps.test-client-123:/oauth2redirect/google?error=access_denied&state=none")!
+
+        do {
+            try await connector.handleAuthorizationRedirect(url: errorRedirect)
+            XCTFail("OAuth error in redirect must throw error")
+        } catch {
+            XCTAssertTrue(error.localizedDescription.contains("Authorization failed"))
+        }
+    }
+
+    func testMissingCredentialsThrowsUnauthorized() async {
+        do {
+            _ = try await connector.searchMessages(query: "from:test")
+            XCTFail("searchMessages without credentials must throw 401")
+        } catch {
+            let nsError = error as NSError
+            XCTAssertEqual(nsError.code, 401)
+        }
+    }
+
+    func testUnconfiguredClientIdThrowsOnAuthStart() async {
+        let unconfiguredConnector = GmailConnector(
+            keychain: testKeychain,
+            session: mockSession,
+            oauthConfig: OAuthConfiguration(clientId: "", redirectUri: "")
+        )
+
+        do {
+            _ = try await unconfiguredConnector.startAuthorizationFlow()
+            XCTFail("Unconfigured client ID must throw error")
+        } catch {
+            XCTAssertTrue(error.localizedDescription.contains("Client ID is not configured"))
         }
     }
 

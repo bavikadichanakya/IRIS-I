@@ -3,7 +3,7 @@
 //  IRIS-I
 //
 //  User-facing connection card and management interface for linking, inspecting,
-//  and disconnecting Google Gmail OAuth accounts with PKCE on iOS.
+//  configuring, and disconnecting Google Gmail OAuth accounts with PKCE on iOS.
 //
 
 import SwiftUI
@@ -13,9 +13,13 @@ import AuthenticationServices
 
 public struct GmailConnectionView: View {
     @State private var connectorState: ConnectorState = .disconnected
+    @State private var isConfigured: Bool = false
     @State private var isAuthenticating: Bool = false
     @State private var errorMessage: String?
     @State private var showingDisconnectAlert: Bool = false
+    @State private var showingConfigSheet: Bool = false
+    @State private var inputClientId: String = ""
+    @State private var inputRedirectUri: String = ""
 
     public init() {}
 
@@ -91,17 +95,46 @@ public struct GmailConnectionView: View {
 
             case .disconnected, .error:
                 VStack(alignment: .leading, spacing: 10) {
-                    Text("Link your Gmail account to check emails from OpenAI, search messages, and manage outgoing emails.")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
+                    if !isConfigured {
+                        VStack(alignment: .leading, spacing: 6) {
+                            HStack {
+                                Image(systemName: "exclamationmark.triangle.fill")
+                                    .foregroundColor(.orange)
+                                Text("Client ID Required")
+                                    .font(.subheadline.bold())
+                            }
+                            Text("To link your live Google account, configure a Google Cloud iOS OAuth Client ID.")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
 
-                    if let err = errorMessage {
-                        Text(err)
+                            Button(action: {
+                                showingConfigSheet = true
+                            }) {
+                                HStack {
+                                    Image(systemName: "gearshape.fill")
+                                    Text("Configure Client ID")
+                                }
+                                .font(.caption.bold())
+                                .padding(.horizontal, 12)
+                                .padding(.vertical, 6)
+                                .background(Color.orange.opacity(0.15))
+                                .foregroundColor(.orange)
+                                .cornerRadius(8)
+                            }
+                        }
+                    } else {
+                        Text("Link your Gmail account to check emails from OpenAI, search messages, and manage outgoing emails.")
                             .font(.caption)
-                            .foregroundColor(.red)
-                    }
+                            .foregroundColor(.secondary)
 
-                    connectButton(label: "Connect with Google")
+                        if let err = errorMessage {
+                            Text(err)
+                                .font(.caption)
+                                .foregroundColor(.red)
+                        }
+
+                        connectButton(label: "Connect with Google")
+                    }
                 }
 
             case .connecting:
@@ -120,6 +153,41 @@ public struct GmailConnectionView: View {
         .cornerRadius(16)
         .task {
             await refreshState()
+        }
+        .sheet(isPresented: $showingConfigSheet) {
+            NavigationStack {
+                Form {
+                    Section(header: Text("Google Cloud OAuth Settings")) {
+                        TextField("Client ID (e.g. 123...apps.googleusercontent.com)", text: $inputClientId)
+                            .autocapitalization(.none)
+                            .disableAutocorrection(true)
+
+                        TextField("Custom Redirect URI (Optional)", text: $inputRedirectUri)
+                            .autocapitalization(.none)
+                            .disableAutocorrection(true)
+                    }
+
+                    Section(footer: Text("Register an iOS Client ID in Google Cloud Console with bundle ID 'com.iris.assistant'. The callback scheme is derived automatically.")) {
+                        Button("Save Configuration") {
+                            Task {
+                                await GmailConnector.shared.saveClientConfiguration(
+                                    clientId: inputClientId.trimmingCharacters(in: .whitespacesAndNewlines),
+                                    redirectUri: inputRedirectUri.trimmingCharacters(in: .whitespacesAndNewlines)
+                                )
+                                showingConfigSheet = false
+                                await refreshState()
+                            }
+                        }
+                        .disabled(inputClientId.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                    }
+                }
+                .navigationTitle("OAuth Configuration")
+                .toolbar {
+                    ToolbarItem(placement: .cancellationAction) {
+                        Button("Cancel") { showingConfigSheet = false }
+                    }
+                }
+            }
         }
         .alert("Disconnect Gmail?", isPresented: $showingDisconnectAlert) {
             Button("Disconnect & Revoke", role: .destructive) {
@@ -162,13 +230,23 @@ public struct GmailConnectionView: View {
                     .foregroundColor(.blue)
                     .cornerRadius(8)
             case .disconnected, .error:
-                Text("Not Connected")
-                    .font(.caption2.bold())
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 4)
-                    .background(Color.gray.opacity(0.15))
-                    .foregroundColor(.secondary)
-                    .cornerRadius(8)
+                if !isConfigured {
+                    Text("Unconfigured")
+                        .font(.caption2.bold())
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 4)
+                        .background(Color.orange.opacity(0.15))
+                        .foregroundColor(.orange)
+                        .cornerRadius(8)
+                } else {
+                    Text("Not Connected")
+                        .font(.caption2.bold())
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 4)
+                        .background(Color.gray.opacity(0.15))
+                        .foregroundColor(.secondary)
+                        .cornerRadius(8)
+                }
             }
         }
     }
@@ -199,8 +277,12 @@ public struct GmailConnectionView: View {
 
     private func refreshState() async {
         let state = await GmailConnector.shared.state
+        let config = await GmailConnector.shared.oauthConfig
         await MainActor.run {
             self.connectorState = state
+            self.isConfigured = config.isConfigured
+            self.inputClientId = config.clientId
+            self.inputRedirectUri = config.redirectUri
         }
     }
 
@@ -209,55 +291,64 @@ public struct GmailConnectionView: View {
         errorMessage = nil
 
         Task {
-            let authURL = await GmailConnector.shared.startAuthorizationFlow()
+            do {
+                let authURL = try await GmailConnector.shared.startAuthorizationFlow()
+                let scheme = await GmailConnector.shared.oauthConfig.callbackScheme
 
-            await MainActor.run {
-                #if canImport(AuthenticationServices)
-                let scheme = "com.googleusercontent.apps"
-                let session = ASWebAuthenticationSession(
-                    url: authURL,
-                    callbackURLScheme: scheme
-                ) { callbackURL, error in
-                    Task {
-                        if let error = error {
+                await MainActor.run {
+                    #if canImport(AuthenticationServices)
+                    let session = ASWebAuthenticationSession(
+                        url: authURL,
+                        callbackURLScheme: scheme
+                    ) { callbackURL, error in
+                        Task {
+                            if let error = error {
+                                await MainActor.run {
+                                    self.isAuthenticating = false
+                                    if (error as NSError).code != ASWebAuthenticationSessionError.canceledLogin.rawValue {
+                                        self.errorMessage = error.localizedDescription
+                                    }
+                                }
+                                return
+                            }
+
+                            if let callbackURL = callbackURL {
+                                do {
+                                    try await GmailConnector.shared.handleAuthorizationRedirect(url: callbackURL)
+                                    await refreshState()
+                                } catch {
+                                    await MainActor.run {
+                                        self.errorMessage = error.localizedDescription
+                                    }
+                                }
+                            }
+
                             await MainActor.run {
                                 self.isAuthenticating = false
-                                if (error as NSError).code != ASWebAuthenticationSessionError.canceledLogin.rawValue {
-                                    self.errorMessage = error.localizedDescription
-                                }
                             }
-                            return
-                        }
-
-                        if let callbackURL = callbackURL {
-                            do {
-                                try await GmailConnector.shared.handleAuthorizationRedirect(url: callbackURL)
-                                await refreshState()
-                            } catch {
-                                await MainActor.run {
-                                    self.errorMessage = error.localizedDescription
-                                }
-                            }
-                        }
-
-                        await MainActor.run {
-                            self.isAuthenticating = false
                         }
                     }
-                }
 
-                session.presentationContextProvider = AuthenticationContextProvider.shared
-                session.prefersEphemeralWebBrowserSession = true
-                session.start()
-                #else
-                self.isAuthenticating = false
-                #endif
+                    #if canImport(UIKit)
+                    session.presentationContextProvider = AuthenticationContextProvider.shared
+                    #endif
+                    session.prefersEphemeralWebBrowserSession = true
+                    session.start()
+                    #else
+                    self.isAuthenticating = false
+                    #endif
+                }
+            } catch {
+                await MainActor.run {
+                    self.isAuthenticating = false
+                    self.errorMessage = error.localizedDescription
+                }
             }
         }
     }
 }
 
-#if canImport(AuthenticationServices)
+#if canImport(AuthenticationServices) && canImport(UIKit)
 final class AuthenticationContextProvider: NSObject, ASWebAuthenticationPresentationContextProviding {
     static let shared = AuthenticationContextProvider()
 

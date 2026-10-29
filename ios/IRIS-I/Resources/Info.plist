@@ -67,5 +67,27 @@
         <string>spotify</string>
         <string>youtube</string>
     </array>
+
+    <!-- Google OAuth URL Types & Callback Scheme -->
+    <key>CFBundleURLTypes</key>
+    <array>
+        <dict>
+            <key>CFBundleTypeRole</key>
+            <string>Editor</string>
+            <key>CFBundleURLName</key>
+            <string>com.googleusercontent.apps</string>
+            <key>CFBundleURLSchemes</key>
+            <array>
+                <string>com.googleusercontent.apps</string>
+                <string>iris-assistant</string>
+            </array>
+        </dict>
+    </array>
+
+    <!-- Optional Build Configuration for Google OAuth -->
+    <key>GmailClientID</key>
+    <string>$(GMAIL_CLIENT_ID)</string>
+    <key>GmailRedirectURI</key>
+    <string>$(GMAIL_REDIRECT_URI)</string>
 </dict>
 </plist>

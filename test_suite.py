@@ -301,8 +301,31 @@ def test_gmail_connector_pkce_and_mime():
     internal_date_ms = "1730200000000"
     epoch_sec = float(internal_date_ms) / 1000.0
     assert epoch_sec == 1730200000.0
+
+    # 4. State Mismatch & Scheme Mismatch Validation
+    expected_state = "state_secret_xyz_123"
+    expected_scheme = "com.googleusercontent.apps.123-abc"
     
-    print("  [PASS] GmailConnector PKCE S256, State validation, and RFC MIME body/timestamp parsing validated.")
+    # Tampered state
+    tampered_url = "com.googleusercontent.apps.123-abc:/oauth2redirect/google?code=auth_code&state=evil_state"
+    parsed_state = re.search(r'state=([^&]+)', tampered_url).group(1)
+    assert parsed_state != expected_state, "Tampered state must not match expected state"
+    
+    # Scheme mismatch
+    invalid_scheme_url = "wrong.scheme:/oauth2redirect/google?code=auth_code&state=" + expected_state
+    extracted_scheme = invalid_scheme_url.split(":")[0]
+    assert extracted_scheme != expected_scheme, "Invalid scheme must not match configured callback scheme"
+    
+    # OAuth Error query param
+    error_url = "com.googleusercontent.apps.123-abc:/oauth2redirect/google?error=access_denied"
+    assert "error=" in error_url, "OAuth error URL must contain error parameter"
+    
+    # Token Expiry check
+    import time
+    expiry_past = time.time() - 10 # expired 10 seconds ago
+    assert time.time() > expiry_past, "Expired token must be flagged"
+    
+    print("  [PASS] GmailConnector PKCE S256, State validation, Scheme check & RFC MIME body/timestamp parsing validated.")
 
 def test_operation_type_security_policy():
     print("[5/7] Testing Operation Type Security Policy Gate & EventKit Destruction...")

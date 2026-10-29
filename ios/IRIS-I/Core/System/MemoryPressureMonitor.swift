@@ -6,7 +6,9 @@
 //
 
 import Foundation
+#if canImport(UIKit)
 import UIKit
+#endif
 
 public final class MemoryPressureMonitor: @unchecked Sendable {
     private var source: DispatchSourceMemoryPressure?
@@ -41,6 +43,7 @@ public final class MemoryPressureMonitor: @unchecked Sendable {
         src.resume()
         self.source = src
 
+        #if canImport(UIKit)
         // Also observe UIKit memory warning notification
         NotificationCenter.default.addObserver(
             forName: UIApplication.didReceiveMemoryWarningNotification,
@@ -49,6 +52,7 @@ public final class MemoryPressureMonitor: @unchecked Sendable {
         ) { [weak self] _ in
             self?.onWarning()
         }
+        #endif
     }
 
     deinit {

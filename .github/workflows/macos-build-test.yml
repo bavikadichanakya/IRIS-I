@@ -27,7 +27,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ios/Frameworks/llama.xcframework
-          key: llama-xcframework-b4500-${{ runner.os }}-${{ hashFiles('ios/build_native_llama.sh', 'ios/build-xcframework.sh') }}
+          key: llama-xcframework-b4500-v2-${{ runner.os }}-${{ hashFiles('ios/build_native_llama.sh', 'ios/build-xcframework.sh') }}
 
       - name: Compile Native llama.xcframework (if cache miss)
         if: steps.cache-llama.outputs.cache-hit != 'true'
@@ -46,15 +46,10 @@ jobs:
           cd ios
           swift package resolve
 
-      - name: Build Swift Package (IRIS_ICore)
+      - name: Build Swift Package for iOS Simulator
         run: |
           cd ios
-          swift build -v
-
-      - name: Run XCTest Suite (IRIS_ITests)
-        run: |
-          cd ios
-          swift test -v
+          swift build -Xswiftc -sdk -Xswiftc $(xcrun --sdk iphonesimulator --show-sdk-path) -Xswiftc -target -Xswiftc arm64-apple-ios17.0-simulator -v
 
       - name: Build Xcode Project (Simulator slice)
         run: |
@@ -63,5 +58,15 @@ jobs:
             -project IRIS-I.xcodeproj \
             -scheme IRIS-I \
             -destination "generic/platform=iOS Simulator" \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO
+
+      - name: Run Xcode Test Suite (iOS Simulator)
+        run: |
+          cd ios
+          xcodebuild test \
+            -project IRIS-I.xcodeproj \
+            -scheme IRIS-I \
+            -destination "platform=iOS Simulator,name=iPhone 15,OS=latest" \
             CODE_SIGNING_ALLOWED=NO \
             CODE_SIGNING_REQUIRED=NO
