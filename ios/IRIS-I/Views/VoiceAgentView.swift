@@ -4,7 +4,7 @@
 //
 //  Interactive full-screen Voice Agent interface featuring an audio-reactive
 //  pulsing orb, wake-word detection ("Hey IRIS"), 1-tap local brain download & auto-activation,
-//  live speech transcription, and vocalized assistant responses.
+//  live speech transcription, vocalized assistant responses, and Apple-level Liquid Glass UI.
 //
 
 import SwiftUI
@@ -28,17 +28,17 @@ public struct VoiceAgentView: View {
                 // Background Dynamic Radial Gradient
                 RadialGradient(
                     gradient: Gradient(colors: [
-                        backgroundColorForState.opacity(0.35),
-                        Color.black.opacity(0.96)
+                        backgroundColorForState.opacity(0.38),
+                        Color.black.opacity(0.97)
                     ]),
                     center: .center,
                     startRadius: 40,
-                    endRadius: 500
+                    endRadius: 520
                 )
                 .ignoresSafeArea()
 
                 VStack(spacing: 16) {
-                    // Top Bar: Status & Wake-word pill
+                    // Top Bar: Glass Status & Wake-word pill
                     HStack {
                         HStack(spacing: 6) {
                             Circle()
@@ -50,31 +50,29 @@ public struct VoiceAgentView: View {
                         }
                         .padding(.horizontal, 12)
                         .padding(.vertical, 6)
-                        .background(Color.white.opacity(0.08))
-                        .cornerRadius(20)
+                        .glassSurface(.clear, in: .capsule)
 
                         Spacer()
 
-                        HStack(spacing: 4) {
+                        HStack(spacing: 5) {
                             Image(systemName: "waveform.badge.mic")
                                 .font(.caption2)
                             Text("\"Hey IRIS\"")
                                 .font(.caption2.bold())
                         }
                         .padding(.horizontal, 10)
-                        .padding(.vertical, 5)
-                        .background(speechManager.wakeWordDetected ? Color.green.opacity(0.2) : Color.white.opacity(0.06))
+                        .padding(.vertical, 6)
+                        .glassSurface(speechManager.wakeWordDetected ? .tinted(.green) : .clear, in: .capsule)
                         .foregroundColor(speechManager.wakeWordDetected ? .green : .gray)
-                        .cornerRadius(16)
                     }
                     .padding(.horizontal, 20)
                     .padding(.top, 8)
 
-                    // 1-Tap Brain Download & Auto-Activation Card
+                    // 1-Tap Brain Download & Auto-Activation Glass Card
                     brainDownloadBanner
                         .padding(.horizontal, 16)
 
-                    Spacer(minLength: 10)
+                    Spacer(minLength: 8)
 
                     // Center Interactive Glowing Orb
                     ZStack {
@@ -119,7 +117,7 @@ public struct VoiceAgentView: View {
                         handleOrbTap()
                     }
 
-                    Spacer(minLength: 10)
+                    Spacer(minLength: 8)
 
                     // Live Speech Transcription / Assistant Output
                     VStack(spacing: 10) {
@@ -127,13 +125,15 @@ public struct VoiceAgentView: View {
                             VStack(spacing: 4) {
                                 Text("YOU SAID")
                                     .font(.system(size: 10, weight: .bold))
-                                    .foregroundColor(.blue.opacity(0.85))
+                                    .foregroundColor(.cyan.opacity(0.9))
                                 Text("\"\(speechManager.recognizedText)\"")
                                     .font(.headline)
                                     .multilineTextAlignment(.center)
                                     .foregroundColor(.white)
                                     .padding(.horizontal, 24)
                             }
+                            .padding(.vertical, 8)
+                            .glassSurface(.clear, in: .roundedRectangle(14))
                             .transition(.opacity)
                         }
 
@@ -141,7 +141,7 @@ public struct VoiceAgentView: View {
                             VStack(spacing: 6) {
                                 Text("IRIS")
                                     .font(.system(size: 10, weight: .bold))
-                                    .foregroundColor(.purple.opacity(0.85))
+                                    .foregroundColor(.purple.opacity(0.9))
 
                                 if !executedTools.isEmpty {
                                     HStack(spacing: 6) {
@@ -152,8 +152,8 @@ public struct VoiceAgentView: View {
                                                 Text(tool)
                                                     .font(.system(size: 10, weight: .semibold))
                                             }
-                                            .padding(.horizontal, 6)
-                                            .padding(.vertical, 2)
+                                            .padding(.horizontal, 8)
+                                            .padding(.vertical, 3)
                                             .background(Color.orange.opacity(0.25))
                                             .foregroundColor(.orange)
                                             .cornerRadius(6)
@@ -165,8 +165,10 @@ public struct VoiceAgentView: View {
                                     .font(.subheadline)
                                     .multilineTextAlignment(.center)
                                     .foregroundColor(.white.opacity(0.92))
-                                    .padding(.horizontal, 24)
+                                    .padding(.horizontal, 16)
                             }
+                            .padding(.vertical, 10)
+                            .glassSurface(.clear, in: .roundedRectangle(16))
                             .transition(.opacity)
                         } else if speechManager.state == .idle && speechManager.recognizedText.isEmpty {
                             Text("Say \"Hey IRIS\" or tap to ask:")
@@ -195,7 +197,7 @@ public struct VoiceAgentView: View {
                     }
                     .frame(minHeight: 110)
 
-                    Spacer(minLength: 10)
+                    Spacer(minLength: 8)
 
                     // Bottom Controls Bar
                     HStack(spacing: 36) {
@@ -208,7 +210,7 @@ public struct VoiceAgentView: View {
                                 .foregroundColor(.gray.opacity(0.7))
                         }
 
-                        // Main Big Microphone Button
+                        // Main Microphone Button
                         Button(action: {
                             handleOrbTap()
                         }) {
@@ -234,7 +236,7 @@ public struct VoiceAgentView: View {
                                 .foregroundColor(.gray.opacity(0.7))
                         }
                     }
-                    .padding(.bottom, 18)
+                    .padding(.bottom, 72) // Space for floating GlassTabBar
                 }
             }
             .onAppear {
@@ -258,79 +260,77 @@ public struct VoiceAgentView: View {
         }
     }
 
-    // MARK: - Brain Download Banner
+    // MARK: - Brain Download Banner (Liquid Glass)
 
     @ViewBuilder
     private var brainDownloadBanner: some View {
         if brainCoordinator.isDownloading {
-            VStack(alignment: .leading, spacing: 6) {
-                HStack {
-                    Text("Downloading Qwen 2.5 3B Brain")
-                        .font(.caption.bold())
-                        .foregroundColor(.white)
-                    Spacer()
-                    Text("\(Int(brainCoordinator.downloadProgress * 100))%")
-                        .font(.caption.bold())
-                        .foregroundColor(.cyan)
-                }
-
-                ProgressView(value: brainCoordinator.downloadProgress)
-                    .tint(.cyan)
-
-                HStack {
-                    Text(brainCoordinator.statusMessage)
-                        .font(.caption2)
-                        .foregroundColor(.gray)
-                    Spacer()
-                    Button("Cancel") {
-                        brainCoordinator.cancelDownload()
+            GlassCard(material: .frosted) {
+                VStack(alignment: .leading, spacing: 6) {
+                    HStack {
+                        Text("Downloading Qwen 2.5 3B Brain")
+                            .font(.caption.bold())
+                            .foregroundColor(.white)
+                        Spacer()
+                        Text("\(Int(brainCoordinator.downloadProgress * 100))%")
+                            .font(.caption.bold())
+                            .foregroundColor(.cyan)
                     }
-                    .font(.caption2.bold())
-                    .foregroundColor(.red)
+
+                    ProgressView(value: brainCoordinator.downloadProgress)
+                        .tint(.cyan)
+
+                    HStack {
+                        Text(brainCoordinator.statusMessage)
+                            .font(.caption2)
+                            .foregroundColor(.gray)
+                        Spacer()
+                        Button("Cancel") {
+                            brainCoordinator.cancelDownload()
+                        }
+                        .font(.caption2.bold())
+                        .foregroundColor(.red)
+                    }
                 }
             }
-            .padding(12)
-            .background(Color.white.opacity(0.07))
-            .cornerRadius(12)
         } else if !brainCoordinator.isModelInstalled && !brainCoordinator.isModelActive {
-            HStack(spacing: 12) {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("🧠 Neural Brain (Qwen 2.5 · 1.95 GB)")
-                        .font(.caption.bold())
-                        .foregroundColor(.white)
-                    Text("Tap to download & auto-activate locally")
-                        .font(.caption2)
-                        .foregroundColor(.gray)
-                }
+            GlassCard(material: .frosted) {
+                HStack(spacing: 12) {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("🧠 Neural Brain (Qwen 2.5 · 1.95 GB)")
+                            .font(.caption.bold())
+                            .foregroundColor(.white)
+                        Text("Tap to download & auto-activate locally")
+                            .font(.caption2)
+                            .foregroundColor(.gray)
+                    }
 
-                Spacer()
+                    Spacer()
 
-                Button(action: {
-                    brainCoordinator.downloadAndActivateBrain()
-                }) {
-                    Text("Download")
-                        .font(.caption.bold())
-                        .padding(.horizontal, 12)
-                        .padding(.vertical, 6)
-                        .background(Color.blue)
-                        .foregroundColor(.white)
-                        .cornerRadius(8)
-                }
+                    Button(action: {
+                        brainCoordinator.downloadAndActivateBrain()
+                    }) {
+                        Text("Download")
+                            .font(.caption.bold())
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 6)
+                            .background(Color.blue)
+                            .foregroundColor(.white)
+                            .cornerRadius(8)
+                    }
 
-                Button(action: {
-                    brainCoordinator.activateInstantMockBrain()
-                }) {
-                    Image(systemName: "bolt.fill")
-                        .font(.caption)
-                        .padding(6)
-                        .background(Color.white.opacity(0.1))
-                        .foregroundColor(.yellow)
-                        .cornerRadius(8)
+                    Button(action: {
+                        brainCoordinator.activateInstantMockBrain()
+                    }) {
+                        Image(systemName: "bolt.fill")
+                            .font(.caption)
+                            .padding(6)
+                            .background(Color.white.opacity(0.1))
+                            .foregroundColor(.yellow)
+                            .cornerRadius(8)
+                    }
                 }
             }
-            .padding(12)
-            .background(Color.white.opacity(0.06))
-            .cornerRadius(12)
         } else if brainCoordinator.isModelActive {
             HStack {
                 Image(systemName: "brain.head.profile")
@@ -343,10 +343,9 @@ public struct VoiceAgentView: View {
                     .font(.caption2)
                     .foregroundColor(.gray)
             }
-            .padding(.horizontal, 12)
-            .padding(.vertical, 6)
-            .background(Color.green.opacity(0.12))
-            .cornerRadius(10)
+            .padding(.horizontal, 14)
+            .padding(.vertical, 8)
+            .glassSurface(.tinted(.green.opacity(0.15)), in: .capsule)
         }
     }
 
@@ -411,12 +410,11 @@ public struct VoiceAgentView: View {
     private func voiceChip(title: String, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             Text(title)
-                .font(.caption2)
-                .foregroundColor(.white.opacity(0.85))
-                .padding(.horizontal, 10)
-                .padding(.vertical, 6)
-                .background(Color.white.opacity(0.08))
-                .cornerRadius(14)
+                .font(.caption2.bold())
+                .foregroundColor(.white.opacity(0.92))
+                .padding(.horizontal, 12)
+                .padding(.vertical, 7)
+                .glassSurface(.clear, in: .capsule, interactive: true)
         }
     }
 

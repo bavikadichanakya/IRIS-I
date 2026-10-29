@@ -157,13 +157,11 @@ public struct AssistantChatView: View {
                             submitQuery(prompt)
                         }) {
                             Text(prompt)
-                                .font(.caption)
-                                .fontWeight(.medium)
+                                .font(.caption.bold())
                                 .padding(.horizontal, 12)
-                                .padding(.vertical, 6)
-                                .background(Color(.secondarySystemBackground))
+                                .padding(.vertical, 7)
+                                .glassSurface(.clear, in: .capsule, interactive: true)
                                 .foregroundColor(.primary)
-                                .cornerRadius(16)
                         }
                         .disabled(isProcessing)
                     }
@@ -198,9 +196,8 @@ public struct AssistantChatView: View {
                 TextField(speechManager.state == .listening ? (speechManager.recognizedText.isEmpty ? "Listening..." : speechManager.recognizedText) : "Ask IRIS anything...", text: $inputText)
                     .textFieldStyle(.plain)
                     .padding(.horizontal, 14)
-                    .padding(.vertical, 8)
-                    .background(Color(.secondarySystemBackground))
-                    .cornerRadius(20)
+                    .padding(.vertical, 9)
+                    .glassSurface(.clear, in: .capsule)
                     .disabled(isProcessing)
                     .onSubmit {
                         if !inputText.isEmpty {
@@ -226,6 +223,7 @@ public struct AssistantChatView: View {
             }
             .padding(.horizontal)
             .padding(.vertical, 8)
+            .padding(.bottom, 68) // Floating GlassTabBar clearance
             .background(Color(.systemBackground))
         }
         .alert("Confirm Sensitive Action", isPresented: $isShowingConfirmation) {
@@ -321,9 +319,8 @@ public struct AssistantChatView: View {
                     Text(msg.content)
                         .padding(.horizontal, 14)
                         .padding(.vertical, 10)
-                        .background(Color(.secondarySystemBackground))
+                        .glassSurface(.frosted, in: .roundedRectangle(18))
                         .foregroundColor(.primary)
-                        .cornerRadius(18)
 
                     if let ms = msg.durationMs {
                         Text(String(format: "%.1f ms", ms))
@@ -357,9 +354,8 @@ public struct AssistantChatView: View {
                 Text(activeStreamingText)
                     .padding(.horizontal, 14)
                     .padding(.vertical, 10)
-                    .background(Color(.secondarySystemBackground))
+                    .glassSurface(.frosted, in: .roundedRectangle(18))
                     .foregroundColor(.primary)
-                    .cornerRadius(18)
             }
             Spacer()
         }

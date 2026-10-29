@@ -7,6 +7,26 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		ALGK01012C00000100000001 /* GlassButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = BLGK01012C00000100000001 /* GlassButton.swift */; };
+		ALGK01022C00000100000001 /* GlassCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = BLGK01022C00000100000001 /* GlassCard.swift */; };
+		ALGK01032C00000100000001 /* GlassNavigationBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = BLGK01032C00000100000001 /* GlassNavigationBar.swift */; };
+		ALGK01042C00000100000001 /* GlassSearchBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = BLGK01042C00000100000001 /* GlassSearchBar.swift */; };
+		ALGK01052C00000100000001 /* GlassSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = BLGK01052C00000100000001 /* GlassSheet.swift */; };
+		ALGK01062C00000100000001 /* GlassSlider.swift in Sources */ = {isa = PBXBuildFile; fileRef = BLGK01062C00000100000001 /* GlassSlider.swift */; };
+		ALGK01072C00000100000001 /* GlassTabBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = BLGK01072C00000100000001 /* GlassTabBar.swift */; };
+		ALGK01082C00000100000001 /* GlassTextField.swift in Sources */ = {isa = PBXBuildFile; fileRef = BLGK01082C00000100000001 /* GlassTextField.swift */; };
+		ALGK01092C00000100000001 /* GlassToggle.swift in Sources */ = {isa = PBXBuildFile; fileRef = BLGK01092C00000100000001 /* GlassToggle.swift */; };
+		ALGK01102C00000100000001 /* SelectionFeedback.swift in Sources */ = {isa = PBXBuildFile; fileRef = BLGK01102C00000100000001 /* SelectionFeedback.swift */; };
+		ALGK01112C00000100000001 /* GlassCodeExporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = BLGK01112C00000100000001 /* GlassCodeExporter.swift */; };
+		ALGK01122C00000100000001 /* GlassMaterial.swift in Sources */ = {isa = PBXBuildFile; fileRef = BLGK01122C00000100000001 /* GlassMaterial.swift */; };
+		ALGK01132C00000100000001 /* GlassPreset.swift in Sources */ = {isa = PBXBuildFile; fileRef = BLGK01132C00000100000001 /* GlassPreset.swift */; };
+		ALGK01142C00000100000001 /* GlassRenderingMode.swift in Sources */ = {isa = PBXBuildFile; fileRef = BLGK01142C00000100000001 /* GlassRenderingMode.swift */; };
+		ALGK01152C00000100000001 /* GlassShape.swift in Sources */ = {isa = PBXBuildFile; fileRef = BLGK01152C00000100000001 /* GlassShape.swift */; };
+		ALGK01162C00000100000001 /* GlassTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = BLGK01162C00000100000001 /* GlassTheme.swift */; };
+		ALGK01172C00000100000001 /* GlassGradient.swift in Sources */ = {isa = PBXBuildFile; fileRef = BLGK01172C00000100000001 /* GlassGradient.swift */; };
+		ALGK01182C00000100000001 /* GlassGroup.swift in Sources */ = {isa = PBXBuildFile; fileRef = BLGK01182C00000100000001 /* GlassGroup.swift */; };
+		ALGK01192C00000100000001 /* GlassHighlight.swift in Sources */ = {isa = PBXBuildFile; fileRef = BLGK01192C00000100000001 /* GlassHighlight.swift */; };
+		ALGK01202C00000100000001 /* GlassSurfaceModifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = BLGK01202C00000100000001 /* GlassSurfaceModifier.swift */; };
 		A10000902C00000100000001 /* BrainDownloadCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000902C00000100000001 /* BrainDownloadCoordinator.swift */; };
 		A10000882C00000100000001 /* SpeechManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000882C00000100000001 /* SpeechManager.swift */; };
 		A10000892C00000100000001 /* VoiceAgentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000892C00000100000001 /* VoiceAgentView.swift */; };
@@ -85,6 +105,26 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		BLGK01012C00000100000001 /* GlassButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlassButton.swift; sourceTree = "<group>"; };
+		BLGK01022C00000100000001 /* GlassCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlassCard.swift; sourceTree = "<group>"; };
+		BLGK01032C00000100000001 /* GlassNavigationBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlassNavigationBar.swift; sourceTree = "<group>"; };
+		BLGK01042C00000100000001 /* GlassSearchBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlassSearchBar.swift; sourceTree = "<group>"; };
+		BLGK01052C00000100000001 /* GlassSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlassSheet.swift; sourceTree = "<group>"; };
+		BLGK01062C00000100000001 /* GlassSlider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlassSlider.swift; sourceTree = "<group>"; };
+		BLGK01072C00000100000001 /* GlassTabBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlassTabBar.swift; sourceTree = "<group>"; };
+		BLGK01082C00000100000001 /* GlassTextField.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlassTextField.swift; sourceTree = "<group>"; };
+		BLGK01092C00000100000001 /* GlassToggle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlassToggle.swift; sourceTree = "<group>"; };
+		BLGK01102C00000100000001 /* SelectionFeedback.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SelectionFeedback.swift; sourceTree = "<group>"; };
+		BLGK01112C00000100000001 /* GlassCodeExporter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlassCodeExporter.swift; sourceTree = "<group>"; };
+		BLGK01122C00000100000001 /* GlassMaterial.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlassMaterial.swift; sourceTree = "<group>"; };
+		BLGK01132C00000100000001 /* GlassPreset.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlassPreset.swift; sourceTree = "<group>"; };
+		BLGK01142C00000100000001 /* GlassRenderingMode.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlassRenderingMode.swift; sourceTree = "<group>"; };
+		BLGK01152C00000100000001 /* GlassShape.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlassShape.swift; sourceTree = "<group>"; };
+		BLGK01162C00000100000001 /* GlassTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlassTheme.swift; sourceTree = "<group>"; };
+		BLGK01172C00000100000001 /* GlassGradient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlassGradient.swift; sourceTree = "<group>"; };
+		BLGK01182C00000100000001 /* GlassGroup.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlassGroup.swift; sourceTree = "<group>"; };
+		BLGK01192C00000100000001 /* GlassHighlight.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlassHighlight.swift; sourceTree = "<group>"; };
+		BLGK01202C00000100000001 /* GlassSurfaceModifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlassSurfaceModifier.swift; sourceTree = "<group>"; };
 		B10000882C00000100000001 /* SpeechManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeechManager.swift; sourceTree = "<group>"; };
 		B10000892C00000100000001 /* VoiceAgentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceAgentView.swift; sourceTree = "<group>"; };
 		B10000902C00000100000001 /* BrainDownloadCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrainDownloadCoordinator.swift; sourceTree = "<group>"; };
@@ -275,6 +315,7 @@
 		G10000052C00000100000001 /* Views */ = {
 			isa = PBXGroup;
 			children = (
+				GLGK00012C00000100000001 /* LiquidGlassKit */,
 				B10000892C00000100000001 /* VoiceAgentView.swift */,
 				B10000462C00000100000001 /* AssistantChatView.swift */,
 				B10000472C00000100000001 /* GmailConnectionView.swift */,
@@ -458,6 +499,57 @@
 			path = Audio;
 			sourceTree = "<group>";
 		};
+		GLGK00022C00000100000001 /* Components */ = {
+			isa = PBXGroup;
+			children = (
+				BLGK01012C00000100000001 /* GlassButton.swift */,
+				BLGK01022C00000100000001 /* GlassCard.swift */,
+				BLGK01032C00000100000001 /* GlassNavigationBar.swift */,
+				BLGK01042C00000100000001 /* GlassSearchBar.swift */,
+				BLGK01052C00000100000001 /* GlassSheet.swift */,
+				BLGK01062C00000100000001 /* GlassSlider.swift */,
+				BLGK01072C00000100000001 /* GlassTabBar.swift */,
+				BLGK01082C00000100000001 /* GlassTextField.swift */,
+				BLGK01092C00000100000001 /* GlassToggle.swift */,
+				BLGK01102C00000100000001 /* SelectionFeedback.swift */,
+			);
+			path = Components;
+			sourceTree = "<group>";
+		};
+		GLGK00032C00000100000001 /* Core */ = {
+			isa = PBXGroup;
+			children = (
+				BLGK01112C00000100000001 /* GlassCodeExporter.swift */,
+				BLGK01122C00000100000001 /* GlassMaterial.swift */,
+				BLGK01132C00000100000001 /* GlassPreset.swift */,
+				BLGK01142C00000100000001 /* GlassRenderingMode.swift */,
+				BLGK01152C00000100000001 /* GlassShape.swift */,
+				BLGK01162C00000100000001 /* GlassTheme.swift */,
+			);
+			path = Core;
+			sourceTree = "<group>";
+		};
+		GLGK00042C00000100000001 /* Surface */ = {
+			isa = PBXGroup;
+			children = (
+				BLGK01172C00000100000001 /* GlassGradient.swift */,
+				BLGK01182C00000100000001 /* GlassGroup.swift */,
+				BLGK01192C00000100000001 /* GlassHighlight.swift */,
+				BLGK01202C00000100000001 /* GlassSurfaceModifier.swift */,
+			);
+			path = Surface;
+			sourceTree = "<group>";
+		};
+		GLGK00012C00000100000001 /* LiquidGlassKit */ = {
+			isa = PBXGroup;
+			children = (
+				GLGK00022C00000100000001 /* Components */,
+				GLGK00032C00000100000001 /* Core */,
+				GLGK00042C00000100000001 /* Surface */,
+			);
+			path = LiquidGlassKit;
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -537,6 +629,26 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				ALGK01012C00000100000001 /* GlassButton.swift in Sources */,
+				ALGK01022C00000100000001 /* GlassCard.swift in Sources */,
+				ALGK01032C00000100000001 /* GlassNavigationBar.swift in Sources */,
+				ALGK01042C00000100000001 /* GlassSearchBar.swift in Sources */,
+				ALGK01052C00000100000001 /* GlassSheet.swift in Sources */,
+				ALGK01062C00000100000001 /* GlassSlider.swift in Sources */,
+				ALGK01072C00000100000001 /* GlassTabBar.swift in Sources */,
+				ALGK01082C00000100000001 /* GlassTextField.swift in Sources */,
+				ALGK01092C00000100000001 /* GlassToggle.swift in Sources */,
+				ALGK01102C00000100000001 /* SelectionFeedback.swift in Sources */,
+				ALGK01112C00000100000001 /* GlassCodeExporter.swift in Sources */,
+				ALGK01122C00000100000001 /* GlassMaterial.swift in Sources */,
+				ALGK01132C00000100000001 /* GlassPreset.swift in Sources */,
+				ALGK01142C00000100000001 /* GlassRenderingMode.swift in Sources */,
+				ALGK01152C00000100000001 /* GlassShape.swift in Sources */,
+				ALGK01162C00000100000001 /* GlassTheme.swift in Sources */,
+				ALGK01172C00000100000001 /* GlassGradient.swift in Sources */,
+				ALGK01182C00000100000001 /* GlassGroup.swift in Sources */,
+				ALGK01192C00000100000001 /* GlassHighlight.swift in Sources */,
+				ALGK01202C00000100000001 /* GlassSurfaceModifier.swift in Sources */,
 				A10000302C00000100000001 /* FastIntentRouter.swift in Sources */,
 				A10000312C00000100000001 /* ReActOrchestrator.swift in Sources */,
 				A10000322C00000100000001 /* ChatMLPromptFormatter.swift in Sources */,
