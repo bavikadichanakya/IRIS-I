@@ -106,6 +106,10 @@
 	<string>IRIS requires access to your reminders to organize tasks.</string>
 	<key>NSSpeechRecognitionUsageDescription</key>
 	<string>IRIS uses on-device speech recognition to transcribe spoken user instructions.</string>
+	<key>NSSupportsLiveActivities</key>
+	<true/>
+	<key>NSSupportsLiveActivitiesFrequentUpdates</key>
+	<true/>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>

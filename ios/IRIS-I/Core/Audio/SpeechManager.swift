@@ -36,6 +36,7 @@ public final class SpeechManager: NSObject, ObservableObject, @unchecked Sendabl
             UserDefaults.standard.set(isBackgroundWakeWordEnabled, forKey: "iris_background_wake_word_enabled")
         }
     }
+    @Published public var isAwaitingFollowUp: Bool = false
 
     private let synthesizer = AVSpeechSynthesizer()
     private var audioEngine = AVAudioEngine()
@@ -272,17 +273,12 @@ public final class SpeechManager: NSObject, ObservableObject, @unchecked Sendabl
             query = input
         }
 
-        // If user only uttered the wake word, respond with greeting and listen
+        // If user only uttered the wake word, respond with greeting and immediately listen for follow-up command
         if query.isEmpty {
             self.state = .speaking
-            self.spokenResponse = "I'm listening. What can I do for you?"
+            self.spokenResponse = "What can I do for you?"
+            self.isAwaitingFollowUp = true
             speak(text: self.spokenResponse)
-            Task {
-                try? await Task.sleep(nanoseconds: 1_400_000_000)
-                if self.state != .speaking {
-                    await self.startListening()
-                }
-            }
             return
         }
 
@@ -375,7 +371,11 @@ public final class SpeechManager: NSObject, ObservableObject, @unchecked Sendabl
 extension SpeechManager: AVSpeechSynthesizerDelegate {
     nonisolated public func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didFinish utterance: AVSpeechUtterance) {
         Task { @MainActor in
-            if self.state == .speaking {
+            if self.isAwaitingFollowUp {
+                self.isAwaitingFollowUp = false
+                self.state = .idle
+                await self.startListening()
+            } else if self.state == .speaking {
                 self.state = .idle
             }
         }

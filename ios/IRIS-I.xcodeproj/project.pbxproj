@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		A100009A2C00000100000001 /* IRISDynamicIslandManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100009A2C00000100000001 /* IRISDynamicIslandManager.swift */; };
 		A10000992C00000100000001 /* MemoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000992C00000100000001 /* MemoryView.swift */; };
 		A10000982C00000100000001 /* ActionsCatalogView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000982C00000100000001 /* ActionsCatalogView.swift */; };
 		A10000972C00000100000001 /* LiveWaveformView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000972C00000100000001 /* LiveWaveformView.swift */; };
@@ -110,6 +111,7 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		B100009A2C00000100000001 /* IRISDynamicIslandManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IRISDynamicIslandManager.swift; sourceTree = "<group>"; };
 		B10000992C00000100000001 /* MemoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemoryView.swift; sourceTree = "<group>"; };
 		B10000982C00000100000001 /* ActionsCatalogView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActionsCatalogView.swift; sourceTree = "<group>"; };
 		B10000972C00000100000001 /* LiveWaveformView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveWaveformView.swift; sourceTree = "<group>"; };
@@ -297,6 +299,7 @@
 			isa = PBXGroup;
 			children = (
 				B10000092C00000100000001 /* HardwareTelemetry.swift */,
+				B100009A2C00000100000001 /* IRISDynamicIslandManager.swift */,
 				B100000A2C00000100000001 /* MemoryPressureMonitor.swift */,
 				B100000B2C00000100000001 /* ThermalStateMonitor.swift */,
 			);
@@ -714,6 +717,7 @@ G100003C2C00000100000001 /* Intents */ = {
 				A10000072C00000100000001 /* ModelIntegrityValidator.swift in Sources */,
 				A10000082C00000100000001 /* ModelDownloadManager.swift in Sources */,
 				A10000092C00000100000001 /* HardwareTelemetry.swift in Sources */,
+				A100009A2C00000100000001 /* IRISDynamicIslandManager.swift in Sources */,
 				A100000A2C00000100000001 /* MemoryPressureMonitor.swift in Sources */,
 				A100000B2C00000100000001 /* ThermalStateMonitor.swift in Sources */,
 				A100000C2C00000100000001 /* ModelEngineProtocol.swift in Sources */,
