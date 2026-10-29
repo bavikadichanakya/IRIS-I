@@ -15,6 +15,7 @@ public struct SettingsView: View {
 
     @State private var isShowingDiagnostics: Bool = false
     @State private var isShowingGmailConnector: Bool = false
+    @State private var gmailStatus: String = "Configure"
     @State private var selectedVoice: String = "IRIS (Default)"
     @State private var isConfirmationMode: Bool = true
     @State private var isBackgroundMode: Bool = true
@@ -174,7 +175,7 @@ public struct SettingsView: View {
                                         icon: "envelope.fill",
                                         iconColor: .red,
                                         title: "Google Gmail",
-                                        value: "Connected"
+                                        value: gmailStatus
                                     )
                                 }
                             }
@@ -185,6 +186,14 @@ public struct SettingsView: View {
                         .padding(.horizontal, 20)
                         .padding(.bottom, 110) // Space for floating tab bar
                     }
+                }
+            }
+            .task {
+                await refreshGmailStatus()
+            }
+            .onChange(of: isShowingGmailConnector) { _, isShowing in
+                if !isShowing {
+                    Task { await refreshGmailStatus() }
                 }
             }
             .sheet(isPresented: $isShowingDiagnostics) {
@@ -256,6 +265,23 @@ public struct SettingsView: View {
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 10)
+    }
+
+    private func refreshGmailStatus() async {
+        let state = await GmailConnector.shared.state
+        let config = await GmailConnector.shared.oauthConfig
+        await MainActor.run {
+            switch state {
+            case .connected:
+                self.gmailStatus = "Connected"
+            case .tokenExpired:
+                self.gmailStatus = "Expired"
+            case .connecting:
+                self.gmailStatus = "Connecting..."
+            case .disconnected, .error:
+                self.gmailStatus = config.isConfigured ? "Not Connected" : "Configure"
+            }
+        }
     }
 }
 
