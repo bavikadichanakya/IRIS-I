@@ -147,7 +147,7 @@ public actor AppLaunchRegistry {
         }
 
         // 3. Find registered descriptor
-        guard let descriptor = descriptor(for: lowName) else {
+        guard let descriptor = await descriptor(for: lowName) else {
             throw AppLaunchError.unregisteredScheme(name)
         }
 

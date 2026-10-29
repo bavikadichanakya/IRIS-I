@@ -76,14 +76,17 @@ public struct SystemInfoTool: IRISAgentTool {
 
         case "battery":
             #if canImport(UIKit)
-            UIDevice.current.isBatteryMonitoringEnabled = true
-            let level = Int(UIDevice.current.batteryLevel * 100)
-            let stateStr: String
-            switch UIDevice.current.batteryState {
-            case .charging: stateStr = "Charging"
-            case .full: stateStr = "Full"
-            case .unplugged: stateStr = "Unplugged (On Battery)"
-            default: stateStr = "Unknown"
+            let (level, stateStr) = await MainActor.run {
+                UIDevice.current.isBatteryMonitoringEnabled = true
+                let lvl = Int(UIDevice.current.batteryLevel * 100)
+                let st: String
+                switch UIDevice.current.batteryState {
+                case .charging: st = "Charging"
+                case .full: st = "Full"
+                case .unplugged: st = "Unplugged (On Battery)"
+                default: st = "Unknown"
+                }
+                return (lvl, st)
             }
             #else
             let level = 100
