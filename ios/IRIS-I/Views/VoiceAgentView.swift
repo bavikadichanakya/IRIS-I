@@ -133,7 +133,7 @@ public struct VoiceAgentView: View {
                                     .padding(.horizontal, 24)
                             }
                             .padding(.vertical, 8)
-                            .glassSurface(.clear, in: .roundedRectangle(14))
+                            .glassSurface(.clear, in: .roundedRectangle(cornerRadius: 14))
                             .transition(.opacity)
                         }
 
@@ -168,7 +168,7 @@ public struct VoiceAgentView: View {
                                     .padding(.horizontal, 16)
                             }
                             .padding(.vertical, 10)
-                            .glassSurface(.clear, in: .roundedRectangle(16))
+                            .glassSurface(.clear, in: .roundedRectangle(cornerRadius: 16))
                             .transition(.opacity)
                         } else if speechManager.state == .idle && speechManager.recognizedText.isEmpty {
                             Text("Say \"Hey IRIS\" or tap to ask:")

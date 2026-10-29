@@ -12,6 +12,11 @@ public enum GlassShape: Sendable, Hashable {
     /// A rectangle with continuous rounded corners.
     case roundedRectangle(cornerRadius: CGFloat)
 
+    /// Convenience initializer without argument label.
+    public static func roundedRectangle(_ cornerRadius: CGFloat) -> GlassShape {
+        .roundedRectangle(cornerRadius: cornerRadius)
+    }
+
     /// A capsule (fully rounded short sides).
     case capsule
 

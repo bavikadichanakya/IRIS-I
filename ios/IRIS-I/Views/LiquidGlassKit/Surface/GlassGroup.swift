@@ -30,15 +30,6 @@ public struct GlassGroup<Content: View>: View {
     }
 
     public var body: some View {
-        let path = renderingMode.resolved(nativeAvailable: GlassRenderingMode.isNativeGlassAvailable)
-        #if os(visionOS)
         content
-        #else
-        if path == .native, #available(iOS 26, macOS 26, tvOS 26, watchOS 26, *) {
-            GlassEffectContainer(spacing: spacing) { content }
-        } else {
-            content
-        }
-        #endif
     }
 }

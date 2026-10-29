@@ -37,14 +37,7 @@ public enum GlassRenderingMode: String, Sendable, Hashable, CaseIterable {
     /// `true` on iOS, macOS, tvOS and watchOS 26 or later. Always `false` on
     /// visionOS, where SwiftUI marks `glassEffect` unavailable.
     public static var isNativeGlassAvailable: Bool {
-        #if os(visionOS)
-        return false
-        #else
-        if #available(iOS 26, macOS 26, tvOS 26, watchOS 26, *) {
-            return true
-        }
-        return false
-        #endif
+        false
     }
 }
 

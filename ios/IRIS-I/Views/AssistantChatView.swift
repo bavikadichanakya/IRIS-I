@@ -319,7 +319,7 @@ public struct AssistantChatView: View {
                     Text(msg.content)
                         .padding(.horizontal, 14)
                         .padding(.vertical, 10)
-                        .glassSurface(.frosted, in: .roundedRectangle(18))
+                        .glassSurface(.frosted, in: .roundedRectangle(cornerRadius: 18))
                         .foregroundColor(.primary)
 
                     if let ms = msg.durationMs {
@@ -354,7 +354,7 @@ public struct AssistantChatView: View {
                 Text(activeStreamingText)
                     .padding(.horizontal, 14)
                     .padding(.vertical, 10)
-                    .glassSurface(.frosted, in: .roundedRectangle(18))
+                    .glassSurface(.frosted, in: .roundedRectangle(cornerRadius: 18))
                     .foregroundColor(.primary)
             }
             Spacer()
