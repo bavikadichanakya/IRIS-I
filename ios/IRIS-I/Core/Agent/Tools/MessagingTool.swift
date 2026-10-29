@@ -31,6 +31,11 @@ public struct MessagingTool: IRISAgentTool {
 
     public init() {}
 
+    public func operationType(for arguments: [String: Any]) -> ActionOperationType {
+        // External message dispatch represents a sensitive send action
+        return .send
+    }
+
     public func execute(arguments: [String: Any]) async -> AgentExecutionResult {
         let startTime = CFAbsoluteTimeGetCurrent()
         guard let message = arguments["message"] as? String, !message.isEmpty else {

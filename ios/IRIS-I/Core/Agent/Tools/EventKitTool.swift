@@ -45,6 +45,20 @@ public struct EventKitTool: IRISAgentTool {
         self.eventStore = eventStore
     }
 
+    public func operationType(for arguments: [String: Any]) -> ActionOperationType {
+        let action = (arguments["action"] as? String)?.lowercased() ?? "create_reminder"
+        switch action {
+        case "delete_events", "delete_reminder", "clear":
+            return .destructive
+        case "create_reminder", "create_event":
+            return .draft
+        case "list_reminders", "list_events", "query":
+            return .read
+        default:
+            return .read
+        }
+    }
+
     public func execute(arguments: [String: Any]) async -> AgentExecutionResult {
         let startTime = CFAbsoluteTimeGetCurrent()
         let action = (arguments["action"] as? String)?.lowercased() ?? "create_reminder"

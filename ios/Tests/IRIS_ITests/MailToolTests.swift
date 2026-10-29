@@ -79,7 +79,7 @@ final class MailToolTests: XCTestCase {
             "sender_filter": "OpenAI"
         ])
 
-        XCTAssertEqual(result.outcome, .completed)
+        XCTAssertEqual(result.outcome, .completedVerified)
         XCTAssertEqual(result.outputPayload["found_count"] as? Int, 1)
         let message = result.outputPayload["message"] as? String
         XCTAssertTrue(message?.contains("OpenAI") == true)
@@ -96,7 +96,7 @@ final class MailToolTests: XCTestCase {
             "body": "All stages completed."
         ])
 
-        XCTAssertEqual(result.outcome, .completed)
+        XCTAssertEqual(result.outcome, .completedVerified)
         XCTAssertEqual(result.outputPayload["message_id"] as? String, "sent_msg_456")
         XCTAssertEqual(mockProvider.sentRecipient, "partner@example.com")
     }

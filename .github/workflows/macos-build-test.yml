@@ -1,0 +1,67 @@
+name: macOS Swift Package Build & XCTest Verification
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build-and-test:
+    name: Build & Test (macOS 14 / Xcode 15+)
+    runs-on: macos-14
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Select Active Xcode
+        run: |
+          sudo xcode-select -s /Applications/Xcode_15.4.app/Contents/Developer || true
+          xcodebuild -version
+          swift --version
+
+      - name: Cache Native llama.xcframework
+        id: cache-llama
+        uses: actions/cache@v4
+        with:
+          path: ios/Frameworks/llama.xcframework
+          key: llama-xcframework-b4500-${{ runner.os }}-${{ hashFiles('ios/build_native_llama.sh', 'ios/build-xcframework.sh') }}
+
+      - name: Compile Native llama.xcframework (if cache miss)
+        if: steps.cache-llama.outputs.cache-hit != 'true'
+        run: |
+          cd ios
+          chmod +x build_native_llama.sh build-xcframework.sh
+          ./build_native_llama.sh
+
+      - name: Verify llama.xcframework Layout
+        run: |
+          ls -la ios/Frameworks/llama.xcframework
+          plutil -lint ios/Frameworks/llama.xcframework/Info.plist
+
+      - name: Resolve Swift Package Dependencies
+        run: |
+          cd ios
+          swift package resolve
+
+      - name: Build Swift Package (IRIS_ICore)
+        run: |
+          cd ios
+          swift build -v
+
+      - name: Run XCTest Suite (IRIS_ITests)
+        run: |
+          cd ios
+          swift test -v
+
+      - name: Build Xcode Project (Simulator slice)
+        run: |
+          cd ios
+          xcodebuild clean build \
+            -project IRIS-I.xcodeproj \
+            -scheme IRIS-I \
+            -destination "generic/platform=iOS Simulator" \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO

@@ -125,6 +125,28 @@ public struct AgentExecutionResult: Sendable {
         self.executionDurationMs = executionDurationMs
     }
 
+    /// Convenience initializer supporting flexible parameter naming
+    public init(
+        success: Bool? = nil,
+        tool: String,
+        outcome: ToolExecutionOutcome,
+        outputPayload: [String: Sendable] = [:],
+        error: String? = nil,
+        confirmationToken: String? = nil,
+        durationMs: Double = 0.0
+    ) {
+        let isSuccess = success ?? (outcome == .completedVerified || outcome == .completedUnverified || outcome == .accepted)
+        self.init(
+            success: isSuccess,
+            toolName: tool,
+            outcome: outcome,
+            outputPayload: outputPayload,
+            error: error,
+            confirmationToken: confirmationToken,
+            executionDurationMs: durationMs
+        )
+    }
+
     public static func success(
         tool: String,
         verified: Bool = true,

@@ -77,14 +77,16 @@ public struct MailTool: IRISAgentTool {
             guard state.isConnected else {
                 let duration = (CFAbsoluteTimeGetCurrent() - startTime) * 1000.0
                 return AgentExecutionResult(
-                    tool: name,
+                    success: false,
+                    toolName: name,
                     outcome: .failed,
                     outputPayload: [
                         "status": "not_connected",
                         "message": "No email account is linked. To check your email or search for messages, please link your Gmail account in IRIS-I Settings."
                     ],
                     error: "Mail provider is not connected.",
-                    durationMs: duration
+                    confirmationToken: nil,
+                    executionDurationMs: duration
                 )
             }
 
@@ -177,7 +179,8 @@ public struct MailTool: IRISAgentTool {
 
             if opened {
                 return AgentExecutionResult(
-                    tool: name,
+                    success: true,
+                    toolName: name,
                     outcome: .completedUnverified,
                     outputPayload: [
                         "status": "handed_off_unverified",
@@ -186,7 +189,8 @@ public struct MailTool: IRISAgentTool {
                         "message": "Opened email draft in default iOS Mail app for \(recipient). Note: Completion within Mail app cannot be verified."
                     ],
                     error: nil,
-                    durationMs: duration
+                    confirmationToken: nil,
+                    executionDurationMs: duration
                 )
             } else {
                 return AgentExecutionResult.failure(
@@ -212,14 +216,16 @@ public struct MailTool: IRISAgentTool {
             guard state.isConnected else {
                 let duration = (CFAbsoluteTimeGetCurrent() - startTime) * 1000.0
                 return AgentExecutionResult(
-                    tool: name,
+                    success: false,
+                    toolName: name,
                     outcome: .failed,
                     outputPayload: [
                         "status": "not_connected",
                         "message": "No email account is linked. Please link your Gmail account in IRIS-I Settings to create cloud drafts."
                     ],
                     error: "Mail provider is not connected.",
-                    durationMs: duration
+                    confirmationToken: nil,
+                    executionDurationMs: duration
                 )
             }
 
@@ -262,14 +268,16 @@ public struct MailTool: IRISAgentTool {
             guard state.isConnected else {
                 let duration = (CFAbsoluteTimeGetCurrent() - startTime) * 1000.0
                 return AgentExecutionResult(
-                    tool: name,
+                    success: false,
+                    toolName: name,
                     outcome: .failed,
                     outputPayload: [
                         "status": "not_connected",
                         "message": "No email account is linked. Please link your Gmail account in IRIS-I Settings to send emails."
                     ],
                     error: "Mail provider is not connected.",
-                    durationMs: duration
+                    confirmationToken: nil,
+                    executionDurationMs: duration
                 )
             }
 

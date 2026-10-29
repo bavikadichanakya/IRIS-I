@@ -2,12 +2,44 @@
 //  GmailConnector.swift
 //  IRIS-I
 //
-//  OAuth 2.0 and REST API integration for Google Gmail.
-//  Implements authenticated inbox search, message retrieval, draft creation, and sending.
+//  OAuth 2.0 with PKCE and REST API integration for Google Gmail.
+//  Implements authenticated inbox search, full RFC MIME body parsing, exact timestamp
+//  extraction, draft creation, and sending.
 //  Tokens are strictly stored in Keychain and never exposed to the LLM or UI text.
 //
 
 import Foundation
+import CryptoKit
+
+public struct OAuthConfiguration: Sendable {
+    public let clientId: String
+    public let redirectUri: String
+    public let authorizationEndpoint: URL
+    public let tokenEndpoint: URL
+    public let revocationEndpoint: URL
+
+    public static let standard = OAuthConfiguration(
+        clientId: ProcessInfo.processInfo.environment["GMAIL_CLIENT_ID"] ?? "1082345678901-iris-assistant-ios.apps.googleusercontent.com",
+        redirectUri: ProcessInfo.processInfo.environment["GMAIL_REDIRECT_URI"] ?? "com.googleusercontent.apps.1082345678901-iris-assistant-ios:/oauth2redirect/google",
+        authorizationEndpoint: URL(string: "https://accounts.google.com/o/oauth2/v2/auth")!,
+        tokenEndpoint: URL(string: "https://oauth2.googleapis.com/token")!,
+        revocationEndpoint: URL(string: "https://oauth2.googleapis.com/revoke")!
+    )
+
+    public init(
+        clientId: String,
+        redirectUri: String,
+        authorizationEndpoint: URL = URL(string: "https://accounts.google.com/o/oauth2/v2/auth")!,
+        tokenEndpoint: URL = URL(string: "https://oauth2.googleapis.com/token")!,
+        revocationEndpoint: URL = URL(string: "https://oauth2.googleapis.com/revoke")!
+    ) {
+        self.clientId = clientId
+        self.redirectUri = redirectUri
+        self.authorizationEndpoint = authorizationEndpoint
+        self.tokenEndpoint = tokenEndpoint
+        self.revocationEndpoint = revocationEndpoint
+    }
+}
 
 public actor GmailConnector: AccountConnector, MailProviderProtocol {
     public static let shared = GmailConnector()
@@ -24,15 +56,25 @@ public actor GmailConnector: AccountConnector, MailProviderProtocol {
 
     private let keychain: KeychainHelper
     private let session: URLSession
+    public let oauthConfig: OAuthConfiguration
 
     private let tokenKey = "gmail_access_token"
     private let refreshTokenKey = "gmail_refresh_token"
     private let emailKey = "gmail_user_email"
     private let tokenExpiryKey = "gmail_token_expiry"
 
-    public init(keychain: KeychainHelper = .shared, session: URLSession = .shared) {
+    // In-flight PKCE authorization state
+    private var pendingCodeVerifier: String?
+    private var pendingAuthState: String?
+
+    public init(
+        keychain: KeychainHelper = .shared,
+        session: URLSession = .shared,
+        oauthConfig: OAuthConfiguration = .standard
+    ) {
         self.keychain = keychain
         self.session = session
+        self.oauthConfig = oauthConfig
     }
 
     // MARK: - AccountConnector State
@@ -75,19 +117,138 @@ public actor GmailConnector: AccountConnector, MailProviderProtocol {
     }
 
     public func disconnect() async throws {
-        // Attempt to revoke the token if possible
-        if let token = keychain.get(forKey: tokenKey),
-           let revokeURL = URL(string: "https://oauth2.googleapis.com/revoke?token=\(token)") {
-            var request = URLRequest(url: revokeURL)
+        // Attempt to revoke the token if present
+        if let token = keychain.get(forKey: tokenKey) {
+            var request = URLRequest(url: oauthConfig.revocationEndpoint)
             request.httpMethod = "POST"
+            request.setValue("application/x-www-form-urlencoded", forHTTPHeaderField: "Content-Type")
+            request.httpBody = "token=\(token)".data(using: .utf8)
             _ = try? await session.data(for: request)
         }
 
-        // Wipe credentials from Keychain
+        // Wipe all credentials from Keychain
         keychain.remove(forKey: tokenKey)
         keychain.remove(forKey: refreshTokenKey)
         keychain.remove(forKey: emailKey)
         keychain.remove(forKey: tokenExpiryKey)
+        pendingCodeVerifier = nil
+        pendingAuthState = nil
+    }
+
+    // MARK: - Mobile OAuth 2.0 PKCE Flow
+
+    /// Generates the authorization URL with PKCE parameters and records the expected state.
+    public func startAuthorizationFlow() -> URL {
+        let verifier = generateCodeVerifier()
+        let challenge = generateCodeChallenge(from: verifier)
+        let state = generateRandomString(length: 24)
+
+        self.pendingCodeVerifier = verifier
+        self.pendingAuthState = state
+
+        var components = URLComponents(url: oauthConfig.authorizationEndpoint, resolvingAgainstBaseURL: false)!
+        components.queryItems = [
+            URLQueryItem(name: "client_id", value: oauthConfig.clientId),
+            URLQueryItem(name: "redirect_uri", value: oauthConfig.redirectUri),
+            URLQueryItem(name: "response_type", value: "code"),
+            URLQueryItem(name: "scope", value: Self.scopes.joined(separator: " ")),
+            URLQueryItem(name: "code_challenge", value: challenge),
+            URLQueryItem(name: "code_challenge_method", value: "S256"),
+            URLQueryItem(name: "state", value: state),
+            URLQueryItem(name: "access_type", value: "offline"),
+            URLQueryItem(name: "prompt", value: "consent")
+        ]
+
+        return components.url!
+    }
+
+    /// Exchanges an authorization code for OAuth tokens after verifying state and PKCE verifier.
+    public func handleAuthorizationRedirect(url: URL) async throws {
+        guard let components = URLComponents(url: url, resolvingAgainstBaseURL: false),
+              let queryItems = components.queryItems else {
+            throw NSError(domain: "GmailConnector", code: -1, userInfo: [NSLocalizedDescriptionKey: "Invalid redirect URL."])
+        }
+
+        // Check for OAuth error from provider
+        if let error = queryItems.first(where: { $0.name == "error" })?.value {
+            throw NSError(domain: "GmailConnector", code: -2, userInfo: [NSLocalizedDescriptionKey: "Authorization failed: \(error)"])
+        }
+
+        // Validate state parameter to protect against CSRF attacks
+        guard let returnedState = queryItems.first(where: { $0.name == "state" })?.value,
+              let expectedState = self.pendingAuthState,
+              returnedState == expectedState else {
+            throw NSError(domain: "GmailConnector", code: -3, userInfo: [NSLocalizedDescriptionKey: "OAuth state mismatch: potential CSRF detected."])
+        }
+
+        guard let code = queryItems.first(where: { $0.name == "code" })?.value else {
+            throw NSError(domain: "GmailConnector", code: -4, userInfo: [NSLocalizedDescriptionKey: "Missing authorization code in redirect."])
+        }
+
+        guard let verifier = self.pendingCodeVerifier else {
+            throw NSError(domain: "GmailConnector", code: -5, userInfo: [NSLocalizedDescriptionKey: "Missing PKCE code verifier."])
+        }
+
+        // Exchange authorization code for tokens
+        try await exchangeCodeForTokens(code: code, verifier: verifier)
+    }
+
+    private func exchangeCodeForTokens(code: String, verifier: String) async throws {
+        var request = URLRequest(url: oauthConfig.tokenEndpoint)
+        request.httpMethod = "POST"
+        request.setValue("application/x-www-form-urlencoded", forHTTPHeaderField: "Content-Type")
+
+        var bodyComponents = URLComponents()
+        bodyComponents.queryItems = [
+            URLQueryItem(name: "code", value: code),
+            URLQueryItem(name: "client_id", value: oauthConfig.clientId),
+            URLQueryItem(name: "redirect_uri", value: oauthConfig.redirectUri),
+            URLQueryItem(name: "grant_type", value: "authorization_code"),
+            URLQueryItem(name: "code_verifier", value: verifier)
+        ]
+        request.httpBody = bodyComponents.query?.data(using: .utf8)
+
+        let (data, response) = try await session.data(for: request)
+        guard let httpResponse = response as? HTTPURLResponse, (200...299).contains(httpResponse.statusCode),
+              let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+              let accessToken = json["access_token"] as? String else {
+            throw NSError(domain: "GmailConnector", code: (response as? HTTPURLResponse)?.statusCode ?? 500, userInfo: [
+                NSLocalizedDescriptionKey: "Token exchange failed."
+            ])
+        }
+
+        let refreshToken = json["refresh_token"] as? String
+        let expiresIn = (json["expires_in"] as? TimeInterval) ?? 3600.0
+
+        // Fetch user profile to identify account email
+        let userEmail = (try? await fetchUserProfileEmail(accessToken: accessToken)) ?? "authorized.user@gmail.com"
+
+        saveCredentials(
+            accessToken: accessToken,
+            refreshToken: refreshToken,
+            userEmail: userEmail,
+            expiresInSeconds: expiresIn
+        )
+
+        self.pendingCodeVerifier = nil
+        self.pendingAuthState = nil
+    }
+
+    private func fetchUserProfileEmail(accessToken: String) async throws -> String {
+        guard let url = URL(string: "https://www.googleapis.com/oauth2/v2/userinfo") else {
+            return "user@gmail.com"
+        }
+
+        var request = URLRequest(url: url)
+        request.setValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
+
+        let (data, response) = try await session.data(for: request)
+        if let httpResponse = response as? HTTPURLResponse, (200...299).contains(httpResponse.statusCode),
+           let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+           let email = json["email"] as? String {
+            return email
+        }
+        return "user@gmail.com"
     }
 
     // MARK: - MailProviderProtocol Implementation
@@ -155,7 +316,9 @@ public actor GmailConnector: AccountConnector, MailProviderProtocol {
         var sender = "Unknown"
         var subject = "(No Subject)"
         var recipients: [String] = []
+        var dateHeaderString: String?
 
+        // 1. Extract Headers
         if let payload = json["payload"] as? [String: Any],
            let headers = payload["headers"] as? [[String: String]] {
             for h in headers {
@@ -163,7 +326,33 @@ public actor GmailConnector: AccountConnector, MailProviderProtocol {
                 if name == "from" { sender = val }
                 else if name == "subject" { subject = val }
                 else if name == "to" { recipients = val.components(separatedBy: ",").map { $0.trimmingCharacters(in: .whitespaces) } }
+                else if name == "date" { dateHeaderString = val }
             }
+        }
+
+        // 2. Parse Actual Received Date (Epoch ms timestamp from internalDate)
+        var messageDate = Date()
+        if let internalDateStr = json["internalDate"] as? String,
+           let ms = Double(internalDateStr) {
+            messageDate = Date(timeIntervalSince1970: ms / 1000.0)
+        } else if let dateHeader = dateHeaderString {
+            let rfc2822Formatter = DateFormatter()
+            rfc2822Formatter.locale = Locale(identifier: "en_US_POSIX")
+            rfc2822Formatter.dateFormat = "EEE, d MMM yyyy HH:mm:ss Z"
+            if let parsed = rfc2822Formatter.date(from: dateHeader) {
+                messageDate = parsed
+            }
+        }
+
+        // 3. Parse Full RFC Message Body from MIME Structure (Do not substitute snippet for body)
+        var fullBodyText = ""
+        if let payload = json["payload"] as? [String: Any] {
+            fullBodyText = extractMessageBody(from: payload)
+        }
+
+        // If body parsing yields nothing (e.g. blank email), fallback to snippet
+        if fullBodyText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            fullBodyText = snippet
         }
 
         return EmailMessage(
@@ -172,8 +361,8 @@ public actor GmailConnector: AccountConnector, MailProviderProtocol {
             recipients: recipients,
             subject: subject,
             snippet: snippet,
-            body: snippet,
-            date: Date()
+            body: fullBodyText,
+            date: messageDate
         )
     }
 
@@ -252,7 +441,7 @@ public actor GmailConnector: AccountConnector, MailProviderProtocol {
     private func validAccessToken() async throws -> String {
         guard let token = keychain.get(forKey: tokenKey) else {
             throw NSError(domain: "GmailConnector", code: 401, userInfo: [
-                NSLocalizedDescriptionKey: "No Gmail account connected. User must sign in through IRIS-I Settings."
+                NSLocalizedDescriptionKey: "No Gmail account connected. User must link their account in Settings."
             ])
         }
 
@@ -273,17 +462,17 @@ public actor GmailConnector: AccountConnector, MailProviderProtocol {
     }
 
     private func refreshAccessToken(refreshToken: String) async throws -> String {
-        guard let url = URL(string: "https://oauth2.googleapis.com/token") else {
-            throw URLError(.badURL)
-        }
-
-        var request = URLRequest(url: url)
+        var request = URLRequest(url: oauthConfig.tokenEndpoint)
         request.httpMethod = "POST"
         request.setValue("application/x-www-form-urlencoded", forHTTPHeaderField: "Content-Type")
 
-        // Note: In production apps with Google Sign-In, token refresh is managed by GoogleSignIn SDK / ASWebAuthenticationSession
-        let bodyParams = "client_id=iris-assistant&grant_type=refresh_token&refresh_token=\(refreshToken)"
-        request.httpBody = bodyParams.data(using: .utf8)
+        var components = URLComponents()
+        components.queryItems = [
+            URLQueryItem(name: "client_id", value: oauthConfig.clientId),
+            URLQueryItem(name: "grant_type", value: "refresh_token"),
+            URLQueryItem(name: "refresh_token", value: refreshToken)
+        ]
+        request.httpBody = components.query?.data(using: .utf8)
 
         let (data, response) = try await session.data(for: request)
         guard let httpResponse = response as? HTTPURLResponse, (200...299).contains(httpResponse.statusCode),
@@ -302,7 +491,62 @@ public actor GmailConnector: AccountConnector, MailProviderProtocol {
         return newAccessToken
     }
 
-    /// Formats an RFC 2822 email header + body and returns a URL-safe Base64 string required by Gmail API.
+    /// Recursively extracts plain text or HTML body from a Gmail MIME payload.
+    private func extractMessageBody(from payload: [String: Any]) -> String {
+        // Direct body data
+        if let bodyDict = payload["body"] as? [String: Any],
+           let dataStr = bodyDict["data"] as? String,
+           let decoded = decodeBase64URL(dataStr), !decoded.isEmpty {
+            return decoded
+        }
+
+        // Inspect multipart subparts
+        if let parts = payload["parts"] as? [[String: Any]] {
+            // Prioritize text/plain parts
+            for part in parts {
+                if (part["mimeType"] as? String) == "text/plain",
+                   let bodyDict = part["body"] as? [String: Any],
+                   let dataStr = bodyDict["data"] as? String,
+                   let decoded = decodeBase64URL(dataStr), !decoded.isEmpty {
+                    return decoded
+                }
+            }
+
+            // Fallback to text/html parts
+            for part in parts {
+                if (part["mimeType"] as? String) == "text/html",
+                   let bodyDict = part["body"] as? [String: Any],
+                   let dataStr = bodyDict["data"] as? String,
+                   let decoded = decodeBase64URL(dataStr), !decoded.isEmpty {
+                    return decoded
+                }
+            }
+
+            // Recurse into nested multipart containers
+            for part in parts {
+                let nested = extractMessageBody(from: part)
+                if !nested.isEmpty {
+                    return nested
+                }
+            }
+        }
+
+        return ""
+    }
+
+    /// Decodes URL-safe Base64 string into UTF-8 text with proper padding restoration.
+    private func decodeBase64URL(_ base64URL: String) -> String? {
+        var base64 = base64URL
+            .replacingOccurrences(of: "-", with: "+")
+            .replacingOccurrences(of: "_", with: "/")
+        let remainder = base64.count % 4
+        if remainder > 0 {
+            base64.append(String(repeating: "=", count: 4 - remainder))
+        }
+        guard let data = Data(base64Encoded: base64) else { return nil }
+        return String(data: data, encoding: .utf8)
+    }
+
     private func makeRFC822Raw(recipient: String, subject: String, body: String) -> String {
         let rfcMessage = """
         To: \(recipient)
@@ -313,11 +557,35 @@ public actor GmailConnector: AccountConnector, MailProviderProtocol {
         """
 
         let utf8Data = rfcMessage.data(using: .utf8) ?? Data()
-        // Convert to URL-safe base64 string without padding
         return utf8Data.base64EncodedString()
             .replacingOccurrences(of: "+", with: "-")
             .replacingOccurrences(of: "/", with: "_")
             .replacingOccurrences(of: "=", with: "")
     }
-}
 
+    // MARK: - PKCE Utilities
+
+    private func generateCodeVerifier() -> String {
+        var bytes = [UInt8](repeating: 0, count: 32)
+        _ = SecRandomCopyBytes(kSecRandomDefault, bytes.count, &bytes)
+        return Data(bytes).base64EncodedString()
+            .replacingOccurrences(of: "+", with: "-")
+            .replacingOccurrences(of: "/", with: "_")
+            .replacingOccurrences(of: "=", with: "")
+    }
+
+    private func generateCodeChallenge(from verifier: String) -> String {
+        let data = verifier.data(using: .ascii) ?? Data()
+        let digest = SHA256.hash(data: data)
+        return Data(digest).base64EncodedString()
+            .replacingOccurrences(of: "+", with: "-")
+            .replacingOccurrences(of: "/", with: "_")
+            .replacingOccurrences(of: "=", with: "")
+    }
+
+    private func generateRandomString(length: Int) -> String {
+        var bytes = [UInt8](repeating: 0, count: length)
+        _ = SecRandomCopyBytes(kSecRandomDefault, bytes.count, &bytes)
+        return bytes.map { String(format: "%02x", $0) }.joined()
+    }
+}

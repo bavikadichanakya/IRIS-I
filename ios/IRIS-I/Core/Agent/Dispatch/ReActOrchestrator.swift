@@ -74,17 +74,28 @@ public actor ReActOrchestrator {
                 let totalDuration = (CFAbsoluteTimeGetCurrent() - totalStartTime) * 1000.0
 
                 let responseText: String
-                if toolResult.outcome == .failed {
-                    responseText = "Action failed: \(toolResult.error ?? "Unknown error.")"
-                } else if toolResult.outcome == .completedUnverified {
+                switch toolResult.outcome {
+                case .completedVerified:
+                    if let msg = toolResult.outputPayload["message"] as? String {
+                        responseText = msg
+                    } else if let summary = toolResult.outputPayload["summary"] as? String {
+                        responseText = summary
+                    } else {
+                        responseText = "Executed \(toolName) successfully."
+                    }
+                case .completedUnverified:
                     let msg = (toolResult.outputPayload["message"] as? String) ?? "Action handed off to external system (unverified outcome)."
                     responseText = "Handed off: \(msg)"
-                } else if let msg = toolResult.outputPayload["message"] as? String {
-                    responseText = msg
-                } else if let summary = toolResult.outputPayload["summary"] as? String {
-                    responseText = summary
-                } else {
-                    responseText = "Executed \(toolName) successfully."
+                case .failed:
+                    responseText = "Action failed: \(toolResult.error ?? "Unknown error.")"
+                case .deniedPolicy:
+                    responseText = "Action denied: \(toolResult.error ?? "Security policy violation.")"
+                case .cancelled:
+                    responseText = "Action was cancelled."
+                case .timedOut:
+                    responseText = "Action timed out."
+                case .accepted, .inProgress, .confirmationRequired:
+                    responseText = (toolResult.outputPayload["message"] as? String) ?? "Action status: \(toolResult.outcome.rawValue)"
                 }
 
                 progressStream?(responseText)
@@ -301,7 +312,7 @@ public actor ReActOrchestrator {
 
         let responseText: String
         switch result.outcome {
-        case .completed:
+        case .completedVerified:
             if let msg = result.outputPayload["message"] as? String {
                 responseText = msg
             } else if let summary = result.outputPayload["summary"] as? String {
@@ -316,9 +327,18 @@ public actor ReActOrchestrator {
             let err = result.error ?? (result.outputPayload["error"] as? String) ?? "Unknown failure."
             responseText = "Action failed: \(err)"
         case .accepted:
-            responseText = "Action accepted for processing."
-        case .unknown:
-            responseText = "Action completed with unknown status."
+            responseText = (result.outputPayload["message"] as? String) ?? "Action accepted for processing."
+        case .inProgress:
+            responseText = (result.outputPayload["message"] as? String) ?? "Action is in progress."
+        case .confirmationRequired:
+            responseText = "Action requires further confirmation."
+        case .deniedPolicy:
+            let err = result.error ?? "Action denied by security policy."
+            responseText = "Action denied: \(err)"
+        case .cancelled:
+            responseText = "Action was cancelled."
+        case .timedOut:
+            responseText = "Action execution timed out."
         }
 
         return OrchestratorResponse(

@@ -21,6 +21,11 @@ public struct ContentView: View {
                 .tabItem {
                     Label("Diagnostics", systemImage: "waveform.path.ecg")
                 }
+
+            SettingsView()
+                .tabItem {
+                    Label("Settings", systemImage: "gearshape")
+                }
         }
     }
 }

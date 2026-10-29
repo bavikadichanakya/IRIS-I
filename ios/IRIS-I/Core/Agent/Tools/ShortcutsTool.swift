@@ -76,7 +76,8 @@ public struct ShortcutsTool: IRISAgentTool {
 
         if opened {
             return AgentExecutionResult(
-                tool: self.name,
+                success: true,
+                toolName: self.name,
                 outcome: .completedUnverified,
                 outputPayload: [
                     "status": "handed_off_unverified",
@@ -84,7 +85,8 @@ public struct ShortcutsTool: IRISAgentTool {
                     "message": "Dispatched shortcut '\(name)' to the Apple Shortcuts app. Note: Outcome within the target app cannot be verified by IRIS-I."
                 ],
                 error: nil,
-                durationMs: duration
+                confirmationToken: nil,
+                executionDurationMs: duration
             )
         } else {
             return AgentExecutionResult.failure(

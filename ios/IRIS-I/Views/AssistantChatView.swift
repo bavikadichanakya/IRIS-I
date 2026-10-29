@@ -175,9 +175,52 @@ public struct AssistantChatView: View {
             }
         } message: {
             if let ticket = pendingTicket {
-                Text("Tool: \(ticket.toolName)\nAre you sure you want to proceed with this sensitive action?")
+                Text(confirmationDetailText(for: ticket))
             }
         }
+    }
+
+    private func confirmationDetailText(for ticket: ConfirmationTicket) -> String {
+        var details: [String] = []
+        details.append("Tool: \(ticket.toolName) [\(ticket.operationType.rawValue.uppercased())]")
+
+        if ticket.toolName == "MailTool" {
+            if let recipient = ticket.rawParameters["recipient"] as? String {
+                details.append("Recipient: \(recipient)")
+            }
+            if let subject = ticket.rawParameters["subject"] as? String {
+                details.append("Subject: \(subject)")
+            }
+            if let body = ticket.rawParameters["body"] as? String, !body.isEmpty {
+                let preview = body.count > 120 ? String(body.prefix(120)) + "..." : body
+                details.append("Body: \(preview)")
+            }
+        } else if ticket.toolName == "MessagingTool" {
+            if let recipient = ticket.rawParameters["recipient"] as? String, !recipient.isEmpty {
+                details.append("Recipient: \(recipient)")
+            }
+            if let msg = ticket.rawParameters["message"] as? String {
+                details.append("Message: \"\(msg)\"")
+            }
+        } else if ticket.toolName == "EventKitTool" {
+            if let action = ticket.rawParameters["action"] as? String {
+                details.append("Action: \(action)")
+            }
+            if let title = ticket.rawParameters["title"] as? String {
+                details.append("Title: \(title)")
+            }
+        } else if ticket.toolName == "ShortcutsTool" {
+            if let name = ticket.rawParameters["shortcut_name"] as? String {
+                details.append("Shortcut: \(name)")
+            }
+        } else {
+            for (key, val) in ticket.rawParameters {
+                details.append("\(key): \(val)")
+            }
+        }
+
+        details.append("\nAre you sure you want to authorize this exact action?")
+        return details.joined(separator: "\n")
     }
 
     private func messageBubble(for msg: ChatDisplayMessage) -> some View {

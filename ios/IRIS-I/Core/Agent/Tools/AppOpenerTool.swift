@@ -31,6 +31,10 @@ public struct AppOpenerTool: IRISAgentTool {
 
     public init() {}
 
+    public func operationType(for arguments: [String: Any]) -> ActionOperationType {
+        return .read
+    }
+
     public func execute(arguments: [String: Any]) async -> AgentExecutionResult {
         let startTime = CFAbsoluteTimeGetCurrent()
         guard let appName = arguments["app_name"] as? String, !appName.isEmpty else {
