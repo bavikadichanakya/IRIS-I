@@ -218,3 +218,4 @@ fileprivate struct PearlOrbButtonStyle: ButtonStyle {
         PearlOrbView(size: 240, audioLevel: 0.2, isListening: true)
     }
 }
+

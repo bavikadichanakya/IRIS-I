@@ -50,3 +50,4 @@ public struct LiveWaveformView: View {
         }
     }
 }
+

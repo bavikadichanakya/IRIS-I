@@ -84,7 +84,7 @@ public struct VoiceAgentView: View {
                 titleVisibility: .visible
             ) {
                 if let ticket = pendingTicket {
-                    Button("Authorize \(ticket.actionName)") {
+                    Button("Authorize \(ticket.toolName)") {
                         confirmAndExecute(ticket: ticket)
                     }
                     Button("Cancel", role: .cancel) {
@@ -93,7 +93,7 @@ public struct VoiceAgentView: View {
                 }
             } message: {
                 if let ticket = pendingTicket {
-                    Text(ticket.description)
+                    Text("Requires authorization for \(ticket.toolName).")
                 }
             }
             .sheet(isPresented: $isShowingKeyboardInput) {

@@ -279,7 +279,7 @@ public struct ActionsCatalogView: View {
                 let tool = SystemInfoTool()
                 let res = await tool.execute(arguments: ["action": action])
                 withAnimation {
-                    feedbackMessage = res.output["message"] as? String ?? "Completed"
+                    feedbackMessage = (res.outputPayload["message"] as? String) ?? (res.success ? "Completed" : (res.error ?? "Failed"))
                 }
                 DispatchQueue.main.asyncAfter(deadline: .now() + 3.0) {
                     withAnimation { feedbackMessage = nil }
@@ -308,3 +308,4 @@ fileprivate struct ScaleOnPressStyle: ButtonStyle {
 #Preview {
     ActionsCatalogView()
 }
+
