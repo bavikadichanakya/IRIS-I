@@ -72,7 +72,7 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
-		C10000012C00000100000001 /* PBXContainerItemProxy */ = {
+		X10000012C00000100000001 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = D10000012C00000100000001 /* Project object */;
 			proxyType = 1;
@@ -82,8 +82,8 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
-		E10000012C00000100000001 /* IRIS-I.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "IRIS-I.app"; sourceTree = BUILT_PRODUCTS_DIR; };
-		E20000012C00000100000001 /* IRIS-ITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "IRIS-ITests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
+		R10000012C00000100000001 /* IRIS-I.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "IRIS-I.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		R20000012C00000100000001 /* IRIS-ITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "IRIS-ITests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
 		B10000012C00000100000001 /* IRIS_IApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IRIS_IApp.swift; sourceTree = "<group>"; };
 		B10000022C00000100000001 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		B10000032C00000100000001 /* ModelManifest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModelManifest.swift; sourceTree = "<group>"; };
@@ -334,8 +334,8 @@
 		G30000012C00000100000001 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				E10000012C00000100000001 /* IRIS-I.app */,
-				E20000012C00000100000001 /* IRIS-ITests.xctest */,
+				R10000012C00000100000001 /* IRIS-I.app */,
+				R20000012C00000100000001 /* IRIS-ITests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -457,7 +457,7 @@
 			);
 			name = "IRIS-I";
 			productName = "IRIS-I";
-			productReference = E10000012C00000100000001 /* IRIS-I.app */;
+			productReference = R10000012C00000100000001 /* IRIS-I.app */;
 			productType = "com.apple.product-type.application";
 		};
 		E20000012C00000100000001 /* IRIS-ITests */ = {
@@ -474,7 +474,7 @@
 			);
 			name = "IRIS-ITests";
 			productName = "IRIS-ITests";
-			productReference = E20000012C00000100000001 /* IRIS-ITests.xctest */;
+			productReference = R20000012C00000100000001 /* IRIS-ITests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
 		};
 /* End PBXNativeTarget section */
@@ -596,7 +596,7 @@
 		D20000012C00000100000001 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = E10000012C00000100000001 /* IRIS-I */;
-			targetProxy = C10000012C00000100000001 /* PBXContainerItemProxy */;
+			targetProxy = X10000012C00000100000001 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
