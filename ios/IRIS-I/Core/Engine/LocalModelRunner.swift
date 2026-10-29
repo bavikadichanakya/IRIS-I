@@ -180,7 +180,7 @@ public actor LocalModelRunner {
         prompt: String,
         maxTokens: Int = 512,
         temperature: Float = 0.7
-    ) -> AsyncThrowingStream<String, Error> {
+    ) async -> AsyncThrowingStream<String, Error> {
         guard let engine = activeEngine, lifecycleState.isLoaded else {
             return AsyncThrowingStream { continuation in
                 continuation.finish(throwing: EngineError.uninitialized)

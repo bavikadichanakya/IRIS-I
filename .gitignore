@@ -54,3 +54,6 @@ xcuserdata/
 *.mlmodelc
 /ios/**/Models/weights/*
 !/ios/**/Models/weights/.gitkeep
+
+# Temporary tools & diagnostics
+xtool-main/

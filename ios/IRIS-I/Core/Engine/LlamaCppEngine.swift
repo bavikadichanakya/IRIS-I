@@ -7,6 +7,9 @@
 //
 
 import Foundation
+#if canImport(llama)
+import llama
+#endif
 
 public actor LlamaCppEngine: ModelEngineProtocol {
     public let isMockEngine: Bool = false
@@ -151,7 +154,7 @@ public actor LlamaCppEngine: ModelEngineProtocol {
                 // 1. Tokenize Prompt via llama_tokenize(vocab, ...)
                 let utf8Bytes = Array(prompt.utf8)
                 let maxPromptTokens = Int32(utf8Bytes.count + 16)
-                var promptTokens = [llama_token](repeating: 0, count: Int(maxPromptTokens))
+                var promptTokens = Array<llama_token>(repeating: 0, count: Int(maxPromptTokens))
 
                 let promptTokenCount = prompt.withCString { cStr in
                     llama_tokenize(vocab, cStr, Int32(utf8Bytes.count), &promptTokens, maxPromptTokens, true, true)
