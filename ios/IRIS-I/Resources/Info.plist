@@ -88,6 +88,18 @@
         <string>shortcuts</string>
         <string>spotify</string>
         <string>youtube</string>
+        <string>music</string>
+        <string>photos-redirect</string>
+        <string>camera</string>
+        <string>mobilenotes</string>
+        <string>calshow</string>
+        <string>x-apple-reminderkit</string>
+        <string>whatsapp</string>
+        <string>tg</string>
+        <string>facetime</string>
+        <string>shareddocuments</string>
+        <string>chatgpt</string>
+        <string>twitter</string>
     </array>
 
     <!-- Google OAuth URL Types & Callback Scheme -->

@@ -149,6 +149,9 @@ public struct DiagnosticConsoleView: View {
                                 onDeleteTapped: {
                                     try? storage.deleteModel(manifest)
                                     Task { await refreshState() }
+                                },
+                                onDownloadTapped: {
+                                    BrainDownloadCoordinator.shared.downloadAndActivateBrain()
                                 }
                             )
                             .padding(.horizontal)

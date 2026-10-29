@@ -4,7 +4,8 @@
 //
 //  Complete on-device voice agent pipeline coordinating real-time Speech-To-Text (STT)
 //  via SFSpeechRecognizer and natural Text-To-Speech (TTS) via AVSpeechSynthesizer.
-//  Includes audio level metering for animated voice orbs and full barge-in support.
+//  Includes wake-word handling ("Hey IRIS"), audio level metering for animated voice orbs,
+//  and full barge-in interruption support.
 //
 
 import Foundation
@@ -29,6 +30,7 @@ public final class SpeechManager: NSObject, ObservableObject, @unchecked Sendabl
     @Published public var spokenResponse: String = ""
     @Published public var audioLevel: Float = 0.0
     @Published public var errorMessage: String? = nil
+    @Published public var wakeWordDetected: Bool = false
 
     private let synthesizer = AVSpeechSynthesizer()
     private var audioEngine = AVAudioEngine()
@@ -38,8 +40,8 @@ public final class SpeechManager: NSObject, ObservableObject, @unchecked Sendabl
     private var recognitionTask: SFSpeechRecognitionTask?
     #endif
 
-    private var silenceTimer: Timer?
-    private let silenceThresholdSeconds: TimeInterval = 1.6
+    private var silenceTask: Task<Void, Never>?
+    private let silenceThresholdNanoseconds: UInt64 = 1_600_000_000 // 1.6 seconds of silence auto-submits
 
     public override init() {
         super.init()
@@ -77,7 +79,7 @@ public final class SpeechManager: NSObject, ObservableObject, @unchecked Sendabl
     // MARK: - Speech To Text (Listening)
 
     public func startListening() async {
-        // Barge-in: stop any active speech synthesis immediately
+        // Barge-in: immediately cut off any active speech synthesis
         if state == .speaking {
             stopSpeaking()
         }
@@ -88,6 +90,7 @@ public final class SpeechManager: NSObject, ObservableObject, @unchecked Sendabl
         stopListeningInternal()
         self.recognizedText = ""
         self.errorMessage = nil
+        self.wakeWordDetected = false
 
         let audioSession = AVAudioSession.sharedInstance()
         do {
@@ -104,17 +107,20 @@ public final class SpeechManager: NSObject, ObservableObject, @unchecked Sendabl
             return
         }
 
-        recognitionRequest = SFSpeechAudioBufferRecognitionRequest()
-        guard let request = recognitionRequest else { return }
+        let request = SFSpeechAudioBufferRecognitionRequest()
         request.shouldReportPartialResults = true
-        request.requiresOnDeviceRecognition = false // Allows fastest neural on-device or hybrid recognition
+        request.requiresOnDeviceRecognition = false // Fast neural hybrid or on-device
+        self.recognitionRequest = request
 
         audioEngine = AVAudioEngine()
         let inputNode = audioEngine.inputNode
         let recordingFormat = inputNode.outputFormat(forBus: 0)
 
+        // Capture local reference to avoid actor isolation crossings inside the audio thread tap
+        let activeRequest = request
+
         inputNode.installTap(onBus: 0, bufferSize: 1024, format: recordingFormat) { [weak self] buffer, _ in
-            self?.recognitionRequest?.append(buffer)
+            activeRequest.append(buffer)
 
             // Calculate RMS audio level for waveform visualization (0.0 to 1.0)
             guard let channelData = buffer.floatChannelData?[0] else { return }
@@ -149,13 +155,19 @@ public final class SpeechManager: NSObject, ObservableObject, @unchecked Sendabl
                     let transcribed = result.bestTranscription.formattedString
                     self.recognizedText = transcribed
 
+                    // Check for wake word in real-time
+                    let lower = transcribed.lowercased()
+                    if lower.contains("hey iris") || lower.contains("iris") {
+                        self.wakeWordDetected = true
+                    }
+
                     // Reset auto-send silence timer
                     self.resetSilenceTimer()
                 }
 
                 if error != nil || result?.isFinal == true {
                     if self.state == .listening && !self.recognizedText.isEmpty {
-                        self.stopListeningAndProcess()
+                        self.processVoiceQuery()
                     } else if self.state == .listening {
                         self.stopListeningInternal()
                     }
@@ -164,51 +176,105 @@ public final class SpeechManager: NSObject, ObservableObject, @unchecked Sendabl
         }
         #else
         self.state = .listening
-        self.recognizedText = "(Simulated Speech Input)"
+        self.recognizedText = "Hey IRIS, what time is it?"
+        self.wakeWordDetected = true
         #endif
     }
 
     private func resetSilenceTimer() {
-        silenceTimer?.invalidate()
-        silenceTimer = Timer.scheduledTimer(withTimeInterval: silenceThresholdSeconds, repeats: false) { [weak self] _ in
-            Task { @MainActor [weak self] in
-                guard let self = self, self.state == .listening, !self.recognizedText.isEmpty else { return }
-                self.stopListeningAndProcess()
-            }
+        silenceTask?.cancel()
+        silenceTask = Task { @MainActor in
+            try? await Task.sleep(nanoseconds: self.silenceThresholdNanoseconds)
+            guard !Task.isCancelled, self.state == .listening, !self.recognizedText.isEmpty else { return }
+            self.processVoiceQuery()
         }
     }
 
-    public func stopListeningAndProcess(onCompletion: (@Sendable (String) async -> Void)? = nil) {
-        silenceTimer?.invalidate()
-        silenceTimer = nil
-
-        let query = recognizedText.trimmingCharacters(in: .whitespacesAndNewlines)
+    /// Stops listening and immediately returns the current transcribed text.
+    @discardableResult
+    public func stopListening() -> String {
+        silenceTask?.cancel()
+        silenceTask = nil
+        let text = recognizedText.trimmingCharacters(in: .whitespacesAndNewlines)
         stopListeningInternal()
+        return text
+    }
 
-        guard !query.isEmpty else {
+    /// Stops listening and triggers end-to-end voice query processing and vocalization.
+    public func stopListeningAndProcess(customHandler: ((String) async -> Void)? = nil) {
+        let text = stopListening()
+        guard !text.isEmpty else {
             self.state = .idle
             return
         }
 
-        self.state = .processing
+        if let handler = customHandler {
+            self.state = .processing
+            Task {
+                await handler(text)
+            }
+        } else {
+            processVoiceQuery(rawText: text)
+        }
+    }
 
-        Task {
-            if let customHandler = onCompletion {
-                await customHandler(query)
-            } else {
-                let orchestrator = ReActOrchestrator.shared
-                let response = await orchestrator.process(userPrompt: query)
-                await MainActor.run {
-                    self.spokenResponse = response.textResponse
-                    self.speak(text: response.textResponse)
+    /// Processes recognized text with wake-word detection, stripping prefixes, and vocalizing responses.
+    public func processVoiceQuery(rawText: String? = nil) {
+        let input = (rawText ?? self.recognizedText).trimmingCharacters(in: .whitespacesAndNewlines)
+        stopListeningInternal()
+
+        guard !input.isEmpty else {
+            self.state = .idle
+            return
+        }
+
+        // Detect and strip wake-word prefixes
+        let lower = input.lowercased()
+        let query: String
+        if lower.hasPrefix("hey iris,") {
+            query = String(input.dropFirst(9)).trimmingCharacters(in: .whitespacesAndNewlines)
+        } else if lower.hasPrefix("hey iris ") {
+            query = String(input.dropFirst(8)).trimmingCharacters(in: .whitespacesAndNewlines)
+        } else if lower == "hey iris" {
+            query = ""
+        } else if lower.hasPrefix("iris,") {
+            query = String(input.dropFirst(5)).trimmingCharacters(in: .whitespacesAndNewlines)
+        } else if lower.hasPrefix("iris ") {
+            query = String(input.dropFirst(4)).trimmingCharacters(in: .whitespacesAndNewlines)
+        } else if lower == "iris" {
+            query = ""
+        } else {
+            query = input
+        }
+
+        // If user only uttered the wake word, respond with greeting and listen
+        if query.isEmpty {
+            self.state = .speaking
+            self.spokenResponse = "I'm listening. What can I do for you?"
+            speak(text: self.spokenResponse)
+            Task {
+                try? await Task.sleep(nanoseconds: 1_400_000_000)
+                if self.state != .speaking {
+                    await self.startListening()
                 }
+            }
+            return
+        }
+
+        self.state = .processing
+        Task {
+            let orchestrator = ReActOrchestrator.shared
+            let response = await orchestrator.process(userPrompt: query)
+            await MainActor.run {
+                self.spokenResponse = response.textResponse
+                self.speak(text: response.textResponse)
             }
         }
     }
 
     public func stopListeningInternal() {
-        silenceTimer?.invalidate()
-        silenceTimer = nil
+        silenceTask?.cancel()
+        silenceTask = nil
 
         #if canImport(Speech)
         recognitionRequest?.endAudio()
@@ -236,17 +302,16 @@ public final class SpeechManager: NSObject, ObservableObject, @unchecked Sendabl
             return
         }
 
-        // Clean any markdown formatting or tags for natural speech
+        // Clean markdown, tags, and formatting for natural spoken cadence
         let cleaned = cleanTextForSpeech(text)
 
         stopSpeaking()
 
         let utterance = AVSpeechUtterance(string: cleaned)
-        utterance.rate = AVSpeechUtteranceDefaultSpeechRate * 1.05
+        utterance.rate = AVSpeechUtteranceDefaultSpeechRate * 1.04
         utterance.pitchMultiplier = 1.0
         utterance.volume = 1.0
 
-        // Use high-quality neural Siri / Samantha voice if available
         if let preferredVoice = AVSpeechSynthesisVoice(language: "en-US") {
             utterance.voice = preferredVoice
         }

@@ -3,7 +3,7 @@
 //  IRIS-I
 //
 //  Interactive UI card representing a model profile with controls for loading,
-//  unloading, local import, and deletion.
+//  unloading, 1-tap downloading, local import, and deletion.
 //
 
 import SwiftUI
@@ -17,6 +17,9 @@ public struct ModelProfileCard: View {
     public let onUnload: () -> Void
     public let onImportTapped: () -> Void
     public let onDeleteTapped: () -> Void
+    public let onDownloadTapped: (() -> Void)?
+
+    @ObservedObject private var brainCoordinator = BrainDownloadCoordinator.shared
 
     public init(
         manifest: ModelManifest,
@@ -26,7 +29,8 @@ public struct ModelProfileCard: View {
         onSelectLoad: @escaping () -> Void,
         onUnload: @escaping () -> Void,
         onImportTapped: @escaping () -> Void,
-        onDeleteTapped: @escaping () -> Void
+        onDeleteTapped: @escaping () -> Void,
+        onDownloadTapped: (() -> Void)? = nil
     ) {
         self.manifest = manifest
         self.isInstalled = isInstalled
@@ -36,6 +40,7 @@ public struct ModelProfileCard: View {
         self.onUnload = onUnload
         self.onImportTapped = onImportTapped
         self.onDeleteTapped = onDeleteTapped
+        self.onDownloadTapped = onDownloadTapped
     }
 
     public var body: some View {
@@ -114,6 +119,26 @@ public struct ModelProfileCard: View {
                     .foregroundColor(.secondary)
             }
 
+            // Live Download Progress Bar (if this model is downloading)
+            if brainCoordinator.isDownloading && manifest.id == "qwen2.5-3b-instruct" {
+                VStack(alignment: .leading, spacing: 4) {
+                    ProgressView(value: brainCoordinator.downloadProgress)
+                        .tint(.blue)
+                    HStack {
+                        Text(brainCoordinator.statusMessage)
+                            .font(.caption2)
+                            .foregroundColor(.blue)
+                        Spacer()
+                        Button("Cancel") {
+                            brainCoordinator.cancelDownload()
+                        }
+                        .font(.caption2.bold())
+                        .foregroundColor(.red)
+                    }
+                }
+                .padding(.vertical, 4)
+            }
+
             // Action Buttons
             HStack(spacing: 10) {
                 if isActive {
@@ -139,12 +164,22 @@ public struct ModelProfileCard: View {
                     }
                     .buttonStyle(.bordered)
                 } else {
-                    Button(action: onImportTapped) {
-                        Label("Import .GGUF File", systemImage: "square.and.arrow.down")
-                            .font(.caption)
-                            .frame(maxWidth: .infinity)
+                    if let download = onDownloadTapped, manifest.verifiedDownloadURL != nil {
+                        Button(action: download) {
+                            Label("Download & Activate", systemImage: "arrow.down.circle.fill")
+                                .font(.caption.bold())
+                                .frame(maxWidth: .infinity)
+                        }
+                        .buttonStyle(.borderedProminent)
+                        .tint(.blue)
+                    } else {
+                        Button(action: onImportTapped) {
+                            Label("Import .GGUF File", systemImage: "square.and.arrow.down")
+                                .font(.caption)
+                                .frame(maxWidth: .infinity)
+                        }
+                        .buttonStyle(.bordered)
                     }
-                    .buttonStyle(.bordered)
 
                     Button(action: onSelectLoad) {
                         Label("Test (Mock)", systemImage: "sparkles")

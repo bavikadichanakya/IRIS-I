@@ -40,6 +40,7 @@ public struct AssistantChatView: View {
     @State private var isShowingConfirmation: Bool = false
 
     @StateObject private var speechManager = SpeechManager.shared
+    @StateObject private var brainCoordinator = BrainDownloadCoordinator.shared
 
     private let orchestrator = ReActOrchestrator.shared
 
@@ -81,6 +82,48 @@ public struct AssistantChatView: View {
             .padding(.vertical, 10)
             .background(Color(.systemBackground))
             .shadow(color: Color.black.opacity(0.05), radius: 2, y: 1)
+
+            // Brain Download & Status Bar
+            if brainCoordinator.isDownloading {
+                VStack(alignment: .leading, spacing: 4) {
+                    HStack {
+                        Text("Downloading Neural Brain (Qwen 2.5 3B)...")
+                            .font(.caption2.bold())
+                        Spacer()
+                        Text("\(Int(brainCoordinator.downloadProgress * 100))%")
+                            .font(.caption2.bold())
+                            .foregroundColor(.blue)
+                    }
+                    ProgressView(value: brainCoordinator.downloadProgress)
+                        .tint(.blue)
+                    Text(brainCoordinator.statusMessage)
+                        .font(.system(size: 10))
+                        .foregroundColor(.secondary)
+                }
+                .padding(.horizontal, 14)
+                .padding(.vertical, 8)
+                .background(Color.blue.opacity(0.08))
+            } else if !brainCoordinator.isModelInstalled && !brainCoordinator.isModelActive {
+                HStack {
+                    VStack(alignment: .leading, spacing: 1) {
+                        Text("🧠 Neural Brain (Qwen 2.5 · 1.95 GB)")
+                            .font(.caption.bold())
+                        Text("1-tap download & auto-activate locally")
+                            .font(.system(size: 10))
+                            .foregroundColor(.secondary)
+                    }
+                    Spacer()
+                    Button("Download Brain") {
+                        brainCoordinator.downloadAndActivateBrain()
+                    }
+                    .font(.caption.bold())
+                    .buttonStyle(.borderedProminent)
+                    .controlSize(.small)
+                }
+                .padding(.horizontal, 14)
+                .padding(.vertical, 8)
+                .background(Color(.secondarySystemBackground))
+            }
 
             // Message Scroll View
             ScrollViewReader { proxy in
@@ -135,7 +178,8 @@ public struct AssistantChatView: View {
             HStack(spacing: 8) {
                 Button(action: {
                     if speechManager.state == .listening {
-                        speechManager.stopListeningAndProcess { query in
+                        let query = speechManager.stopListening()
+                        if !query.isEmpty {
                             inputText = query
                             submitQuery(query)
                         }

@@ -108,14 +108,109 @@ public actor AppLaunchRegistry {
             appStoreURL: URL(string: "https://apps.apple.com/app/youtube/id544007664"),
             description: "YouTube video player"
         ))
+        register(AppLaunchDescriptor(
+            appName: "Music",
+            urlScheme: "music:",
+            queryScheme: "music",
+            appStoreURL: URL(string: "https://apps.apple.com/app/apple-music/id1108187390"),
+            description: "Apple Music player and streaming"
+        ))
+        register(AppLaunchDescriptor(
+            appName: "Apple Music",
+            urlScheme: "music:",
+            queryScheme: "music",
+            appStoreURL: URL(string: "https://apps.apple.com/app/apple-music/id1108187390"),
+            description: "Apple Music player and streaming"
+        ))
+        register(AppLaunchDescriptor(
+            appName: "Photos",
+            urlScheme: "photos-redirect:",
+            queryScheme: "photos-redirect",
+            description: "Apple Photos library"
+        ))
+        register(AppLaunchDescriptor(
+            appName: "Camera",
+            urlScheme: "camera:",
+            queryScheme: "camera",
+            description: "Camera capture app"
+        ))
+        register(AppLaunchDescriptor(
+            appName: "Notes",
+            urlScheme: "mobilenotes:",
+            queryScheme: "mobilenotes",
+            description: "Apple Notes"
+        ))
+        register(AppLaunchDescriptor(
+            appName: "Calendar",
+            urlScheme: "calshow:",
+            queryScheme: "calshow",
+            description: "iOS Calendar"
+        ))
+        register(AppLaunchDescriptor(
+            appName: "Reminders",
+            urlScheme: "x-apple-reminderkit:",
+            queryScheme: "x-apple-reminderkit",
+            description: "Apple Reminders"
+        ))
+        register(AppLaunchDescriptor(
+            appName: "WhatsApp",
+            urlScheme: "whatsapp:",
+            queryScheme: "whatsapp",
+            appStoreURL: URL(string: "https://apps.apple.com/app/whatsapp-messenger/id310633997"),
+            description: "WhatsApp Messenger"
+        ))
+        register(AppLaunchDescriptor(
+            appName: "Telegram",
+            urlScheme: "tg:",
+            queryScheme: "tg",
+            appStoreURL: URL(string: "https://apps.apple.com/app/telegram-messenger/id686449807"),
+            description: "Telegram Messenger"
+        ))
+        register(AppLaunchDescriptor(
+            appName: "FaceTime",
+            urlScheme: "facetime:",
+            queryScheme: "facetime",
+            description: "Apple FaceTime video calls"
+        ))
+        register(AppLaunchDescriptor(
+            appName: "Files",
+            urlScheme: "shareddocuments:",
+            queryScheme: "shareddocuments",
+            description: "Apple Files document manager"
+        ))
+        register(AppLaunchDescriptor(
+            appName: "ChatGPT",
+            urlScheme: "chatgpt:",
+            queryScheme: "chatgpt",
+            appStoreURL: URL(string: "https://apps.apple.com/app/chatgpt/id6448311069"),
+            description: "OpenAI ChatGPT app"
+        ))
+        register(AppLaunchDescriptor(
+            appName: "Twitter",
+            urlScheme: "twitter:",
+            queryScheme: "twitter",
+            description: "X / Twitter"
+        ))
     }
 
     public func register(_ descriptor: AppLaunchDescriptor) {
-        registry[descriptor.appName.lowercased()] = descriptor
+        let key = descriptor.appName.lowercased()
+        registry[key] = descriptor
+        let noSpace = key.replacingOccurrences(of: " ", with: "")
+        if noSpace != key {
+            registry[noSpace] = descriptor
+        }
     }
 
     public func descriptor(for appName: String) -> AppLaunchDescriptor? {
-        registry[appName.lowercased()]
+        let key = appName.lowercased().trimmingCharacters(in: .whitespacesAndNewlines)
+        if let d = registry[key] { return d }
+        let stripped = key.replacingOccurrences(of: "apple ", with: "")
+        if let d = registry[stripped] { return d }
+        let noSpace = key.replacingOccurrences(of: " ", with: "")
+        if let d = registry[noSpace] { return d }
+        if key == "x" { return registry["twitter"] }
+        return nil
     }
 
     /// Preflights and launches an app via verified URL scheme.

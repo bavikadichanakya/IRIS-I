@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		A10000902C00000100000001 /* BrainDownloadCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000902C00000100000001 /* BrainDownloadCoordinator.swift */; };
 		A10000882C00000100000001 /* SpeechManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000882C00000100000001 /* SpeechManager.swift */; };
 		A10000892C00000100000001 /* VoiceAgentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000892C00000100000001 /* VoiceAgentView.swift */; };
 		A10000012C00000100000001 /* IRIS_IApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000012C00000100000001 /* IRIS_IApp.swift */; };
@@ -558,6 +559,9 @@
 				A10000462C00000100000001 /* AssistantChatView.swift in Sources */,
 				A10000472C00000100000001 /* GmailConnectionView.swift in Sources */,
 				A10000482C00000100000001 /* SettingsView.swift in Sources */,
+				A10000882C00000100000001 /* SpeechManager.swift in Sources */,
+				A10000892C00000100000001 /* VoiceAgentView.swift in Sources */,
+				A10000902C00000100000001 /* BrainDownloadCoordinator.swift in Sources */,
 				A10000012C00000100000001 /* IRIS_IApp.swift in Sources */,
 				A10000022C00000100000001 /* ContentView.swift in Sources */,
 				A10000032C00000100000001 /* ModelManifest.swift in Sources */,
