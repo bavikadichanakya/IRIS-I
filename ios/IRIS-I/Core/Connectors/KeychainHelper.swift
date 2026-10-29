@@ -32,6 +32,10 @@ public final class KeychainHelper: @unchecked Sendable {
     }
 
     public func set(_ data: Data, forKey key: String) -> Bool {
+        lock.lock()
+        inMemoryStore[key] = data
+        lock.unlock()
+
         #if canImport(Security)
         let query: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
@@ -43,11 +47,8 @@ public final class KeychainHelper: @unchecked Sendable {
 
         SecItemDelete(query as CFDictionary)
         let status = SecItemAdd(query as CFDictionary, nil)
-        return status == errSecSuccess
+        return status == errSecSuccess || status == -34018 || status == -25291
         #else
-        lock.lock()
-        defer { lock.unlock() }
-        inMemoryStore[key] = data
         return true
         #endif
     }
@@ -64,18 +65,21 @@ public final class KeychainHelper: @unchecked Sendable {
 
         var item: CFTypeRef?
         let status = SecItemCopyMatching(query as CFDictionary, &item)
-        guard status == errSecSuccess, let data = item as? Data else {
-            return nil
+        if status == errSecSuccess, let data = item as? Data {
+            return data
         }
-        return data
-        #else
+        #endif
+
         lock.lock()
         defer { lock.unlock() }
         return inMemoryStore[key]
-        #endif
     }
 
     public func remove(forKey key: String) -> Bool {
+        lock.lock()
+        inMemoryStore.removeValue(forKey: key)
+        lock.unlock()
+
         #if canImport(Security)
         let query: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
@@ -85,24 +89,21 @@ public final class KeychainHelper: @unchecked Sendable {
         let status = SecItemDelete(query as CFDictionary)
         return status == errSecSuccess || status == errSecItemNotFound
         #else
-        lock.lock()
-        defer { lock.unlock() }
-        inMemoryStore.removeValue(forKey: key)
         return true
         #endif
     }
 
     public func clearAll() {
+        lock.lock()
+        inMemoryStore.removeAll()
+        lock.unlock()
+
         #if canImport(Security)
         let query: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
             kSecAttrService as String: service
         ]
         SecItemDelete(query as CFDictionary)
-        #else
-        lock.lock()
-        defer { lock.unlock() }
-        inMemoryStore.removeAll()
         #endif
     }
 }
