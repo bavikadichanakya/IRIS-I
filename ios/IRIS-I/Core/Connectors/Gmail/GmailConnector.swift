@@ -44,41 +44,41 @@ public struct OAuthConfiguration: Sendable {
         // 1. User keychain override (configured in-app via Settings screen)
         if let customClientId = keychain.get(forKey: "custom_gmail_client_id"), !customClientId.isEmpty {
             let customRedirect = keychain.get(forKey: "custom_gmail_redirect_uri")
-            let redirect = (customRedirect != nil && !customRedirect!.isEmpty)
-                ? customRedirect!
-                : {
-                    let cleaned = customClientId.replacingOccurrences(of: ".apps.googleusercontent.com", with: "")
-                    let reversed = cleaned.hasPrefix("com.googleusercontent.apps.") ? cleaned : "com.googleusercontent.apps.\(cleaned)"
-                    return "\(reversed):/oauth2redirect/google"
-                }()
+            let redirect: String
+            if let customRedirect = customRedirect, !customRedirect.isEmpty, !customRedirect.hasSuffix("/google") {
+                redirect = customRedirect
+            } else {
+                let prefix = customClientId
+                    .replacingOccurrences(of: "com.googleusercontent.apps.", with: "")
+                    .replacingOccurrences(of: ".apps.googleusercontent.com", with: "")
+                redirect = "com.googleusercontent.apps.\(prefix):/oauth2redirect"
+            }
             return OAuthConfiguration(clientId: customClientId, redirectUri: redirect, userEmailHint: defaultEmail)
         }
 
         // 2. Process environment (e.g. CI runner or launch arguments)
         if let envClientId = ProcessInfo.processInfo.environment["GMAIL_CLIENT_ID"], !envClientId.isEmpty {
-            let envRedirect = ProcessInfo.processInfo.environment["GMAIL_REDIRECT_URI"] ?? {
-                let cleaned = envClientId.replacingOccurrences(of: ".apps.googleusercontent.com", with: "")
-                let reversed = cleaned.hasPrefix("com.googleusercontent.apps.") ? cleaned : "com.googleusercontent.apps.\(cleaned)"
-                return "\(reversed):/oauth2redirect/google"
-            }()
+            let prefix = envClientId
+                .replacingOccurrences(of: "com.googleusercontent.apps.", with: "")
+                .replacingOccurrences(of: ".apps.googleusercontent.com", with: "")
+            let envRedirect = ProcessInfo.processInfo.environment["GMAIL_REDIRECT_URI"] ?? "com.googleusercontent.apps.\(prefix):/oauth2redirect"
             return OAuthConfiguration(clientId: envClientId, redirectUri: envRedirect, userEmailHint: defaultEmail)
         }
 
         // 3. Info.plist (Xcode build setting)
         if let plistClientId = Bundle.main.object(forInfoDictionaryKey: "GmailClientID") as? String,
            !plistClientId.isEmpty, !plistClientId.contains("$(") {
-            let plistRedirect = (Bundle.main.object(forInfoDictionaryKey: "GmailRedirectURI") as? String) ?? {
-                let cleaned = plistClientId.replacingOccurrences(of: ".apps.googleusercontent.com", with: "")
-                let reversed = cleaned.hasPrefix("com.googleusercontent.apps.") ? cleaned : "com.googleusercontent.apps.\(cleaned)"
-                return "\(reversed):/oauth2redirect/google"
-            }()
+            let prefix = plistClientId
+                .replacingOccurrences(of: "com.googleusercontent.apps.", with: "")
+                .replacingOccurrences(of: ".apps.googleusercontent.com", with: "")
+            let plistRedirect = (Bundle.main.object(forInfoDictionaryKey: "GmailRedirectURI") as? String) ?? "com.googleusercontent.apps.\(prefix):/oauth2redirect"
             return OAuthConfiguration(clientId: plistClientId, redirectUri: plistRedirect, userEmailHint: defaultEmail)
         }
 
         // Unconfigured state: requires user or environment configuration
         return OAuthConfiguration(
             clientId: "",
-            redirectUri: "com.googleusercontent.apps.unconfigured:/oauth2redirect/google",
+            redirectUri: "com.googleusercontent.apps.unconfigured:/oauth2redirect",
             userEmailHint: defaultEmail
         )
     }
@@ -142,12 +142,15 @@ public actor GmailConnector: AccountConnector, MailProviderProtocol {
 
     /// Allows user or test to provide client ID and custom redirect URI dynamically.
     public func saveClientConfiguration(clientId: String, redirectUri: String? = nil) {
-        keychain.set(clientId, forKey: "custom_gmail_client_id")
+        let cleanedClientId = clientId.trimmingCharacters(in: .whitespacesAndNewlines)
+        keychain.set(cleanedClientId, forKey: "custom_gmail_client_id")
         if let redirect = redirectUri, !redirect.isEmpty {
-            keychain.set(redirect, forKey: "custom_gmail_redirect_uri")
+            keychain.set(redirect.trimmingCharacters(in: .whitespacesAndNewlines), forKey: "custom_gmail_redirect_uri")
         } else {
-            let reversed = clientId.replacingOccurrences(of: ".apps.googleusercontent.com", with: "")
-            keychain.set("com.googleusercontent.apps.\(reversed):/oauth2redirect/google", forKey: "custom_gmail_redirect_uri")
+            let prefix = cleanedClientId
+                .replacingOccurrences(of: "com.googleusercontent.apps.", with: "")
+                .replacingOccurrences(of: ".apps.googleusercontent.com", with: "")
+            keychain.set("com.googleusercontent.apps.\(prefix):/oauth2redirect", forKey: "custom_gmail_redirect_uri")
         }
     }
 

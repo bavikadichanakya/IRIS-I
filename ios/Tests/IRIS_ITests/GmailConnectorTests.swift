@@ -52,7 +52,7 @@ final class GmailConnectorTests: XCTestCase {
     var mockSession: URLSession!
     let mockOAuthConfig = OAuthConfiguration(
         clientId: "test-client-123.apps.googleusercontent.com",
-        redirectUri: "com.googleusercontent.apps.test-client-123:/oauth2redirect/google"
+        redirectUri: "com.googleusercontent.apps.test-client-123:/oauth2redirect"
     )
 
     override func setUp() {
@@ -149,7 +149,7 @@ final class GmailConnectorTests: XCTestCase {
     func testAuthorizationRedirectRejectsStateMismatch() async throws {
         _ = try await connector.startAuthorizationFlow()
 
-        let tamperedRedirect = URL(string: "com.googleusercontent.apps.test-client-123:/oauth2redirect/google?code=auth_code_123&state=tampered_state_456")!
+        let tamperedRedirect = URL(string: "com.googleusercontent.apps.test-client-123:/oauth2redirect?code=auth_code_123&state=tampered_state_456")!
 
         do {
             try await connector.handleAuthorizationRedirect(url: tamperedRedirect)
@@ -175,7 +175,7 @@ final class GmailConnectorTests: XCTestCase {
     func testOAuthErrorInRedirectThrows() async throws {
         _ = try await connector.startAuthorizationFlow()
 
-        let errorRedirect = URL(string: "com.googleusercontent.apps.test-client-123:/oauth2redirect/google?error=access_denied&state=none")!
+        let errorRedirect = URL(string: "com.googleusercontent.apps.test-client-123:/oauth2redirect?error=access_denied&state=none")!
 
         do {
             try await connector.handleAuthorizationRedirect(url: errorRedirect)
