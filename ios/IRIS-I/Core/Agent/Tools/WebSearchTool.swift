@@ -20,6 +20,18 @@ public struct SearchResultItem: Codable, Sendable {
         self.snippet = snippet
         self.date = date
     }
+
+    public var asDictionary: [String: Any] {
+        var dict: [String: Any] = [
+            "title": title,
+            "url": url,
+            "snippet": snippet
+        ]
+        if let date = date {
+            dict["date"] = date
+        }
+        return dict
+    }
 }
 
 public struct WebSearchTool: IRISAgentTool {

@@ -73,3 +73,26 @@ jobs:
             -destination "platform=iOS Simulator,name=iPhone 15,OS=latest" \
             CODE_SIGNING_ALLOWED=NO \
             CODE_SIGNING_REQUIRED=NO
+
+      - name: Build IRIS-I Application (iOS Device)
+        run: |
+          cd ios
+          xcodebuild clean build \
+            -project IRIS-I.xcodeproj \
+            -scheme IRIS-I \
+            -destination "generic/platform=iOS" \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CONFIGURATION_BUILD_DIR=build/Device
+
+      - name: Upload IRIS-I iOS Device App
+        uses: actions/upload-artifact@v4
+        with:
+          name: IRIS-I-Device-App
+          path: ios/build/Device/IRIS-I.app
+
+      - name: Upload llama.xcframework
+        uses: actions/upload-artifact@v4
+        with:
+          name: llama.xcframework
+          path: ios/Frameworks/llama.xcframework
