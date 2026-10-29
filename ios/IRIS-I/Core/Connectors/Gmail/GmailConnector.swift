@@ -31,6 +31,9 @@ public struct OAuthConfiguration: Sendable {
             return scheme
         }
         let cleaned = clientId.replacingOccurrences(of: ".apps.googleusercontent.com", with: "")
+        if cleaned.hasPrefix("com.googleusercontent.apps.") {
+            return cleaned
+        }
         return "com.googleusercontent.apps.\(cleaned)"
     }
 
@@ -40,20 +43,32 @@ public struct OAuthConfiguration: Sendable {
             let customRedirect = keychain.get(forKey: "custom_gmail_redirect_uri")
             let redirect = (customRedirect != nil && !customRedirect!.isEmpty)
                 ? customRedirect!
-                : "com.googleusercontent.apps." + customClientId.replacingOccurrences(of: ".apps.googleusercontent.com", with: "") + ":/oauth2redirect/google"
+                : {
+                    let cleaned = customClientId.replacingOccurrences(of: ".apps.googleusercontent.com", with: "")
+                    let reversed = cleaned.hasPrefix("com.googleusercontent.apps.") ? cleaned : "com.googleusercontent.apps.\(cleaned)"
+                    return "\(reversed):/oauth2redirect/google"
+                }()
             return OAuthConfiguration(clientId: customClientId, redirectUri: redirect)
         }
 
         // 2. Process environment (e.g. CI runner or launch arguments)
         if let envClientId = ProcessInfo.processInfo.environment["GMAIL_CLIENT_ID"], !envClientId.isEmpty {
-            let envRedirect = ProcessInfo.processInfo.environment["GMAIL_REDIRECT_URI"] ?? ("com.googleusercontent.apps." + envClientId.replacingOccurrences(of: ".apps.googleusercontent.com", with: "") + ":/oauth2redirect/google")
+            let envRedirect = ProcessInfo.processInfo.environment["GMAIL_REDIRECT_URI"] ?? {
+                let cleaned = envClientId.replacingOccurrences(of: ".apps.googleusercontent.com", with: "")
+                let reversed = cleaned.hasPrefix("com.googleusercontent.apps.") ? cleaned : "com.googleusercontent.apps.\(cleaned)"
+                return "\(reversed):/oauth2redirect/google"
+            }()
             return OAuthConfiguration(clientId: envClientId, redirectUri: envRedirect)
         }
 
         // 3. Info.plist (Xcode build setting)
         if let plistClientId = Bundle.main.object(forInfoDictionaryKey: "GmailClientID") as? String,
            !plistClientId.isEmpty, !plistClientId.contains("$(") {
-            let plistRedirect = (Bundle.main.object(forInfoDictionaryKey: "GmailRedirectURI") as? String) ?? ("com.googleusercontent.apps." + plistClientId.replacingOccurrences(of: ".apps.googleusercontent.com", with: "") + ":/oauth2redirect/google")
+            let plistRedirect = (Bundle.main.object(forInfoDictionaryKey: "GmailRedirectURI") as? String) ?? {
+                let cleaned = plistClientId.replacingOccurrences(of: ".apps.googleusercontent.com", with: "")
+                let reversed = cleaned.hasPrefix("com.googleusercontent.apps.") ? cleaned : "com.googleusercontent.apps.\(cleaned)"
+                return "\(reversed):/oauth2redirect/google"
+            }()
             return OAuthConfiguration(clientId: plistClientId, redirectUri: plistRedirect)
         }
 

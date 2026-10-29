@@ -75,11 +75,12 @@
             <key>CFBundleTypeRole</key>
             <string>Editor</string>
             <key>CFBundleURLName</key>
-            <string>com.googleusercontent.apps</string>
+            <string>Google OAuth Callback</string>
             <key>CFBundleURLSchemes</key>
             <array>
-                <string>com.googleusercontent.apps</string>
+                <string>$(GMAIL_REVERSED_CLIENT_ID)</string>
                 <string>iris-assistant</string>
+                <string>com.googleusercontent.apps</string>
             </array>
         </dict>
     </array>
@@ -89,5 +90,7 @@
     <string>$(GMAIL_CLIENT_ID)</string>
     <key>GmailRedirectURI</key>
     <string>$(GMAIL_REDIRECT_URI)</string>
+    <key>GmailReversedClientID</key>
+    <string>$(GMAIL_REVERSED_CLIENT_ID)</string>
 </dict>
 </plist>

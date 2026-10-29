@@ -1,4 +1,4 @@
-name: macOS Swift Package Build & XCTest Verification
+name: macOS iOS Simulator Build & XCTest Verification
 
 on:
   push:
@@ -41,17 +41,7 @@ jobs:
           ls -la ios/Frameworks/llama.xcframework
           plutil -lint ios/Frameworks/llama.xcframework/Info.plist
 
-      - name: Resolve Swift Package Dependencies
-        run: |
-          cd ios
-          swift package resolve
-
-      - name: Build Swift Package for iOS Simulator
-        run: |
-          cd ios
-          swift build -Xswiftc -sdk -Xswiftc $(xcrun --sdk iphonesimulator --show-sdk-path) -Xswiftc -target -Xswiftc arm64-apple-ios17.0-simulator -v
-
-      - name: Build Xcode Project (Simulator slice)
+      - name: Build IRIS-I Application (iOS Simulator)
         run: |
           cd ios
           xcodebuild clean build \
@@ -61,7 +51,7 @@ jobs:
             CODE_SIGNING_ALLOWED=NO \
             CODE_SIGNING_REQUIRED=NO
 
-      - name: Run Xcode Test Suite (iOS Simulator)
+      - name: Run Native XCTest Suite (iOS Simulator)
         run: |
           cd ios
           xcodebuild test \

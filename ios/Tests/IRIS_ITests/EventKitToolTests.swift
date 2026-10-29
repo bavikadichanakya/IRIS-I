@@ -6,7 +6,11 @@
 //
 
 import XCTest
+#if canImport(IRIS_ICore)
 @testable import IRIS_ICore
+#elseif canImport(IRIS_I)
+@testable import IRIS_I
+#endif
 
 final class EventKitToolTests: XCTestCase {
 

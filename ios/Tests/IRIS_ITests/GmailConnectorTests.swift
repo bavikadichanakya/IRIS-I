@@ -8,7 +8,11 @@
 //
 
 import XCTest
+#if canImport(IRIS_ICore)
 @testable import IRIS_ICore
+#elseif canImport(IRIS_I)
+@testable import IRIS_I
+#endif
 
 // Mock URLProtocol to intercept URLSession requests during offline tests
 final class MockURLProtocol: URLProtocol {
@@ -291,5 +295,146 @@ final class GmailConnectorTests: XCTestCase {
 
         let messages = try await connector.searchMessages(query: "from:nonexistent@domain.com")
         XCTAssertTrue(messages.isEmpty)
+    }
+
+    func testAuthorizedGmailFlowEndToEnd() async throws {
+        // 1. Connect account with valid credentials
+        await connector.saveCredentials(
+            accessToken: "valid_e2e_access_token",
+            refreshToken: "valid_e2e_refresh_token",
+            userEmail: "authorized_user@gmail.com",
+            expiresInSeconds: 3600
+        )
+        let state = await connector.state
+        XCTAssertTrue(state.isConnected)
+        XCTAssertEqual(state.accountEmail, "authorized_user@gmail.com")
+
+        // 2. Search for known test message ("from:OpenAI")
+        let sampleBodyText = "OpenAI Developer Platform: New model updates available."
+        let base64Body = Data(sampleBodyText.utf8).base64EncodedString()
+            .replacingOccurrences(of: "+", with: "-")
+            .replacingOccurrences(of: "/", with: "_")
+
+        let searchResponseJson = """
+        {
+            "messages": [
+                {"id": "msg_openai_999", "threadId": "thread_999"}
+            ],
+            "resultSizeEstimate": 1
+        }
+        """
+
+        let getMessageResponseJson = """
+        {
+            "id": "msg_openai_999",
+            "snippet": "OpenAI Developer Platform updates...",
+            "internalDate": "1730210000000",
+            "payload": {
+                "headers": [
+                    {"name": "From", "value": "OpenAI <support@openai.com>"},
+                    {"name": "Subject", "value": "OpenAI Developer Updates"},
+                    {"name": "To", "value": "authorized_user@gmail.com"}
+                ],
+                "parts": [
+                    {
+                        "mimeType": "text/plain",
+                        "body": {
+                            "data": "\(base64Body)"
+                        }
+                    }
+                ]
+            }
+        }
+        """
+
+        let createDraftResponseJson = """
+        {
+            "id": "draft_openai_abc",
+            "message": {
+                "id": "draft_msg_123"
+            }
+        }
+        """
+
+        let sendResponseJson = """
+        {
+            "id": "sent_msg_openai_789"
+        }
+        """
+
+        MockURLProtocol.requestHandler = { request in
+            let path = request.url?.path ?? ""
+            let method = request.httpMethod ?? "GET"
+
+            if path.contains("/messages/send") && method == "POST" {
+                let response = HTTPURLResponse(url: request.url!, statusCode: 200, httpVersion: nil, headerFields: ["Content-Type": "application/json"])!
+                return (response, sendResponseJson.data(using: .utf8)!)
+            } else if path.contains("/drafts") && method == "POST" {
+                let response = HTTPURLResponse(url: request.url!, statusCode: 200, httpVersion: nil, headerFields: ["Content-Type": "application/json"])!
+                return (response, createDraftResponseJson.data(using: .utf8)!)
+            } else if path.contains("/messages/msg_openai_999") {
+                let response = HTTPURLResponse(url: request.url!, statusCode: 200, httpVersion: nil, headerFields: ["Content-Type": "application/json"])!
+                return (response, getMessageResponseJson.data(using: .utf8)!)
+            } else if path.contains("/messages") {
+                let response = HTTPURLResponse(url: request.url!, statusCode: 200, httpVersion: nil, headerFields: ["Content-Type": "application/json"])!
+                return (response, searchResponseJson.data(using: .utf8)!)
+            }
+
+            let notFound = HTTPURLResponse(url: request.url!, statusCode: 404, httpVersion: nil, headerFields: nil)!
+            return (notFound, Data())
+        }
+
+        // Search messages
+        let found = try await connector.searchMessages(query: "from:OpenAI")
+        XCTAssertEqual(found.count, 1)
+        XCTAssertEqual(found.first?.id, "msg_openai_999")
+
+        // Read content
+        let message = try await connector.getMessage(id: "msg_openai_999")
+        XCTAssertEqual(message.subject, "OpenAI Developer Updates")
+        XCTAssertEqual(message.sender, "OpenAI <support@openai.com>")
+        XCTAssertEqual(message.body, sampleBodyText)
+        XCTAssertEqual(message.date.timeIntervalSince1970, 1730210000.0)
+
+        // Create draft
+        let draftId = try await connector.createDraft(
+            recipient: "support@openai.com",
+            subject: "Re: OpenAI Developer Updates",
+            body: "Acknowledging receipt of the update."
+        )
+        XCTAssertEqual(draftId, "draft_openai_abc")
+
+        // 3. Verify that sending requires explicit confirmation ticket
+        let mailTool = MailTool(provider: connector)
+        XCTAssertEqual(mailTool.operationType(for: ["action": "send_email"]), .send)
+
+        // Issue single-use confirmation ticket
+        let ticketParams: [String: Any] = [
+            "action": "send_email",
+            "recipient": "support@openai.com",
+            "subject": "Re: OpenAI Developer Updates"
+        ]
+        let ticket = await ConfirmationManager.shared.issueTicket(
+            for: "MailTool",
+            operationType: .send,
+            parameters: ticketParams
+        )
+        XCTAssertFalse(ticket.isConsumed)
+
+        // Validate that executing with approval succeeds and consumes ticket
+        let consumed = try await ConfirmationManager.shared.validateAndConsume(
+            ticketId: ticket.ticketId,
+            toolName: "MailTool",
+            parameters: ticketParams
+        )
+        XCTAssertTrue(consumed.isConsumed)
+
+        // Execute send with authorized provider
+        let sentMsgId = try await connector.sendEmail(
+            recipient: "support@openai.com",
+            subject: "Re: OpenAI Developer Updates",
+            body: "Approved outgoing response"
+        )
+        XCTAssertEqual(sentMsgId, "sent_msg_openai_789")
     }
 }

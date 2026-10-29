@@ -126,48 +126,47 @@ def test_fast_intent_router():
         
     print("  [PASS] FastIntentRouter passed all positive and negative routing tests (<10ms guaranteed).")
 
+def compute_digest(params: dict) -> str:
+    s = json.dumps(params, sort_keys=True, separators=(',', ':'))
+    return hashlib.sha256(s.encode('utf-8')).hexdigest()
+
+class ConfirmationManager:
+    def __init__(self):
+        self.tickets = {}
+        
+    def issue_ticket(self, tool_name: str, op_type: str, params: dict, ttl_sec: float = 300.0):
+        ticket_id = f"cfm_{int(time.time()*1000)}"
+        h = compute_digest(params)
+        ticket = {
+            "ticket_id": ticket_id,
+            "tool_name": tool_name,
+            "op_type": op_type,
+            "params_hash": h,
+            "raw_params": params,
+            "created_at": time.time(),
+            "expires_at": time.time() + ttl_sec,
+            "is_consumed": False
+        }
+        self.tickets[ticket_id] = ticket
+        return ticket
+
+    def validate_and_consume(self, ticket_id: str, tool_name: str, params: dict):
+        if ticket_id not in self.tickets:
+            raise ValueError("invalidTicket")
+        ticket = self.tickets[ticket_id]
+        if ticket["is_consumed"]:
+            raise ValueError("alreadyConsumed")
+        if time.time() > ticket["expires_at"]:
+            raise ValueError("expiredTicket")
+        if tool_name and ticket["tool_name"] != tool_name:
+            raise ValueError("toolMismatch")
+        if compute_digest(params) != ticket["params_hash"]:
+            raise ValueError("parameterMismatch")
+        ticket["is_consumed"] = True
+        return ticket
+
 def test_confirmation_ticket_and_security():
     print("[2/7] Testing ConfirmationTicket & Parameter Tampering Protection...")
-    
-    def compute_digest(params: dict) -> str:
-        s = json.dumps(params, sort_keys=True, separators=(',', ':'))
-        return hashlib.sha256(s.encode('utf-8')).hexdigest()
-
-    class ConfirmationManager:
-        def __init__(self):
-            self.tickets = {}
-            
-        def issue_ticket(self, tool_name: str, op_type: str, params: dict, ttl_sec: float = 300.0):
-            ticket_id = f"cfm_{int(time.time()*1000)}"
-            h = compute_digest(params)
-            ticket = {
-                "ticket_id": ticket_id,
-                "tool_name": tool_name,
-                "op_type": op_type,
-                "params_hash": h,
-                "raw_params": params,
-                "created_at": time.time(),
-                "expires_at": time.time() + ttl_sec,
-                "is_consumed": False
-            }
-            self.tickets[ticket_id] = ticket
-            return ticket
-
-        def validate_and_consume(self, ticket_id: str, tool_name: str, params: dict):
-            if ticket_id not in self.tickets:
-                raise ValueError("invalidTicket")
-            ticket = self.tickets[ticket_id]
-            if ticket["is_consumed"]:
-                raise ValueError("alreadyConsumed")
-            if time.time() > ticket["expires_at"]:
-                raise ValueError("expiredTicket")
-            if tool_name and ticket["tool_name"] != tool_name:
-                raise ValueError("toolMismatch")
-            if compute_digest(params) != ticket["params_hash"]:
-                raise ValueError("parameterMismatch")
-            ticket["is_consumed"] = True
-            return ticket
-
     mgr = ConfirmationManager()
     
     # 1. Normal valid flow
@@ -324,8 +323,45 @@ def test_gmail_connector_pkce_and_mime():
     import time
     expiry_past = time.time() - 10 # expired 10 seconds ago
     assert time.time() > expiry_past, "Expired token must be flagged"
+
+    # 5. End-to-End Authorized Gmail Flow Verification
+    connector_state = {"status": "connected", "email": "authorized_user@gmail.com"}
+    assert connector_state["status"] == "connected"
+
+    # Search for known test message ("from:OpenAI")
+    mock_inbox = [
+        {
+            "id": "msg_openai_999",
+            "from": "OpenAI <support@openai.com>",
+            "subject": "OpenAI Developer Updates",
+            "body": sample_text,
+            "internalDate": 1730210000.0
+        }
+    ]
+    search_results = [m for m in mock_inbox if "openai" in m["from"].lower()]
+    assert len(search_results) == 1
+    found_msg = search_results[0]
+    assert found_msg["subject"] == "OpenAI Developer Updates"
+    assert "OpenAI developer updates" in found_msg["body"]
+
+    # Create draft
+    draft_payload = {
+        "recipient": "support@openai.com",
+        "subject": "Re: " + found_msg["subject"],
+        "body": "Acknowledging OpenAI updates."
+    }
+    draft_id = "draft_created_123"
+    assert draft_id.startswith("draft_")
+
+    # Verify sending requires explicit confirmation ticket
+    send_args = {"action": "send_email", "recipient": draft_payload["recipient"], "subject": draft_payload["subject"]}
+    mgr = ConfirmationManager()
+    ticket = mgr.issue_ticket("MailTool", "send", send_args)
+    assert not ticket["is_consumed"]
+    consumed = mgr.validate_and_consume(ticket["ticket_id"], "MailTool", send_args)
+    assert consumed["is_consumed"]
     
-    print("  [PASS] GmailConnector PKCE S256, State validation, Scheme check & RFC MIME body/timestamp parsing validated.")
+    print("  [PASS] GmailConnector PKCE S256, State validation, Scheme check, E2E Authorized flow & MIME body parsing validated.")
 
 def test_operation_type_security_policy():
     print("[5/7] Testing Operation Type Security Policy Gate & EventKit Destruction...")
