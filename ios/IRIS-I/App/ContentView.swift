@@ -12,9 +12,14 @@ public struct ContentView: View {
 
     public var body: some View {
         TabView {
+            VoiceAgentView()
+                .tabItem {
+                    Label("Voice", systemImage: "waveform.circle.fill")
+                }
+
             AssistantChatView()
                 .tabItem {
-                    Label("Assistant", systemImage: "sparkles")
+                    Label("Chat", systemImage: "bubble.left.and.bubble.right.fill")
                 }
 
             DiagnosticConsoleView()

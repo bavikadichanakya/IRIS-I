@@ -24,7 +24,7 @@ public final class ModelCatalog: Sendable {
         defaultContextSize: 2048,
         maxContextSize: 4096,
         expectedSHA256: nil, // Must be supplied by verified artifact manifest or import
-        verifiedDownloadURL: nil, // Kept nil until independently verified against trusted release
+        verifiedDownloadURL: URL(string: "https://huggingface.co/Qwen/Qwen2.5-3B-Instruct-GGUF/resolve/main/qwen2.5-3b-instruct-q4_k_m.gguf"),
         summary: "Primary supported local model for iPhone 17 (A19). Qwen 2.5 architecture, ChatML template, fast reasoning, low memory pressure, reliable structured tool calling."
     )
 

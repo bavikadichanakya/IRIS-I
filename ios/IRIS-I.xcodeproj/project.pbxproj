@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		A10000882C00000100000001 /* SpeechManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000882C00000100000001 /* SpeechManager.swift */; };
+		A10000892C00000100000001 /* VoiceAgentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000892C00000100000001 /* VoiceAgentView.swift */; };
 		A10000012C00000100000001 /* IRIS_IApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000012C00000100000001 /* IRIS_IApp.swift */; };
 		A10000022C00000100000001 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000022C00000100000001 /* ContentView.swift */; };
 		A10000032C00000100000001 /* ModelManifest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000032C00000100000001 /* ModelManifest.swift */; };
@@ -82,6 +84,8 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		B10000882C00000100000001 /* SpeechManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeechManager.swift; sourceTree = "<group>"; };
+		B10000892C00000100000001 /* VoiceAgentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceAgentView.swift; sourceTree = "<group>"; };
 		R10000012C00000100000001 /* IRIS-I.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "IRIS-I.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		R20000012C00000100000001 /* IRIS-ITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "IRIS-ITests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
 		B10000012C00000100000001 /* IRIS_IApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IRIS_IApp.swift; sourceTree = "<group>"; };
@@ -211,6 +215,7 @@
 		G10000042C00000100000001 /* Core */ = {
 			isa = PBXGroup;
 			children = (
+				G10000882C00000100000001 /* Audio */,
 				G10000302C00000100000001 /* Agent */,
 				G10000382C00000100000001 /* Connectors */,
 				G10000082C00000100000001 /* ModelManager */,
@@ -439,6 +444,14 @@
 				G10000392C00000100000001 /* Gmail */,
 			);
 			path = Connectors;
+			sourceTree = "<group>";
+		};
+		G10000882C00000100000001 /* Audio */ = {
+			isa = PBXGroup;
+			children = (
+				B10000882C00000100000001 /* SpeechManager.swift */,
+			);
+			path = Audio;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */

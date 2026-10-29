@@ -39,6 +39,8 @@ public struct AssistantChatView: View {
     @State private var pendingTicket: ConfirmationTicket? = nil
     @State private var isShowingConfirmation: Bool = false
 
+    @StateObject private var speechManager = SpeechManager.shared
+
     private let orchestrator = ReActOrchestrator.shared
 
     private let quickPrompts = [
@@ -131,7 +133,25 @@ public struct AssistantChatView: View {
 
             // Input Bar
             HStack(spacing: 8) {
-                TextField("Ask IRIS anything...", text: $inputText)
+                Button(action: {
+                    if speechManager.state == .listening {
+                        speechManager.stopListeningAndProcess { query in
+                            inputText = query
+                            submitQuery(query)
+                        }
+                    } else {
+                        Task {
+                            await speechManager.startListening()
+                        }
+                    }
+                }) {
+                    Image(systemName: speechManager.state == .listening ? "mic.fill" : "mic")
+                        .font(.system(size: 20))
+                        .foregroundColor(speechManager.state == .listening ? .red : .blue)
+                        .padding(6)
+                }
+
+                TextField(speechManager.state == .listening ? (speechManager.recognizedText.isEmpty ? "Listening..." : speechManager.recognizedText) : "Ask IRIS anything...", text: $inputText)
                     .textFieldStyle(.plain)
                     .padding(.horizontal, 14)
                     .padding(.vertical, 8)
