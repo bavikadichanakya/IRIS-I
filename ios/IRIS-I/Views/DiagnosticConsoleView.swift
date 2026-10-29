@@ -363,7 +363,9 @@ public struct DiagnosticConsoleView: View {
                     from: selectedURL,
                     manifest: manifest,
                     progressHandler: { p in
-                        self.importProgress = p
+                        Task { @MainActor in
+                            self.importProgress = p
+                        }
                     }
                 )
                 self.importProgress = 1.0
