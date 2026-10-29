@@ -35,5 +35,37 @@
     <array>
         <string>UIInterfaceOrientationPortrait</string>
     </array>
+
+    <!-- EventKit Modern iOS 17+ Usage Descriptions -->
+    <key>NSCalendarsFullAccessUsageDescription</key>
+    <string>IRIS requires full access to your calendar to schedule and query appointments.</string>
+    <key>NSCalendarsWriteOnlyAccessUsageDescription</key>
+    <string>IRIS requires write access to add scheduled events to your calendar.</string>
+    <key>NSRemindersFullAccessUsageDescription</key>
+    <string>IRIS requires full access to Reminders to create and organize your tasks.</string>
+
+    <!-- EventKit Legacy iOS 16 Usage Descriptions -->
+    <key>NSCalendarsUsageDescription</key>
+    <string>IRIS requires access to your calendar to schedule events.</string>
+    <key>NSRemindersUsageDescription</key>
+    <string>IRIS requires access to your reminders to organize tasks.</string>
+
+    <!-- Microphone & Speech Recognition for Voice & Wake-word -->
+    <key>NSMicrophoneUsageDescription</key>
+    <string>IRIS requires microphone access for foreground voice commands and wake-word detection.</string>
+    <key>NSSpeechRecognitionUsageDescription</key>
+    <string>IRIS uses on-device speech recognition to transcribe spoken user instructions.</string>
+
+    <!-- Verified Application Query Schemes for Deep Links -->
+    <key>LSApplicationQueriesSchemes</key>
+    <array>
+        <string>maps</string>
+        <string>tel</string>
+        <string>sms</string>
+        <string>mailto</string>
+        <string>shortcuts</string>
+        <string>spotify</string>
+        <string>youtube</string>
+    </array>
 </dict>
 </plist>
