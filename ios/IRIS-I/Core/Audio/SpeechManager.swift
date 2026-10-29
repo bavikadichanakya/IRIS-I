@@ -31,6 +31,11 @@ public final class SpeechManager: NSObject, ObservableObject, @unchecked Sendabl
     @Published public var audioLevel: Float = 0.0
     @Published public var errorMessage: String? = nil
     @Published public var wakeWordDetected: Bool = false
+    @Published public var isBackgroundWakeWordEnabled: Bool {
+        didSet {
+            UserDefaults.standard.set(isBackgroundWakeWordEnabled, forKey: "iris_background_wake_word_enabled")
+        }
+    }
 
     private let synthesizer = AVSpeechSynthesizer()
     private var audioEngine = AVAudioEngine()
@@ -44,8 +49,28 @@ public final class SpeechManager: NSObject, ObservableObject, @unchecked Sendabl
     private let silenceThresholdNanoseconds: UInt64 = 1_600_000_000 // 1.6 seconds of silence auto-submits
 
     public override init() {
+        self.isBackgroundWakeWordEnabled = UserDefaults.standard.bool(forKey: "iris_background_wake_word_enabled")
         super.init()
         synthesizer.delegate = self
+        setupLifecycleObservers()
+    }
+
+    private func setupLifecycleObservers() {
+        NotificationCenter.default.addObserver(
+            forName: AVAudioSession.interruptionNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] notification in
+            guard let self = self,
+                  let userInfo = notification.userInfo,
+                  let typeValue = userInfo[AVAudioSessionInterruptionTypeKey] as? UInt,
+                  let type = AVAudioSession.InterruptionType(rawValue: typeValue) else { return }
+
+            if type == .began {
+                self.stopListeningInternal()
+                self.stopSpeaking()
+            }
+        }
     }
 
     // MARK: - Permissions

@@ -65,10 +65,17 @@ public struct AppOpenerTool: IRISAgentTool {
             )
         } catch let err as AppLaunchError {
             let duration = (CFAbsoluteTimeGetCurrent() - startTime) * 1000.0
+            let outcome: ToolExecutionOutcome
+            switch err {
+            case .unregisteredScheme, .unsupportedInAppAction:
+                outcome = .deniedPolicy
+            case .appNotInstalled, .systemLaunchFailed:
+                outcome = .failed
+            }
             return AgentExecutionResult.failure(
                 tool: name,
                 error: err.localizedDescription,
-                outcome: .deniedPolicy,
+                outcome: outcome,
                 durationMs: duration
             )
         } catch {

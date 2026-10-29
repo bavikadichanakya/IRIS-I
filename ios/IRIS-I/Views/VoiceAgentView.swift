@@ -312,21 +312,10 @@ public struct VoiceAgentView: View {
                     }) {
                         Text("Download")
                             .font(.caption.bold())
-                            .padding(.horizontal, 12)
-                            .padding(.vertical, 6)
+                            .padding(.horizontal, 14)
+                            .padding(.vertical, 7)
                             .background(Color.blue)
                             .foregroundColor(.white)
-                            .cornerRadius(8)
-                    }
-
-                    Button(action: {
-                        brainCoordinator.activateInstantMockBrain()
-                    }) {
-                        Image(systemName: "bolt.fill")
-                            .font(.caption)
-                            .padding(6)
-                            .background(Color.white.opacity(0.1))
-                            .foregroundColor(.yellow)
                             .cornerRadius(8)
                     }
                 }

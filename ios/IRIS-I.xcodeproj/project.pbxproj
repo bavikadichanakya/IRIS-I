@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		A10000952C00000100000001 /* IRISAppIntents.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000952C00000100000001 /* IRISAppIntents.swift */; };
 		ALGK01012C00000100000001 /* GlassButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = BLGK01012C00000100000001 /* GlassButton.swift */; };
 		ALGK01022C00000100000001 /* GlassCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = BLGK01022C00000100000001 /* GlassCard.swift */; };
 		ALGK01032C00000100000001 /* GlassNavigationBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = BLGK01032C00000100000001 /* GlassNavigationBar.swift */; };
@@ -105,6 +106,7 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		B10000952C00000100000001 /* IRISAppIntents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IRISAppIntents.swift; sourceTree = "<group>"; };
 		BLGK01012C00000100000001 /* GlassButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlassButton.swift; sourceTree = "<group>"; };
 		BLGK01022C00000100000001 /* GlassCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlassCard.swift; sourceTree = "<group>"; };
 		BLGK01032C00000100000001 /* GlassNavigationBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlassNavigationBar.swift; sourceTree = "<group>"; };
@@ -259,6 +261,7 @@
 			children = (
 				G10000882C00000100000001 /* Audio */,
 				G10000302C00000100000001 /* Agent */,
+				G100003C2C00000100000001 /* Intents */,
 				G10000382C00000100000001 /* Connectors */,
 				G10000082C00000100000001 /* ModelManager */,
 				G10000092C00000100000001 /* System */,
@@ -550,6 +553,14 @@
 			path = LiquidGlassKit;
 			sourceTree = "<group>";
 		};
+G100003C2C00000100000001 /* Intents */ = {
+			isa = PBXGroup;
+			children = (
+				B10000952C00000100000001 /* IRISAppIntents.swift */,
+			);
+			path = Intents;
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -662,6 +673,7 @@
 				A100003A2C00000100000001 /* PermissionLevel.swift in Sources */,
 				A100003B2C00000100000001 /* PermissionManager.swift in Sources */,
 				A100003C2C00000100000001 /* AppOpenerTool.swift in Sources */,
+				A10000952C00000100000001 /* IRISAppIntents.swift in Sources */,
 				A100003D2C00000100000001 /* EventKitTool.swift in Sources */,
 				A100003E2C00000100000001 /* MailTool.swift in Sources */,
 				A100003F2C00000100000001 /* MessagingTool.swift in Sources */,

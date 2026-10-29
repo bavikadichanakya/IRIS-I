@@ -87,6 +87,22 @@ public struct FastIntentRouter: Sendable {
         "show me ", "get me "
     ]
 
+    private static let launchVerbPrefixes: [String] = [
+        "open up ", "open ",
+        "launch ",
+        "start ",
+        "take me to ",
+        "bring up ",
+        "switch to ",
+        "go to ",
+        "jump to ",
+        "show me ",
+        "can you open ", "could you open ", "please open ",
+        "can you launch ", "could you launch ", "please launch ",
+        "can you take me to ", "please take me to ",
+        "i want to open ", "i want to use "
+    ]
+
     private static let invalidAppStopwords: Set<String> = [
         "the", "a", "an", "door", "doors", "can", "file", "window",
         "discussion", "tab", "link", "website", "mail", "email"
@@ -152,20 +168,31 @@ public struct FastIntentRouter: Sendable {
             )
         }
 
-        // 5. Direct app opening patterns: "open [App]" or "launch [App]"
+        // 5. Generalized app opening patterns
         var appCandidate = ""
-        if clean.hasPrefix("open ") {
-            appCandidate = String(clean.dropFirst(5)).trimmingCharacters(in: .whitespaces)
-        } else if clean.hasPrefix("launch ") {
-            appCandidate = String(clean.dropFirst(7)).trimmingCharacters(in: .whitespaces)
+        for prefix in Self.launchVerbPrefixes {
+            if clean.hasPrefix(prefix) {
+                appCandidate = String(clean.dropFirst(prefix.count)).trimmingCharacters(in: .whitespaces)
+                break
+            }
         }
 
-        if !appCandidate.isEmpty && appCandidate.count <= 25 {
+        if appCandidate.hasPrefix("the ") {
+            appCandidate = String(appCandidate.dropFirst(4)).trimmingCharacters(in: .whitespaces)
+        } else if appCandidate.hasPrefix("my ") {
+            appCandidate = String(appCandidate.dropFirst(3)).trimmingCharacters(in: .whitespaces)
+        }
+
+        if appCandidate.hasSuffix(" app") {
+            appCandidate = String(appCandidate.dropLast(4)).trimmingCharacters(in: .whitespaces)
+        }
+
+        if !appCandidate.isEmpty && appCandidate.count <= 30 {
             let words = appCandidate.split(separator: " ").map(String.init)
             let containsStopword = words.contains { Self.invalidAppStopwords.contains($0) }
 
-            // Guard against arbitrary sentences like "open the door" or "open a debate"
-            if !containsStopword && words.count <= 2 {
+            // Guard against arbitrary physical sentences like "open the door" or "open a debate"
+            if !containsStopword && words.count <= 3 {
                 let duration = (CFAbsoluteTimeGetCurrent() - startTime) * 1000.0
                 return .matched(
                     toolName: "AppOpenerTool",

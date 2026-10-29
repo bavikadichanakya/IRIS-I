@@ -43,9 +43,11 @@ public final class BrainDownloadCoordinator: ObservableObject {
 
     public func refreshStateAsync() async {
         self.isModelInstalled = storage.isModelInstalled(catalog.baseline3B)
-        self.isModelActive = await runner.isModelLoaded
+        let loaded = await runner.isModelLoaded
+        let isMock = await runner.isUsingMockEngine
+        self.isModelActive = loaded && !isMock
         if isModelActive {
-            self.statusMessage = "Brain Active (100% On-Device)"
+            self.statusMessage = "Brain Active (100% On-Device · Metal)"
         } else if isModelInstalled {
             self.statusMessage = "Model downloaded · Ready to activate"
         } else if !isDownloading {
@@ -117,21 +119,6 @@ public final class BrainDownloadCoordinator: ObservableObject {
                 SpeechManager.shared.speak(text: "Local neural brain downloaded and activated. I'm ready.")
             } catch {
                 self.statusMessage = "Engine activation error: \(error.localizedDescription)"
-            }
-        }
-    }
-
-    /// Instant zero-download test activation for immediate evaluation
-    public func activateInstantMockBrain() {
-        Task {
-            do {
-                self.statusMessage = "Activating instant test engine..."
-                try await runner.loadModel(manifest: catalog.baseline3B, contextSize: 2048, forceMockEngine: true)
-                await self.refreshStateAsync()
-                self.statusMessage = "Instant Test Brain Active"
-                SpeechManager.shared.speak(text: "Instant test brain activated.")
-            } catch {
-                self.statusMessage = "Mock engine activation error: \(error.localizedDescription)"
             }
         }
     }

@@ -84,6 +84,31 @@ final class FastIntentRouterTests: XCTestCase {
         }
     }
 
+    func testInstagramAndGeneralizedPhrasingsRouting() {
+        let testCases = [
+            ("open Instagram", "instagram"),
+            ("Hey IRIS, open Instagram", "instagram"),
+            ("take me to Instagram", "instagram"),
+            ("can you open Instagram", "instagram"),
+            ("switch to YouTube", "youtube"),
+            ("bring up Spotify", "spotify"),
+            ("start TikTok", "tiktok"),
+            ("go to Apple Music", "apple music")
+        ]
+
+        for (query, expectedApp) in testCases {
+            let result = router.route(query: query)
+            switch result {
+            case .matched(let toolName, let args, let routingDurationMs):
+                XCTAssertEqual(toolName, "AppOpenerTool", "Query '\(query)' should route to AppOpenerTool")
+                XCTAssertEqual(args["app_name"] as? String, expectedApp, "Expected app '\(expectedApp)' for query '\(query)'")
+                XCTAssertLessThan(routingDurationMs, 10.0, "Routing must complete in <10ms for '\(query)'")
+            case .unmatched:
+                XCTFail("Expected '\(query)' to match generalized app launch routing")
+            }
+        }
+    }
+
     // MARK: - Negative Fall-Through Tests
 
     func testNegativeTimeQueriesFallThrough() {

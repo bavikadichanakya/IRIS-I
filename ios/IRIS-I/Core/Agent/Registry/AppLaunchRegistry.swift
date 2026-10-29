@@ -15,6 +15,7 @@ public struct AppLaunchDescriptor: Sendable {
     public let appName: String
     public let urlScheme: String
     public let queryScheme: String?
+    public let universalLinkURL: URL?
     public let appStoreURL: URL?
     public let description: String
 
@@ -22,12 +23,14 @@ public struct AppLaunchDescriptor: Sendable {
         appName: String,
         urlScheme: String,
         queryScheme: String? = nil,
+        universalLinkURL: URL? = nil,
         appStoreURL: URL? = nil,
         description: String
     ) {
         self.appName = appName
         self.urlScheme = urlScheme
         self.queryScheme = queryScheme
+        self.universalLinkURL = universalLinkURL
         self.appStoreURL = appStoreURL
         self.description = description
     }
@@ -68,6 +71,7 @@ public actor AppLaunchRegistry {
             appName: "Maps",
             urlScheme: "maps:",
             queryScheme: "maps",
+            universalLinkURL: URL(string: "https://maps.apple.com/"),
             description: "Apple Maps directions and locations"
         ))
         register(AppLaunchDescriptor(
@@ -98,6 +102,7 @@ public actor AppLaunchRegistry {
             appName: "Spotify",
             urlScheme: "spotify:",
             queryScheme: "spotify",
+            universalLinkURL: URL(string: "https://open.spotify.com/"),
             appStoreURL: URL(string: "https://apps.apple.com/app/spotify/id324684580"),
             description: "Spotify music streaming"
         ))
@@ -105,13 +110,31 @@ public actor AppLaunchRegistry {
             appName: "YouTube",
             urlScheme: "youtube:",
             queryScheme: "youtube",
+            universalLinkURL: URL(string: "https://www.youtube.com/"),
             appStoreURL: URL(string: "https://apps.apple.com/app/youtube/id544007664"),
             description: "YouTube video player"
+        ))
+        register(AppLaunchDescriptor(
+            appName: "Instagram",
+            urlScheme: "instagram:",
+            queryScheme: "instagram",
+            universalLinkURL: URL(string: "https://www.instagram.com/"),
+            appStoreURL: URL(string: "https://apps.apple.com/app/instagram/id389801252"),
+            description: "Instagram photo and video sharing"
+        ))
+        register(AppLaunchDescriptor(
+            appName: "TikTok",
+            urlScheme: "snssdk1233:",
+            queryScheme: "snssdk1233",
+            universalLinkURL: URL(string: "https://www.tiktok.com/"),
+            appStoreURL: URL(string: "https://apps.apple.com/app/tiktok/id835599320"),
+            description: "TikTok short-form video"
         ))
         register(AppLaunchDescriptor(
             appName: "Music",
             urlScheme: "music:",
             queryScheme: "music",
+            universalLinkURL: URL(string: "https://music.apple.com/"),
             appStoreURL: URL(string: "https://apps.apple.com/app/apple-music/id1108187390"),
             description: "Apple Music player and streaming"
         ))
@@ -119,6 +142,7 @@ public actor AppLaunchRegistry {
             appName: "Apple Music",
             urlScheme: "music:",
             queryScheme: "music",
+            universalLinkURL: URL(string: "https://music.apple.com/"),
             appStoreURL: URL(string: "https://apps.apple.com/app/apple-music/id1108187390"),
             description: "Apple Music player and streaming"
         ))
@@ -156,6 +180,7 @@ public actor AppLaunchRegistry {
             appName: "WhatsApp",
             urlScheme: "whatsapp:",
             queryScheme: "whatsapp",
+            universalLinkURL: URL(string: "https://chat.whatsapp.com/"),
             appStoreURL: URL(string: "https://apps.apple.com/app/whatsapp-messenger/id310633997"),
             description: "WhatsApp Messenger"
         ))
@@ -163,6 +188,7 @@ public actor AppLaunchRegistry {
             appName: "Telegram",
             urlScheme: "tg:",
             queryScheme: "tg",
+            universalLinkURL: URL(string: "https://t.me/"),
             appStoreURL: URL(string: "https://apps.apple.com/app/telegram-messenger/id686449807"),
             description: "Telegram Messenger"
         ))
@@ -182,6 +208,7 @@ public actor AppLaunchRegistry {
             appName: "ChatGPT",
             urlScheme: "chatgpt:",
             queryScheme: "chatgpt",
+            universalLinkURL: URL(string: "https://chatgpt.com/"),
             appStoreURL: URL(string: "https://apps.apple.com/app/chatgpt/id6448311069"),
             description: "OpenAI ChatGPT app"
         ))
@@ -189,7 +216,32 @@ public actor AppLaunchRegistry {
             appName: "Twitter",
             urlScheme: "twitter:",
             queryScheme: "twitter",
+            universalLinkURL: URL(string: "https://x.com/"),
             description: "X / Twitter"
+        ))
+        register(AppLaunchDescriptor(
+            appName: "Reddit",
+            urlScheme: "reddit:",
+            queryScheme: "reddit",
+            universalLinkURL: URL(string: "https://www.reddit.com/"),
+            appStoreURL: URL(string: "https://apps.apple.com/app/reddit/id1064216828"),
+            description: "Reddit social news and communities"
+        ))
+        register(AppLaunchDescriptor(
+            appName: "Slack",
+            urlScheme: "slack:",
+            queryScheme: "slack",
+            universalLinkURL: URL(string: "https://slack.com/"),
+            appStoreURL: URL(string: "https://apps.apple.com/app/slack/id618783545"),
+            description: "Slack team collaboration"
+        ))
+        register(AppLaunchDescriptor(
+            appName: "Discord",
+            urlScheme: "discord:",
+            queryScheme: "discord",
+            universalLinkURL: URL(string: "https://discord.com/"),
+            appStoreURL: URL(string: "https://apps.apple.com/app/discord/id985746746"),
+            description: "Discord voice and chat"
         ))
     }
 
@@ -213,14 +265,34 @@ public actor AppLaunchRegistry {
         return nil
     }
 
-    /// Preflights and launches an app via verified URL scheme.
+    /// Resolves an app descriptor dynamically, synthesizing candidate schemes and universal links
+    /// if the app is not in the built-in catalog.
+    public func resolveDescriptor(for appName: String) -> AppLaunchDescriptor {
+        if let d = descriptor(for: appName) {
+            return d
+        }
+        let clean = appName.trimmingCharacters(in: .whitespacesAndNewlines)
+        let slug = clean.lowercased().replacingOccurrences(of: " ", with: "")
+        let scheme = "\(slug):"
+        let universal = URL(string: "https://www.\(slug).com/")
+        return AppLaunchDescriptor(
+            appName: clean,
+            urlScheme: scheme,
+            queryScheme: slug,
+            universalLinkURL: universal,
+            appStoreURL: nil,
+            description: "\(clean) application"
+        )
+    }
+
+    /// Preflights and launches an app via capability-driven dispatch (Native URL Scheme or Universal Link).
     /// Runs on the MainActor for UIKit interaction.
     @MainActor
     public func launchApp(name: String, parameter: String? = nil) async throws -> URL {
         let lowName = name.lowercased().trimmingCharacters(in: .whitespaces)
 
         // 1. Special Case: iOS System Settings via official public API
-        if lowName == "settings" || lowName == "app settings" {
+        if lowName == "settings" || lowName == "app settings" || lowName == "system settings" {
             #if canImport(UIKit)
             guard let settingsURL = URL(string: UIApplication.openSettingsURLString) else {
                 throw AppLaunchError.systemLaunchFailed("Invalid settings URL")
@@ -241,18 +313,13 @@ public actor AppLaunchRegistry {
             throw AppLaunchError.unregisteredScheme("App-Prefs is a private API and cannot be used.")
         }
 
-        // 3. Find registered descriptor
-        guard let descriptor = await descriptor(for: lowName) else {
-            throw AppLaunchError.unregisteredScheme(name)
-        }
+        // 3. Resolve descriptor (either registered or dynamically synthesized)
+        let descriptor = await resolveDescriptor(for: lowName)
 
-        // 4. Construct URL
+        // 4. Construct candidate URL Scheme
         var targetString = descriptor.urlScheme
         if let param = parameter, !param.isEmpty {
-            if targetString.hasSuffix("=") {
-                let encoded = param.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? param
-                targetString += encoded
-            } else if targetString.hasSuffix(":") {
+            if targetString.hasSuffix("=") || targetString.hasSuffix(":") {
                 let encoded = param.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? param
                 targetString += encoded
             } else {
@@ -261,24 +328,30 @@ public actor AppLaunchRegistry {
             }
         }
 
-        guard let targetURL = URL(string: targetString) else {
-            throw AppLaunchError.systemLaunchFailed(targetString)
-        }
-
-        // 5. Pre-flight check with canOpenURL & launch via UIApplication
         #if canImport(UIKit)
-        let canOpen = UIApplication.shared.canOpenURL(targetURL)
-        guard canOpen else {
-            throw AppLaunchError.appNotInstalled(appName: descriptor.appName, appStoreURL: descriptor.appStoreURL)
+        // Phase 1: Try Native URL Scheme if canOpenURL allows it
+        if let schemeURL = URL(string: targetString), UIApplication.shared.canOpenURL(schemeURL) {
+            let opened = await UIApplication.shared.open(schemeURL)
+            if opened {
+                return schemeURL
+            }
         }
 
-        let opened = await UIApplication.shared.open(targetURL)
-        guard opened else {
-            throw AppLaunchError.systemLaunchFailed(targetString)
+        // Phase 2: Try Universal Link with .universalLinksOnly: true
+        // Official iOS public API: launches the native app if installed, failing cleanly if not installed
+        if let universalBase = descriptor.universalLinkURL {
+            let openedNative = await UIApplication.shared.open(universalBase, options: [.universalLinksOnly: true])
+            if openedNative {
+                return universalBase
+            }
         }
+
+        // Phase 3: Neither native scheme nor universal link opened a native app
+        // Truthful outcome: the application is not installed on this device
+        throw AppLaunchError.appNotInstalled(appName: descriptor.appName, appStoreURL: descriptor.appStoreURL)
+        #else
+        throw AppLaunchError.systemLaunchFailed("UIKit unavailable on this platform")
         #endif
-
-        return targetURL
     }
 }
 

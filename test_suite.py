@@ -77,15 +77,31 @@ def test_fast_intent_router():
         if clean in valid_telemetry_queries:
             return ("matched", "SystemInfoTool", {"action": "telemetry"}, duration_ms)
         
+        launch_prefixes = [
+            "open up ", "open ", "launch ", "start ",
+            "take me to ", "bring up ", "switch to ", "go to ", "jump to ",
+            "show me ", "can you open ", "could you open ", "please open ",
+            "can you launch ", "could you launch ", "please launch ",
+            "can you take me to ", "please take me to ",
+            "i want to open ", "i want to use "
+        ]
+        
         app_cand = ""
-        if clean.startswith("open "):
-            app_cand = clean[5:].strip()
-        elif clean.startswith("launch "):
-            app_cand = clean[7:].strip()
+        for lp in launch_prefixes:
+            if clean.startswith(lp):
+                app_cand = clean[len(lp):].strip()
+                break
+        
+        if app_cand.startswith("the "):
+            app_cand = app_cand[4:].strip()
+        elif app_cand.startswith("my "):
+            app_cand = app_cand[3:].strip()
+        if app_cand.endswith(" app"):
+            app_cand = app_cand[:-4].strip()
             
-        if app_cand and len(app_cand) <= 25:
+        if app_cand and len(app_cand) <= 30:
             words = app_cand.split()
-            if not any(w in invalid_stopwords for w in words) and len(words) <= 2:
+            if not any(w in invalid_stopwords for w in words) and len(words) <= 3:
                 return ("matched", "AppOpenerTool", {"app_name": app_cand}, duration_ms)
                 
         return ("unmatched", None, None, duration_ms)
@@ -100,7 +116,14 @@ def test_fast_intent_router():
         ("battery percentage", "SystemInfoTool", "battery"),
         ("What is my current RAM memory usage?", "SystemInfoTool", "telemetry"),
         ("open Spotify", "AppOpenerTool", "spotify"),
-        ("launch YouTube", "AppOpenerTool", "youtube")
+        ("launch YouTube", "AppOpenerTool", "youtube"),
+        ("IRIS, open Instagram", "AppOpenerTool", "instagram"),
+        ("take me to Instagram", "AppOpenerTool", "instagram"),
+        ("can you open Instagram", "AppOpenerTool", "instagram"),
+        ("switch to YouTube", "AppOpenerTool", "youtube"),
+        ("bring up Spotify", "AppOpenerTool", "spotify"),
+        ("please open TikTok", "AppOpenerTool", "tiktok"),
+        ("go to Apple Music", "AppOpenerTool", "apple music")
     ]
     for q, expected_tool, expected_arg in positives:
         status, tool, args, dur = route(q)

@@ -2,129 +2,126 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-    <key>CFBundleDevelopmentRegion</key>
-    <string>$(DEVELOPMENT_LANGUAGE)</string>
-    <key>CFBundleExecutable</key>
-    <string>$(EXECUTABLE_NAME)</string>
-    <key>CFBundleIdentifier</key>
-    <string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
-    <key>CFBundleInfoDictionaryVersion</key>
-    <string>6.0</string>
-    <key>CFBundleName</key>
-    <string>$(PRODUCT_NAME)</string>
-    <key>CFBundlePackageType</key>
-    <string>$(PRODUCT_BUNDLE_PACKAGE_TYPE)</string>
-    <key>CFBundleShortVersionString</key>
-    <string>0.2.0</string>
-    <key>CFBundleVersion</key>
-    <string>1</string>
-    <key>CFBundleIcons</key>
-    <dict>
-        <key>CFBundlePrimaryIcon</key>
-        <dict>
-            <key>CFBundleIconFiles</key>
-            <array>
-                <string>AppIcon20x20</string>
-                <string>AppIcon29x29</string>
-                <string>AppIcon40x40</string>
-                <string>AppIcon60x60</string>
-            </array>
-            <key>CFBundleIconName</key>
-            <string>AppIcon</string>
-        </dict>
-    </dict>
-    <key>CFBundleIconFiles</key>
-    <array>
-        <string>AppIcon20x20</string>
-        <string>AppIcon29x29</string>
-        <string>AppIcon40x40</string>
-        <string>AppIcon60x60</string>
-    </array>
-    <key>LSRequiresIPhoneOS</key>
-    <true/>
-    <key>UIFileSharingEnabled</key>
-    <true/>
-    <key>LSSupportsOpeningDocumentsInPlace</key>
-    <true/>
-    <key>UIApplicationSceneManifest</key>
-    <dict>
-        <key>UIApplicationSupportsMultipleScenes</key>
-        <false/>
-    </dict>
-    <key>UILaunchScreen</key>
-    <dict/>
-    <key>UISupportedInterfaceOrientations</key>
-    <array>
-        <string>UIInterfaceOrientationPortrait</string>
-    </array>
-
-    <!-- EventKit Modern iOS 17+ Usage Descriptions -->
-    <key>NSCalendarsFullAccessUsageDescription</key>
-    <string>IRIS requires full access to your calendar to schedule and query appointments.</string>
-    <key>NSCalendarsWriteOnlyAccessUsageDescription</key>
-    <string>IRIS requires write access to add scheduled events to your calendar.</string>
-    <key>NSRemindersFullAccessUsageDescription</key>
-    <string>IRIS requires full access to Reminders to create and organize your tasks.</string>
-
-    <!-- EventKit Legacy iOS 16 Usage Descriptions -->
-    <key>NSCalendarsUsageDescription</key>
-    <string>IRIS requires access to your calendar to schedule events.</string>
-    <key>NSRemindersUsageDescription</key>
-    <string>IRIS requires access to your reminders to organize tasks.</string>
-
-    <!-- Microphone & Speech Recognition for Voice & Wake-word -->
-    <key>NSMicrophoneUsageDescription</key>
-    <string>IRIS requires microphone access for foreground voice commands and wake-word detection.</string>
-    <key>NSSpeechRecognitionUsageDescription</key>
-    <string>IRIS uses on-device speech recognition to transcribe spoken user instructions.</string>
-
-    <!-- Verified Application Query Schemes for Deep Links -->
-    <key>LSApplicationQueriesSchemes</key>
-    <array>
-        <string>maps</string>
-        <string>tel</string>
-        <string>sms</string>
-        <string>mailto</string>
-        <string>shortcuts</string>
-        <string>spotify</string>
-        <string>youtube</string>
-        <string>music</string>
-        <string>photos-redirect</string>
-        <string>camera</string>
-        <string>mobilenotes</string>
-        <string>calshow</string>
-        <string>x-apple-reminderkit</string>
-        <string>whatsapp</string>
-        <string>tg</string>
-        <string>facetime</string>
-        <string>shareddocuments</string>
-        <string>chatgpt</string>
-        <string>twitter</string>
-    </array>
-
-    <!-- Google OAuth URL Types & Callback Scheme -->
-    <key>CFBundleURLTypes</key>
-    <array>
-        <dict>
-            <key>CFBundleTypeRole</key>
-            <string>Editor</string>
-            <key>CFBundleURLName</key>
-            <string>Google OAuth Callback</string>
-            <key>CFBundleURLSchemes</key>
-            <array>
-                <string>$(GMAIL_REVERSED_CLIENT_ID)</string>
-                <string>iris-assistant</string>
-                <string>com.googleusercontent.apps</string>
-            </array>
-        </dict>
-    </array>
-
-    <!-- Optional Build Configuration for Google OAuth -->
-    <key>GmailClientID</key>
-    <string>$(GMAIL_CLIENT_ID)</string>
-    <key>GmailRedirectURI</key>
-    <string>$(GMAIL_REDIRECT_URI)</string>
-    <key>GmailReversedClientID</key>
-    <string>$(GMAIL_REVERSED_CLIENT_ID)</string>
+	<key>CFBundleDevelopmentRegion</key>
+	<string>$(DEVELOPMENT_LANGUAGE)</string>
+	<key>CFBundleExecutable</key>
+	<string>$(EXECUTABLE_NAME)</string>
+	<key>CFBundleIconFiles</key>
+	<array>
+		<string>AppIcon20x20</string>
+		<string>AppIcon29x29</string>
+		<string>AppIcon40x40</string>
+		<string>AppIcon60x60</string>
+	</array>
+	<key>CFBundleIcons</key>
+	<dict>
+		<key>CFBundlePrimaryIcon</key>
+		<dict>
+			<key>CFBundleIconFiles</key>
+			<array>
+				<string>AppIcon20x20</string>
+				<string>AppIcon29x29</string>
+				<string>AppIcon40x40</string>
+				<string>AppIcon60x60</string>
+			</array>
+			<key>CFBundleIconName</key>
+			<string>AppIcon</string>
+		</dict>
+	</dict>
+	<key>CFBundleIdentifier</key>
+	<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+	<key>CFBundleInfoDictionaryVersion</key>
+	<string>6.0</string>
+	<key>CFBundleName</key>
+	<string>$(PRODUCT_NAME)</string>
+	<key>CFBundlePackageType</key>
+	<string>$(PRODUCT_BUNDLE_PACKAGE_TYPE)</string>
+	<key>CFBundleShortVersionString</key>
+	<string>0.2.0</string>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>CFBundleURLName</key>
+			<string>Google OAuth Callback</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>$(GMAIL_REVERSED_CLIENT_ID)</string>
+				<string>iris-assistant</string>
+				<string>com.googleusercontent.apps</string>
+			</array>
+		</dict>
+	</array>
+	<key>CFBundleVersion</key>
+	<string>1</string>
+	<key>GmailClientID</key>
+	<string>$(GMAIL_CLIENT_ID)</string>
+	<key>GmailRedirectURI</key>
+	<string>$(GMAIL_REDIRECT_URI)</string>
+	<key>GmailReversedClientID</key>
+	<string>$(GMAIL_REVERSED_CLIENT_ID)</string>
+	<key>LSApplicationQueriesSchemes</key>
+	<array>
+		<string>maps</string>
+		<string>tel</string>
+		<string>sms</string>
+		<string>mailto</string>
+		<string>shortcuts</string>
+		<string>spotify</string>
+		<string>youtube</string>
+		<string>music</string>
+		<string>photos-redirect</string>
+		<string>camera</string>
+		<string>mobilenotes</string>
+		<string>calshow</string>
+		<string>x-apple-reminderkit</string>
+		<string>whatsapp</string>
+		<string>tg</string>
+		<string>facetime</string>
+		<string>shareddocuments</string>
+		<string>chatgpt</string>
+		<string>twitter</string>
+		<string>instagram</string>
+		<string>tiktok</string>
+		<string>slack</string>
+		<string>discord</string>
+		<string>reddit</string>
+	</array>
+	<key>LSRequiresIPhoneOS</key>
+	<true/>
+	<key>LSSupportsOpeningDocumentsInPlace</key>
+	<true/>
+	<key>NSCalendarsFullAccessUsageDescription</key>
+	<string>IRIS requires full access to your calendar to schedule and query appointments.</string>
+	<key>NSCalendarsUsageDescription</key>
+	<string>IRIS requires access to your calendar to schedule events.</string>
+	<key>NSCalendarsWriteOnlyAccessUsageDescription</key>
+	<string>IRIS requires write access to add scheduled events to your calendar.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>IRIS requires microphone access for foreground voice commands and wake-word detection.</string>
+	<key>NSRemindersFullAccessUsageDescription</key>
+	<string>IRIS requires full access to Reminders to create and organize your tasks.</string>
+	<key>NSRemindersUsageDescription</key>
+	<string>IRIS requires access to your reminders to organize tasks.</string>
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>IRIS uses on-device speech recognition to transcribe spoken user instructions.</string>
+	<key>UIApplicationSceneManifest</key>
+	<dict>
+		<key>UIApplicationSupportsMultipleScenes</key>
+		<false/>
+	</dict>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>audio</string>
+	</array>
+	<key>UIFileSharingEnabled</key>
+	<true/>
+	<key>UILaunchScreen</key>
+	<dict/>
+	<key>UISupportedInterfaceOrientations</key>
+	<array>
+		<string>UIInterfaceOrientationPortrait</string>
+	</array>
 </dict>
 </plist>

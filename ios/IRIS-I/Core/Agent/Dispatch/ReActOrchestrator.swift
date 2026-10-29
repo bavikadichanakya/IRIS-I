@@ -84,12 +84,15 @@ public actor ReActOrchestrator {
                         responseText = "Executed \(toolName) successfully."
                     }
                 case .completedUnverified:
-                    let msg = (toolResult.outputPayload["message"] as? String) ?? "Action handed off to external system (unverified outcome)."
-                    responseText = "Handed off: \(msg)"
+                    if let msg = toolResult.outputPayload["message"] as? String {
+                        responseText = msg
+                    } else {
+                        responseText = "Action dispatched to external system."
+                    }
                 case .failed:
-                    responseText = "Action failed: \(toolResult.error ?? "Unknown error.")"
+                    responseText = toolResult.error ?? "Action failed."
                 case .deniedPolicy:
-                    responseText = "Action denied: \(toolResult.error ?? "Security policy violation.")"
+                    responseText = toolResult.error ?? "Action denied by security policy."
                 case .cancelled:
                     responseText = "Action was cancelled."
                 case .timedOut:
