@@ -65,7 +65,7 @@ public final class ModelCatalog: Sendable {
     )
 
     public var allProfiles: [ModelManifest] {
-        [baseline3B, smokeTestLlama3B, experimental7B]
+        [baseline3B]
     }
 
     public func profile(for id: String) -> ModelManifest? {

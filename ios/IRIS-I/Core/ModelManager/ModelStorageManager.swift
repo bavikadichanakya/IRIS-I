@@ -32,7 +32,17 @@ public final class ModelStorageManager: Sendable {
     }
 
     public func fileURL(for filename: String) -> URL {
-        weightsDirectory.appendingPathComponent(filename)
+        let weightsPath = weightsDirectory.appendingPathComponent(filename)
+        if FileManager.default.fileExists(atPath: weightsPath.path) {
+            return weightsPath
+        }
+        if let docs = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first {
+            let docsPath = docs.appendingPathComponent(filename)
+            if FileManager.default.fileExists(atPath: docsPath.path) {
+                return docsPath
+            }
+        }
+        return weightsPath
     }
 
     public func isModelInstalled(_ manifest: ModelManifest) -> Bool {

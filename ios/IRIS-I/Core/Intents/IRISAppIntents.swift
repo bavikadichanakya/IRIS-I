@@ -89,3 +89,4 @@ public struct IRISAppShortcutsProvider: AppShortcutsProvider {
 }
 
 #endif
+

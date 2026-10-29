@@ -30,6 +30,7 @@ public struct DiagnosticConsoleView: View {
     @State private var isRunningBenchmarks: Bool = false
 
     @State private var errorMessage: String?
+    @ObservedObject private var brainCoordinator = BrainDownloadCoordinator.shared
 
     private let runner = LocalModelRunner.shared
     private let catalog = ModelCatalog.shared
@@ -115,6 +116,28 @@ public struct DiagnosticConsoleView: View {
                     .background(Color(.secondarySystemGroupedBackground))
                     .cornerRadius(12)
                     .padding(.horizontal)
+
+                    if brainCoordinator.isDownloading {
+                        VStack(alignment: .leading, spacing: 6) {
+                            HStack {
+                                Text("DOWNLOADING NEURAL BRAIN")
+                                    .font(.caption2.bold())
+                                    .foregroundColor(.blue)
+                                Spacer()
+                                Text("\(Int(brainCoordinator.downloadProgress * 100))%")
+                                    .font(.caption2.bold())
+                                    .foregroundColor(.blue)
+                            }
+                            ProgressView(value: brainCoordinator.downloadProgress)
+                            Text(brainCoordinator.statusMessage)
+                                .font(.system(size: 11))
+                                .foregroundColor(.secondary)
+                        }
+                        .padding()
+                        .background(Color.blue.opacity(0.08))
+                        .cornerRadius(10)
+                        .padding(.horizontal)
+                    }
 
                     // 4. Model Profiles Catalog
                     VStack(alignment: .leading, spacing: 12) {
@@ -244,6 +267,12 @@ public struct DiagnosticConsoleView: View {
             .sheet(isPresented: $isShowingBenchmarkResults) {
                 BenchmarkResultsView(results: benchmarkResults)
             }
+            .onChange(of: brainCoordinator.isModelInstalled) { _, _ in
+                Task { await refreshState() }
+            }
+            .onChange(of: brainCoordinator.isModelActive) { _, _ in
+                Task { await refreshState() }
+            }
             .task {
                 await refreshState()
                 // Periodic telemetry poller
@@ -259,6 +288,7 @@ public struct DiagnosticConsoleView: View {
     // MARK: - Actions
 
     private func refreshState() async {
+        brainCoordinator.refreshState()
         self.runnerState = await runner.state
         self.activeManifest = await runner.currentManifest
         self.inferenceTelemetry = await runner.latestTelemetry()

@@ -148,6 +148,7 @@ public actor ModelDownloadManager: NSObject, URLSessionDownloadDelegate {
         let destURL = storage.fileURL(for: manifest.filename)
 
         do {
+            try FileManager.default.createDirectory(at: destURL.deletingLastPathComponent(), withIntermediateDirectories: true)
             if FileManager.default.fileExists(atPath: destURL.path) {
                 try FileManager.default.removeItem(at: destURL)
             }
@@ -160,7 +161,11 @@ public actor ModelDownloadManager: NSObject, URLSessionDownloadDelegate {
             )
             progressContinuation?.finish()
         } catch {
-            try? FileManager.default.removeItem(at: destURL)
+            // Only remove if file is tiny (< 1 MB) or totally corrupted
+            if let attrs = try? FileManager.default.attributesOfItem(atPath: destURL.path),
+               let size = attrs[.size] as? Int64, size < 1_000_000 {
+                try? FileManager.default.removeItem(at: destURL)
+            }
             progressContinuation?.finish()
         }
     }

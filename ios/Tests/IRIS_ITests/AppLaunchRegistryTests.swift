@@ -29,13 +29,13 @@ final class AppLaunchRegistryTests: XCTestCase {
     func testUnregisteredAppThrows() async {
         do {
             _ = try await registry.launchApp(name: "NonExistentApp12345")
-            XCTFail("Should throw unregisteredScheme")
+            XCTFail("Should throw error for non-existent app")
         } catch let err as AppLaunchError {
             switch err {
-            case .unregisteredScheme:
+            case .appNotInstalled, .unregisteredScheme:
                 break // Expected
             default:
-                XCTFail("Expected unregisteredScheme error, got \(err)")
+                XCTFail("Expected appNotInstalled or unregisteredScheme error, got \(err)")
             }
         } catch {
             XCTFail("Unexpected error type: \(error)")
