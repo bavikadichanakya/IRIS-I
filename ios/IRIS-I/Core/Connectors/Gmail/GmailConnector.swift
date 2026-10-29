@@ -14,6 +14,7 @@ import CryptoKit
 public struct OAuthConfiguration: Sendable {
     public let clientId: String
     public let redirectUri: String
+    public let userEmailHint: String?
     public let authorizationEndpoint: URL
     public let tokenEndpoint: URL
     public let revocationEndpoint: URL
@@ -38,6 +39,8 @@ public struct OAuthConfiguration: Sendable {
     }
 
     public static func load(keychain: KeychainHelper = .shared) -> OAuthConfiguration {
+        let defaultEmail = keychain.get(forKey: "custom_gmail_login_hint") ?? "bavikadichanakya@gmail.com"
+
         // 1. User keychain override (configured in-app via Settings screen)
         if let customClientId = keychain.get(forKey: "custom_gmail_client_id"), !customClientId.isEmpty {
             let customRedirect = keychain.get(forKey: "custom_gmail_redirect_uri")
@@ -48,7 +51,7 @@ public struct OAuthConfiguration: Sendable {
                     let reversed = cleaned.hasPrefix("com.googleusercontent.apps.") ? cleaned : "com.googleusercontent.apps.\(cleaned)"
                     return "\(reversed):/oauth2redirect/google"
                 }()
-            return OAuthConfiguration(clientId: customClientId, redirectUri: redirect)
+            return OAuthConfiguration(clientId: customClientId, redirectUri: redirect, userEmailHint: defaultEmail)
         }
 
         // 2. Process environment (e.g. CI runner or launch arguments)
@@ -58,7 +61,7 @@ public struct OAuthConfiguration: Sendable {
                 let reversed = cleaned.hasPrefix("com.googleusercontent.apps.") ? cleaned : "com.googleusercontent.apps.\(cleaned)"
                 return "\(reversed):/oauth2redirect/google"
             }()
-            return OAuthConfiguration(clientId: envClientId, redirectUri: envRedirect)
+            return OAuthConfiguration(clientId: envClientId, redirectUri: envRedirect, userEmailHint: defaultEmail)
         }
 
         // 3. Info.plist (Xcode build setting)
@@ -69,25 +72,28 @@ public struct OAuthConfiguration: Sendable {
                 let reversed = cleaned.hasPrefix("com.googleusercontent.apps.") ? cleaned : "com.googleusercontent.apps.\(cleaned)"
                 return "\(reversed):/oauth2redirect/google"
             }()
-            return OAuthConfiguration(clientId: plistClientId, redirectUri: plistRedirect)
+            return OAuthConfiguration(clientId: plistClientId, redirectUri: plistRedirect, userEmailHint: defaultEmail)
         }
 
         // Unconfigured state: requires user or environment configuration
         return OAuthConfiguration(
             clientId: "",
-            redirectUri: "com.googleusercontent.apps.unconfigured:/oauth2redirect/google"
+            redirectUri: "com.googleusercontent.apps.unconfigured:/oauth2redirect/google",
+            userEmailHint: defaultEmail
         )
     }
 
     public init(
         clientId: String,
         redirectUri: String,
+        userEmailHint: String? = "bavikadichanakya@gmail.com",
         authorizationEndpoint: URL = URL(string: "https://accounts.google.com/o/oauth2/v2/auth")!,
         tokenEndpoint: URL = URL(string: "https://oauth2.googleapis.com/token")!,
         revocationEndpoint: URL = URL(string: "https://oauth2.googleapis.com/revoke")!
     ) {
         self.clientId = clientId
         self.redirectUri = redirectUri
+        self.userEmailHint = userEmailHint
         self.authorizationEndpoint = authorizationEndpoint
         self.tokenEndpoint = tokenEndpoint
         self.revocationEndpoint = revocationEndpoint
@@ -222,7 +228,7 @@ public actor GmailConnector: AccountConnector, MailProviderProtocol {
         self.pendingAuthState = state
 
         var components = URLComponents(url: config.authorizationEndpoint, resolvingAgainstBaseURL: false)!
-        components.queryItems = [
+        var items = [
             URLQueryItem(name: "client_id", value: config.clientId),
             URLQueryItem(name: "redirect_uri", value: config.redirectUri),
             URLQueryItem(name: "response_type", value: "code"),
@@ -233,6 +239,10 @@ public actor GmailConnector: AccountConnector, MailProviderProtocol {
             URLQueryItem(name: "access_type", value: "offline"),
             URLQueryItem(name: "prompt", value: "consent")
         ]
+        if let hint = config.userEmailHint, !hint.isEmpty {
+            items.append(URLQueryItem(name: "login_hint", value: hint))
+        }
+        components.queryItems = items
 
         guard let url = components.url else {
             throw URLError(.badURL)
