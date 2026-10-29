@@ -84,6 +84,8 @@ jobs:
             CODE_SIGNING_ALLOWED=NO \
             CODE_SIGNING_REQUIRED=NO \
             CONFIGURATION_BUILD_DIR=build/Device
+          mkdir -p build/Device/IRIS-I.app/Frameworks
+          cp -R Frameworks/llama.xcframework/ios-arm64/llama.framework build/Device/IRIS-I.app/Frameworks/
 
       - name: Upload IRIS-I iOS Device App
         uses: actions/upload-artifact@v4
