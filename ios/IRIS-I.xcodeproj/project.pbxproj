@@ -87,6 +87,7 @@
 /* Begin PBXFileReference section */
 		B10000882C00000100000001 /* SpeechManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeechManager.swift; sourceTree = "<group>"; };
 		B10000892C00000100000001 /* VoiceAgentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceAgentView.swift; sourceTree = "<group>"; };
+		B10000902C00000100000001 /* BrainDownloadCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrainDownloadCoordinator.swift; sourceTree = "<group>"; };
 		R10000012C00000100000001 /* IRIS-I.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "IRIS-I.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		R20000012C00000100000001 /* IRIS-ITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "IRIS-ITests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
 		B10000012C00000100000001 /* IRIS_IApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IRIS_IApp.swift; sourceTree = "<group>"; };
@@ -236,6 +237,7 @@
 				B10000062C00000100000001 /* ModelStorageManager.swift */,
 				B10000072C00000100000001 /* ModelIntegrityValidator.swift */,
 				B10000082C00000100000001 /* ModelDownloadManager.swift */,
+				B10000902C00000100000001 /* BrainDownloadCoordinator.swift */,
 			);
 			path = ModelManager;
 			sourceTree = "<group>";
@@ -273,6 +275,7 @@
 		G10000052C00000100000001 /* Views */ = {
 			isa = PBXGroup;
 			children = (
+				B10000892C00000100000001 /* VoiceAgentView.swift */,
 				B10000462C00000100000001 /* AssistantChatView.swift */,
 				B10000472C00000100000001 /* GmailConnectionView.swift */,
 				B10000482C00000100000001 /* SettingsView.swift */,
