@@ -2,20 +2,22 @@
 //  ContentView.swift
 //  IRIS-I
 //
-//  Root view hosting the standalone IRIS Assistant with Apple-level Liquid Glass UI.
+//  Root view hosting the complete 5-screen IRIS assistant matching the design blueprint:
+//  [Chat] [Actions] [(●) Home] [Memory] [Settings]
 //
 
 import SwiftUI
 
 public enum MainTabSection: Hashable, CaseIterable {
-    case voice
     case chat
-    case diagnostics
+    case actions
+    case home
+    case memory
     case settings
 }
 
 public struct ContentView: View {
-    @State private var selectedTab: MainTabSection = .voice
+    @State private var selectedTab: MainTabSection = .home
 
     public init() {}
 
@@ -23,23 +25,26 @@ public struct ContentView: View {
         ZStack(alignment: .bottom) {
             Group {
                 switch selectedTab {
-                case .voice:
-                    VoiceAgentView()
                 case .chat:
                     AssistantChatView()
-                case .diagnostics:
-                    DiagnosticConsoleView()
+                case .actions:
+                    ActionsCatalogView()
+                case .home:
+                    VoiceAgentView()
+                case .memory:
+                    MemoryView()
                 case .settings:
                     SettingsView()
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
 
-            // Apple-Level Liquid Glass Floating Tab Bar
+            // Apple-Level Liquid Glass Floating Tab Bar (5 Tabs)
             GlassTabBar(selection: $selectedTab) {
-                GlassTab("Voice", systemImage: "waveform.circle", value: MainTabSection.voice)
                 GlassTab("Chat", systemImage: "bubble.left.and.bubble.right", value: MainTabSection.chat)
-                GlassTab("Diagnostics", systemImage: "waveform.path.ecg", value: MainTabSection.diagnostics)
+                GlassTab("Actions", systemImage: "square.grid.2x2", value: MainTabSection.actions)
+                GlassTab("Home", systemImage: "sparkles", value: MainTabSection.home)
+                GlassTab("Memory", systemImage: "clock.arrow.circlepath", value: MainTabSection.memory)
                 GlassTab("Settings", systemImage: "gearshape", value: MainTabSection.settings)
             }
             .padding(.horizontal, 16)

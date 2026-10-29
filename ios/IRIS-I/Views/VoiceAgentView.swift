@@ -2,21 +2,34 @@
 //  VoiceAgentView.swift
 //  IRIS-I
 //
-//  Interactive full-screen Voice Agent interface featuring an audio-reactive
-//  pulsing orb, wake-word detection ("Hey IRIS"), 1-tap local brain download & auto-activation,
-//  live speech transcription, vocalized assistant responses, and Apple-level Liquid Glass UI.
+//  Complete 3-Stage Voice Experience matching Screens 1, 2, and 3:
+//  - Stage 1: Main Interface ("IRIS / Your personal assistant / Always with you", Pearl Orb, "Hey IRIS" capsule).
+//  - Stage 2: Listening / Thinking (Live audio-reactive waveform, radiating ripples, "I'm listening", [X] / [■] controls).
+//  - Stage 3: Response / Execution (Top query chip, Apple Intelligence step-by-step checklist, native result card, suggestion pills).
 //
 
 import SwiftUI
+
+public struct ExecutionStepItem: Identifiable, Sendable {
+    public let id = UUID()
+    public let title: String
+    public var isCompleted: Bool
+}
 
 public struct VoiceAgentView: View {
     @StateObject private var speechManager = SpeechManager.shared
     @StateObject private var brainCoordinator = BrainDownloadCoordinator.shared
 
     @State private var executedTools: [String] = []
-    @State private var isPulsing: Bool = false
+    @State private var activeAppIcon: String = "app.badge.fill"
+    @State private var activeAppName: String = "App"
+    @State private var activeResultTitle: String = "Opened successfully"
+    @State private var executionSteps: [ExecutionStepItem] = []
+    @State private var isShowingResult: Bool = false
     @State private var pendingTicket: ConfirmationTicket? = nil
     @State private var isShowingConfirmation: Bool = false
+    @State private var textInputQuery: String = ""
+    @State private var isShowingKeyboardInput: Bool = false
 
     private let orchestrator = ReActOrchestrator.shared
 
@@ -25,332 +38,472 @@ public struct VoiceAgentView: View {
     public var body: some View {
         NavigationStack {
             ZStack {
-                // Background Dynamic Radial Gradient
-                RadialGradient(
-                    gradient: Gradient(colors: [
-                        backgroundColorForState.opacity(0.38),
-                        Color.black.opacity(0.97)
-                    ]),
-                    center: .center,
-                    startRadius: 40,
-                    endRadius: 520
-                )
-                .ignoresSafeArea()
+                // Background Clean Pearlescent Canvas
+                Color(red: 0.96, green: 0.96, blue: 0.98)
+                    .ignoresSafeArea()
 
-                VStack(spacing: 16) {
-                    // Top Bar: Glass Status & Wake-word pill
-                    HStack {
-                        HStack(spacing: 6) {
-                            Circle()
-                                .fill(statusColor)
-                                .frame(width: 8, height: 8)
-                            Text(statusText)
-                                .font(.caption.bold())
-                                .foregroundColor(statusColor)
-                        }
-                        .padding(.horizontal, 12)
-                        .padding(.vertical, 6)
-                        .glassSurface(.clear, in: .capsule)
-
-                        Spacer()
-
-                        HStack(spacing: 5) {
-                            Image(systemName: "waveform.badge.mic")
-                                .font(.caption2)
-                            Text("\"Hey IRIS\"")
-                                .font(.caption2.bold())
-                        }
-                        .padding(.horizontal, 10)
-                        .padding(.vertical, 6)
-                        .glassSurface(speechManager.wakeWordDetected ? .tinted(.green) : .clear, in: .capsule)
-                        .foregroundColor(speechManager.wakeWordDetected ? .green : .gray)
-                    }
-                    .padding(.horizontal, 20)
-                    .padding(.top, 8)
-
-                    // 1-Tap Brain Download & Auto-Activation Glass Card
-                    brainDownloadBanner
-                        .padding(.horizontal, 16)
+                VStack(spacing: 0) {
+                    // Top Navigation Header
+                    topNavigationHeader
+                        .padding(.horizontal, 20)
+                        .padding(.top, 12)
 
                     Spacer(minLength: 8)
 
-                    // Center Interactive Glowing Orb
-                    ZStack {
-                        // Outer Ambient Halo
-                        Circle()
-                            .fill(
-                                RadialGradient(
-                                    gradient: Gradient(colors: [
-                                        orbColor.opacity(0.55),
-                                        orbColor.opacity(0.0)
-                                    ]),
-                                    center: .center,
-                                    startRadius: 30,
-                                    endRadius: 160
-                                )
-                            )
-                            .frame(width: 280, height: 280)
-                            .scaleEffect(speechManager.state == .listening ? 1.0 + CGFloat(speechManager.audioLevel * 0.9) : (isPulsing ? 1.08 : 0.94))
-                            .animation(.easeInOut(duration: speechManager.state == .listening ? 0.08 : 2.0).repeatForever(autoreverses: true), value: isPulsing)
-
-                        // Middle Glowing Core
-                        Circle()
-                            .fill(
-                                LinearGradient(
-                                    colors: [orbColor, orbSecondaryColor],
-                                    startPoint: .topLeading,
-                                    endPoint: .bottomTrailing
-                                )
-                            )
-                            .frame(width: 140, height: 140)
-                            .shadow(color: orbColor.opacity(0.85), radius: 32, x: 0, y: 0)
-                            .scaleEffect(speechManager.state == .listening ? 1.0 + CGFloat(speechManager.audioLevel * 0.6) : 1.0)
-                            .animation(.spring(response: 0.15, dampingFraction: 0.5), value: speechManager.audioLevel)
-
-                        // Center Icon
-                        Image(systemName: iconForState)
-                            .font(.system(size: 44, weight: .semibold))
-                            .foregroundColor(.white)
-                            .symbolEffect(.pulse, isActive: speechManager.state == .processing)
-                    }
-                    .onTapGesture {
-                        handleOrbTap()
-                    }
-
-                    Spacer(minLength: 8)
-
-                    // Live Speech Transcription / Assistant Output
-                    VStack(spacing: 10) {
-                        if !speechManager.recognizedText.isEmpty {
-                            VStack(spacing: 4) {
-                                Text("YOU SAID")
-                                    .font(.system(size: 10, weight: .bold))
-                                    .foregroundColor(.cyan.opacity(0.9))
-                                Text("\"\(speechManager.recognizedText)\"")
-                                    .font(.headline)
-                                    .multilineTextAlignment(.center)
-                                    .foregroundColor(.white)
-                                    .padding(.horizontal, 24)
-                            }
-                            .padding(.vertical, 8)
-                            .glassSurface(.clear, in: .roundedRectangle(cornerRadius: 14))
+                    // Main Interactive Content Area (Stages 1, 2, or 3)
+                    if isShowingResult {
+                        executionResultStage
+                            .transition(.asymmetric(
+                                insertion: .opacity.combined(with: .scale(scale: 0.96)),
+                                removal: .opacity
+                            ))
+                    } else if speechManager.state == .listening || speechManager.state == .processing {
+                        listeningThinkingStage
+                            .transition(.asymmetric(
+                                insertion: .opacity.combined(with: .scale(scale: 0.96)),
+                                removal: .opacity
+                            ))
+                    } else {
+                        mainIdleStage
                             .transition(.opacity)
-                        }
-
-                        if !speechManager.spokenResponse.isEmpty && speechManager.state != .listening {
-                            VStack(spacing: 6) {
-                                Text("IRIS")
-                                    .font(.system(size: 10, weight: .bold))
-                                    .foregroundColor(.purple.opacity(0.9))
-
-                                if !executedTools.isEmpty {
-                                    HStack(spacing: 6) {
-                                        ForEach(executedTools, id: \.self) { tool in
-                                            HStack(spacing: 4) {
-                                                Image(systemName: "bolt.fill")
-                                                    .font(.system(size: 8))
-                                                Text(tool)
-                                                    .font(.system(size: 10, weight: .semibold))
-                                            }
-                                            .padding(.horizontal, 8)
-                                            .padding(.vertical, 3)
-                                            .background(Color.orange.opacity(0.25))
-                                            .foregroundColor(.orange)
-                                            .cornerRadius(6)
-                                        }
-                                    }
-                                }
-
-                                Text(speechManager.spokenResponse)
-                                    .font(.subheadline)
-                                    .multilineTextAlignment(.center)
-                                    .foregroundColor(.white.opacity(0.92))
-                                    .padding(.horizontal, 16)
-                            }
-                            .padding(.vertical, 10)
-                            .glassSurface(.clear, in: .roundedRectangle(cornerRadius: 16))
-                            .transition(.opacity)
-                        } else if speechManager.state == .idle && speechManager.recognizedText.isEmpty {
-                            Text("Say \"Hey IRIS\" or tap to ask:")
-                                .font(.caption)
-                                .foregroundColor(.gray)
-
-                            HStack(spacing: 8) {
-                                voiceChip(title: "\"Open Apple Music\"") {
-                                    triggerVoiceQuery("Open Apple Music")
-                                }
-                                voiceChip(title: "\"Battery status\"") {
-                                    triggerVoiceQuery("What is my battery level?")
-                                }
-                                voiceChip(title: "\"What time is it?\"") {
-                                    triggerVoiceQuery("What time is it?")
-                                }
-                            }
-                        }
-
-                        if let err = speechManager.errorMessage {
-                            Text(err)
-                                .font(.caption2)
-                                .foregroundColor(.red)
-                                .padding(.horizontal, 20)
-                        }
                     }
-                    .frame(minHeight: 110)
 
                     Spacer(minLength: 8)
 
-                    // Bottom Controls Bar
-                    HStack(spacing: 36) {
-                        Button(action: {
-                            speechManager.stopSpeaking()
-                            speechManager.stopListeningInternal()
-                        }) {
-                            Image(systemName: "xmark.circle.fill")
-                                .font(.system(size: 36))
-                                .foregroundColor(.gray.opacity(0.7))
-                        }
-
-                        // Main Microphone Button
-                        Button(action: {
-                            handleOrbTap()
-                        }) {
-                            ZStack {
-                                Circle()
-                                    .fill(speechManager.state == .listening ? Color.red : Color.blue)
-                                    .frame(width: 76, height: 76)
-                                    .shadow(color: (speechManager.state == .listening ? Color.red : Color.blue).opacity(0.55), radius: 18)
-
-                                Image(systemName: speechManager.state == .listening ? "stop.fill" : "mic.fill")
-                                    .font(.system(size: 30, weight: .bold))
-                                    .foregroundColor(.white)
-                            }
-                        }
-
-                        Button(action: {
-                            if !speechManager.spokenResponse.isEmpty {
-                                speechManager.speak(text: speechManager.spokenResponse)
-                            }
-                        }) {
-                            Image(systemName: "speaker.wave.2.circle.fill")
-                                .font(.system(size: 36))
-                                .foregroundColor(.gray.opacity(0.7))
-                        }
-                    }
-                    .padding(.bottom, 72) // Space for floating GlassTabBar
+                    // Bottom Floating Action or Controls
+                    bottomControlArea
+                        .padding(.horizontal, 20)
+                        .padding(.bottom, 96) // Space for floating tab bar
                 }
             }
-            .onAppear {
-                isPulsing = true
-                brainCoordinator.refreshState()
-            }
-            .alert("Confirm Sensitive Action", isPresented: $isShowingConfirmation) {
-                Button("Authorize", role: .destructive) {
-                    if let ticket = pendingTicket {
+            .animation(.spring(response: 0.38, dampingFraction: 0.8), value: speechManager.state)
+            .animation(.spring(response: 0.38, dampingFraction: 0.8), value: isShowingResult)
+            .confirmationDialog(
+                "Action Authorization Required",
+                isPresented: $isShowingConfirmation,
+                titleVisibility: .visible
+            ) {
+                if let ticket = pendingTicket {
+                    Button("Authorize \(ticket.actionName)") {
                         confirmAndExecute(ticket: ticket)
                     }
-                }
-                Button("Cancel", role: .cancel) {
-                    pendingTicket = nil
+                    Button("Cancel", role: .cancel) {
+                        pendingTicket = nil
+                    }
                 }
             } message: {
                 if let ticket = pendingTicket {
-                    Text("Authorize \(ticket.toolName) to execute with parameter security verification?")
+                    Text(ticket.description)
                 }
+            }
+            .sheet(isPresented: $isShowingKeyboardInput) {
+                NavigationStack {
+                    VStack(spacing: 20) {
+                        TextField("Ask IRIS anything...", text: $textInputQuery)
+                            .textFieldStyle(.roundedBorder)
+                            .padding()
+
+                        Button("Submit") {
+                            isShowingKeyboardInput = false
+                            if !textInputQuery.isEmpty {
+                                triggerVoiceQuery(textInputQuery)
+                                textInputQuery = ""
+                            }
+                        }
+                        .buttonStyle(.borderedProminent)
+                        Spacer()
+                    }
+                    .navigationTitle("Type to IRIS")
+                    .navigationBarTitleDisplayMode(.inline)
+                }
+                .presentationDetents([.fraction(0.35)])
             }
         }
     }
 
-    // MARK: - Brain Download Banner (Liquid Glass)
+    // MARK: - Stage 1: Main Idle Interface (Screen 1)
 
-    @ViewBuilder
-    private var brainDownloadBanner: some View {
-        if brainCoordinator.isDownloading {
-            GlassCard(material: .frosted) {
-                VStack(alignment: .leading, spacing: 6) {
-                    HStack {
-                        Text("Downloading Qwen 2.5 3B Brain")
-                            .font(.caption.bold())
-                            .foregroundColor(.white)
-                        Spacer()
-                        Text("\(Int(brainCoordinator.downloadProgress * 100))%")
-                            .font(.caption.bold())
-                            .foregroundColor(.cyan)
-                    }
+    private var mainIdleStage: some View {
+        VStack(spacing: 20) {
+            // Typography Header
+            VStack(spacing: 6) {
+                Text("IRIS")
+                    .font(.system(size: 38, weight: .bold, design: .default))
+                    .tracking(1.5)
+                    .foregroundColor(.primary)
 
-                    ProgressView(value: brainCoordinator.downloadProgress)
-                        .tint(.cyan)
+                Text("Your personal assistant")
+                    .font(.system(size: 16, weight: .medium))
+                    .foregroundColor(.secondary)
 
-                    HStack {
-                        Text(brainCoordinator.statusMessage)
-                            .font(.caption2)
-                            .foregroundColor(.gray)
-                        Spacer()
-                        Button("Cancel") {
-                            brainCoordinator.cancelDownload()
-                        }
-                        .font(.caption2.bold())
-                        .foregroundColor(.red)
-                    }
-                }
+                Text("Always with you.")
+                    .font(.system(size: 15))
+                    .foregroundColor(Color.secondary.opacity(0.85))
             }
-        } else if !brainCoordinator.isModelInstalled && !brainCoordinator.isModelActive {
-            GlassCard(material: .frosted) {
-                HStack(spacing: 12) {
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("🧠 Neural Brain (Qwen 2.5 · 1.95 GB)")
-                            .font(.caption.bold())
-                            .foregroundColor(.white)
-                        Text("Tap to download & auto-activate locally")
-                            .font(.caption2)
-                            .foregroundColor(.gray)
-                    }
+            .padding(.top, 10)
 
-                    Spacer()
+            Spacer(minLength: 16)
 
-                    Button(action: {
-                        brainCoordinator.downloadAndActivateBrain()
-                    }) {
-                        Text("Download")
-                            .font(.caption.bold())
-                            .padding(.horizontal, 14)
-                            .padding(.vertical, 7)
-                            .background(Color.blue)
-                            .foregroundColor(.white)
-                            .cornerRadius(8)
-                    }
-                }
+            // Center 3D Pearlescent Liquid Glass Orb
+            PearlOrbView(
+                size: 260,
+                audioLevel: speechManager.audioLevel,
+                isListening: false,
+                isThinking: false
+            ) {
+                toggleListening()
             }
-        } else if brainCoordinator.isModelActive {
-            HStack {
-                Image(systemName: "brain.head.profile")
-                    .foregroundColor(.green)
-                Text("Brain: Qwen 2.5 3B Active (100% On-Device)")
-                    .font(.caption2.bold())
-                    .foregroundColor(.green)
+
+            Spacer(minLength: 16)
+        }
+    }
+
+    // MARK: - Stage 2: Listening / Thinking Interface (Screen 2)
+
+    private var listeningThinkingStage: some View {
+        VStack(spacing: 16) {
+            // Top Status Capsule
+            HStack(spacing: 6) {
+                Image(systemName: "waveform")
+                    .font(.system(size: 13, weight: .semibold))
+                Text(speechManager.state == .processing ? "Thinking..." : "Listening...")
+                    .font(.system(size: 13, weight: .semibold))
+                Image(systemName: "checkmark")
+                    .font(.system(size: 11, weight: .bold))
+                    .foregroundColor(.blue)
+
                 Spacer()
-                Text("A19 Neural")
-                    .font(.caption2)
-                    .foregroundColor(.gray)
+
+                Button {
+                    speechManager.stopListeningInternal()
+                    Task { await speechManager.startListening() }
+                } label: {
+                    Image(systemName: "arrow.counterclockwise")
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundColor(.secondary)
+                }
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 8)
+            .frame(width: 220)
+            .background(Color.white.opacity(0.9))
+            .cornerRadius(20)
+            .shadow(color: Color.black.opacity(0.04), radius: 6, y: 2)
+
+            // Live Audio Reactive Waveform
+            LiveWaveformView(audioLevel: speechManager.audioLevel)
+                .padding(.horizontal, 24)
+
+            // Center Pearl Orb with Audio Ripples
+            PearlOrbView(
+                size: 210,
+                audioLevel: speechManager.audioLevel,
+                isListening: speechManager.state == .listening,
+                isThinking: speechManager.state == .processing
+            ) {
+                toggleListening()
+            }
+
+            // State Text
+            VStack(spacing: 4) {
+                Text(speechManager.state == .processing ? "Processing..." : "I'm listening")
+                    .font(.system(size: 22, weight: .bold))
+                    .foregroundColor(.primary)
+
+                Text(speechManager.recognizedText.isEmpty ? "Speak naturally" : "\"\(speechManager.recognizedText)\"")
+                    .font(.system(size: 15))
+                    .foregroundColor(.secondary)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 30)
+            }
+            .padding(.top, 6)
+        }
+    }
+
+    // MARK: - Stage 3: Response & Execution Interface (Screen 3)
+
+    private var executionResultStage: some View {
+        VStack(spacing: 14) {
+            // Top Query Chip with Edit Pencil
+            HStack(spacing: 8) {
+                Text(speechManager.recognizedText.isEmpty ? "Requested Action" : speechManager.recognizedText)
+                    .font(.system(size: 14, weight: .medium))
+                    .foregroundColor(.primary)
+                Image(systemName: "pencil")
+                    .font(.system(size: 12))
+                    .foregroundColor(.secondary)
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 8)
+            .background(Color.white.opacity(0.9))
+            .cornerRadius(20)
+            .shadow(color: Color.black.opacity(0.04), radius: 6, y: 2)
+
+            // Step-by-Step Apple Intelligence Progress Card
+            VStack(alignment: .leading, spacing: 12) {
+                HStack(spacing: 10) {
+                    PearlOrbView(size: 32)
+                    VStack(alignment: .leading, spacing: 1) {
+                        Text("IRIS")
+                            .font(.system(size: 12, weight: .bold))
+                            .foregroundColor(.secondary)
+                        Text(activeAppName.isEmpty ? "Executing..." : "Opening \(activeAppName)...")
+                            .font(.system(size: 15, weight: .semibold))
+                            .foregroundColor(.primary)
+                    }
+                    Spacer()
+                }
+
+                Divider()
+
+                VStack(alignment: .leading, spacing: 8) {
+                    ForEach(executionSteps) { step in
+                        HStack(spacing: 8) {
+                            Image(systemName: step.isCompleted ? "checkmark.circle.fill" : "circle")
+                                .font(.system(size: 14))
+                                .foregroundColor(step.isCompleted ? .black : .secondary)
+                            Text(step.title)
+                                .font(.system(size: 13, weight: step.isCompleted ? .medium : .regular))
+                                .foregroundColor(step.isCompleted ? .primary : .secondary)
+                        }
+                    }
+                }
+            }
+            .padding(16)
+            .background(Color.white.opacity(0.92))
+            .cornerRadius(18)
+            .shadow(color: Color.black.opacity(0.04), radius: 8, y: 3)
+            .padding(.horizontal, 20)
+
+            // Result App Badge Card
+            VStack(spacing: 6) {
+                ZStack {
+                    RoundedRectangle(cornerRadius: 16, style: .continuous)
+                        .fill(
+                            LinearGradient(
+                                colors: [Color.purple.opacity(0.85), Color.pink.opacity(0.95), Color.orange.opacity(0.85)],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
+                        )
+                        .frame(width: 52, height: 52)
+                    Image(systemName: activeAppIcon)
+                        .font(.system(size: 26, weight: .bold))
+                        .foregroundColor(.white)
+                }
+
+                Text(activeAppName)
+                    .font(.system(size: 16, weight: .bold))
+                    .foregroundColor(.primary)
+
+                Text(activeResultTitle)
+                    .font(.system(size: 12))
+                    .foregroundColor(.secondary)
+            }
+            .padding(.vertical, 10)
+
+            // Quick Suggestions Chips
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 8) {
+                    suggestionChip(title: "Open YouTube", icon: "play.circle.fill") {
+                        triggerVoiceQuery("Open YouTube")
+                    }
+                    suggestionChip(title: "Play music", icon: "music.note") {
+                        triggerVoiceQuery("Open Apple Music")
+                    }
+                    suggestionChip(title: "Take a photo", icon: "camera.fill") {
+                        triggerVoiceQuery("Open Camera")
+                    }
+                    suggestionChip(title: "Open Spotify", icon: "waveform") {
+                        triggerVoiceQuery("Open Spotify")
+                    }
+                }
+                .padding(.horizontal, 20)
+            }
+        }
+    }
+
+    private func suggestionChip(title: String, icon: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            HStack(spacing: 5) {
+                Image(systemName: icon)
+                    .font(.system(size: 11))
+                Text(title)
+                    .font(.system(size: 12, weight: .medium))
             }
             .padding(.horizontal, 14)
             .padding(.vertical, 8)
-            .glassSurface(.tinted(.green.opacity(0.15)), in: .capsule)
+            .background(Color.white.opacity(0.9))
+            .cornerRadius(16)
+            .shadow(color: Color.black.opacity(0.03), radius: 4, y: 2)
+            .foregroundColor(.primary)
+        }
+        .buttonStyle(ScaleOnPressStyle())
+    }
+
+    // MARK: - Top Navigation Header
+
+    private var topNavigationHeader: some View {
+        HStack {
+            Button {
+                let generator = UIImpactFeedbackGenerator(style: .light)
+                generator.impactOccurred()
+            } label: {
+                Image(systemName: "line.3.horizontal")
+                    .font(.system(size: 18, weight: .semibold))
+                    .foregroundColor(.primary)
+                    .frame(width: 40, height: 40)
+                    .glassSurface(.clear, in: .circle)
+            }
+
+            Spacer()
+
+            if speechManager.wakeWordDetected {
+                HStack(spacing: 5) {
+                    Circle().fill(Color.green).frame(width: 6, height: 6)
+                    Text("Wake Word Active")
+                        .font(.caption2.bold())
+                        .foregroundColor(.green)
+                }
+                .padding(.horizontal, 10)
+                .padding(.vertical, 5)
+                .glassSurface(.tinted(.green), in: .capsule)
+            }
+
+            Spacer()
+
+            HStack(spacing: 8) {
+                Button {
+                    let generator = UIImpactFeedbackGenerator(style: .light)
+                    generator.impactOccurred()
+                    resetToIdle()
+                } label: {
+                    Image(systemName: "sparkles")
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundColor(.primary)
+                        .frame(width: 40, height: 40)
+                        .glassSurface(.clear, in: .circle)
+                }
+            }
         }
     }
 
-    // MARK: - Actions
+    // MARK: - Bottom Control Area
 
-    private func handleOrbTap() {
-        if speechManager.state == .listening {
-            let text = speechManager.stopListening()
-            if !text.isEmpty {
-                Task {
-                    await executeVoiceQuery(text)
+    private var bottomControlArea: some View {
+        Group {
+            if isShowingResult {
+                // Return to idle / Dismiss bar
+                Button {
+                    resetToIdle()
+                } label: {
+                    HStack(spacing: 6) {
+                        Image(systemName: "mic.fill")
+                        Text("Ask another request")
+                            .font(.system(size: 14, weight: .semibold))
+                    }
+                    .foregroundColor(.primary)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 12)
+                    .background(Color.white.opacity(0.92))
+                    .cornerRadius(24)
+                    .shadow(color: Color.black.opacity(0.04), radius: 6, y: 2)
                 }
+                .buttonStyle(ScaleOnPressStyle())
+            } else if speechManager.state == .listening || speechManager.state == .processing {
+                // Listening Controls: Cancel [X] and Stop [■]
+                HStack(spacing: 40) {
+                    Button {
+                        speechManager.stopListeningInternal()
+                        resetToIdle()
+                    } label: {
+                        Image(systemName: "xmark")
+                            .font(.system(size: 18, weight: .bold))
+                            .foregroundColor(.secondary)
+                            .frame(width: 52, height: 52)
+                            .background(Color.white.opacity(0.9))
+                            .clipShape(Circle())
+                            .shadow(color: Color.black.opacity(0.04), radius: 6, y: 2)
+                    }
+
+                    Button {
+                        speechManager.stopListeningInternal()
+                        if !speechManager.recognizedText.isEmpty {
+                            triggerVoiceQuery(speechManager.recognizedText)
+                        } else {
+                            resetToIdle()
+                        }
+                    } label: {
+                        RoundedRectangle(cornerRadius: 6)
+                            .fill(Color.primary)
+                            .frame(width: 18, height: 18)
+                            .frame(width: 52, height: 52)
+                            .background(Color.white.opacity(0.9))
+                            .clipShape(Circle())
+                            .shadow(color: Color.black.opacity(0.04), radius: 6, y: 2)
+                    }
+                }
+            } else {
+                // Idle "Hey IRIS" Bottom Floating Capsule Card
+                Button {
+                    toggleListening()
+                } label: {
+                    HStack(spacing: 12) {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("Hey IRIS")
+                                .font(.system(size: 16, weight: .bold))
+                                .foregroundColor(.primary)
+                            Text("Tap to speak or just say it")
+                                .font(.system(size: 13))
+                                .foregroundColor(.secondary)
+                        }
+
+                        Spacer()
+
+                        ZStack {
+                            Circle()
+                                .fill(Color.black.opacity(0.05))
+                                .frame(width: 38, height: 38)
+                            Image(systemName: "mic.fill")
+                                .font(.system(size: 16, weight: .semibold))
+                                .foregroundColor(.primary)
+                        }
+                    }
+                    .padding(.horizontal, 20)
+                    .padding(.vertical, 14)
+                    .background(Color.white.opacity(0.92))
+                    .cornerRadius(28)
+                    .shadow(color: Color.black.opacity(0.04), radius: 10, y: 3)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 28, style: .continuous)
+                            .stroke(Color.white.opacity(0.8), lineWidth: 1.2)
+                    )
+                }
+                .buttonStyle(ScaleOnPressStyle())
             }
-        } else if speechManager.state == .speaking {
-            speechManager.stopSpeaking()
+        }
+    }
+
+    // MARK: - Actions & Logic
+
+    private func resetToIdle() {
+        speechManager.recognizedText = ""
+        speechManager.spokenResponse = ""
+        isShowingResult = false
+        speechManager.state = .idle
+    }
+
+    private func toggleListening() {
+        let generator = UIImpactFeedbackGenerator(style: .medium)
+        generator.impactOccurred()
+
+        if speechManager.state == .listening {
+            speechManager.stopListeningInternal()
+            if !speechManager.recognizedText.isEmpty {
+                triggerVoiceQuery(speechManager.recognizedText)
+            }
         } else {
+            isShowingResult = false
             Task {
                 await speechManager.startListening()
             }
@@ -369,10 +522,51 @@ public struct VoiceAgentView: View {
         self.speechManager.state = .processing
         self.executedTools = []
 
+        // Extract app target name if launch query
+        let low = query.lowercased()
+        if low.contains("instagram") {
+            activeAppName = "Instagram"
+            activeAppIcon = "camera.circle.fill"
+        } else if low.contains("music") {
+            activeAppName = "Apple Music"
+            activeAppIcon = "music.note"
+        } else if low.contains("spotify") {
+            activeAppName = "Spotify"
+            activeAppIcon = "waveform"
+        } else if low.contains("youtube") {
+            activeAppName = "YouTube"
+            activeAppIcon = "play.circle.fill"
+        } else if low.contains("camera") || low.contains("photo") {
+            activeAppName = "Camera"
+            activeAppIcon = "camera.fill"
+        } else {
+            activeAppName = "Action"
+            activeAppIcon = "sparkles"
+        }
+
+        // Initialize progressive checklist
+        executionSteps = [
+            ExecutionStepItem(title: "Understanding request", isCompleted: true),
+            ExecutionStepItem(title: "Resolving capability & device policy", isCompleted: true),
+            ExecutionStepItem(title: "Executing \(activeAppName)", isCompleted: false),
+            ExecutionStepItem(title: "Done!", isCompleted: false)
+        ]
+
         let response = await orchestrator.process(userPrompt: query)
 
         self.executedTools = response.executedTools
         self.speechManager.spokenResponse = response.textResponse
+
+        // Mark execution complete
+        if executionSteps.count >= 4 {
+            executionSteps[2].isCompleted = true
+            executionSteps[3].isCompleted = true
+        }
+
+        activeResultTitle = response.textResponse
+        withAnimation {
+            isShowingResult = true
+        }
 
         if response.requiresConfirmation, let ticket = response.pendingConfirmationTicket {
             self.pendingTicket = ticket
@@ -395,95 +589,16 @@ public struct VoiceAgentView: View {
             self.pendingTicket = nil
         }
     }
+}
 
-    private func voiceChip(title: String, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            Text(title)
-                .font(.caption2.bold())
-                .foregroundColor(.white.opacity(0.92))
-                .padding(.horizontal, 12)
-                .padding(.vertical, 7)
-                .glassSurface(.clear, in: .capsule, interactive: true)
-        }
+fileprivate struct ScaleOnPressStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .scaleEffect(configuration.isPressed ? 0.97 : 1.0)
+            .animation(.spring(response: 0.25, dampingFraction: 0.7), value: configuration.isPressed)
     }
+}
 
-    // MARK: - Orb Visual State Mappings
-
-    private var statusText: String {
-        switch speechManager.state {
-        case .idle:
-            return "READY"
-        case .listening:
-            return "LISTENING..."
-        case .processing:
-            return "THINKING..."
-        case .speaking:
-            return "SPEAKING"
-        }
-    }
-
-    private var statusColor: Color {
-        switch speechManager.state {
-        case .idle:
-            return .green
-        case .listening:
-            return .blue
-        case .processing:
-            return .purple
-        case .speaking:
-            return .orange
-        }
-    }
-
-    private var orbColor: Color {
-        switch speechManager.state {
-        case .idle:
-            return Color.blue
-        case .listening:
-            return Color.cyan
-        case .processing:
-            return Color.purple
-        case .speaking:
-            return Color.pink
-        }
-    }
-
-    private var orbSecondaryColor: Color {
-        switch speechManager.state {
-        case .idle:
-            return Color.purple.opacity(0.8)
-        case .listening:
-            return Color.indigo
-        case .processing:
-            return Color.blue
-        case .speaking:
-            return Color.orange
-        }
-    }
-
-    private var backgroundColorForState: Color {
-        switch speechManager.state {
-        case .idle:
-            return Color.blue
-        case .listening:
-            return Color.indigo
-        case .processing:
-            return Color.purple
-        case .speaking:
-            return Color.pink
-        }
-    }
-
-    private var iconForState: String {
-        switch speechManager.state {
-        case .idle:
-            return "sparkles"
-        case .listening:
-            return "waveform"
-        case .processing:
-            return "brain.head.profile"
-        case .speaking:
-            return "speaker.wave.3.fill"
-        }
-    }
+#Preview {
+    VoiceAgentView()
 }

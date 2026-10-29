@@ -7,6 +7,10 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		A10000992C00000100000001 /* MemoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000992C00000100000001 /* MemoryView.swift */; };
+		A10000982C00000100000001 /* ActionsCatalogView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000982C00000100000001 /* ActionsCatalogView.swift */; };
+		A10000972C00000100000001 /* LiveWaveformView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000972C00000100000001 /* LiveWaveformView.swift */; };
+		A10000962C00000100000001 /* PearlOrbView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000962C00000100000001 /* PearlOrbView.swift */; };
 		A10000952C00000100000001 /* IRISAppIntents.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000952C00000100000001 /* IRISAppIntents.swift */; };
 		ALGK01012C00000100000001 /* GlassButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = BLGK01012C00000100000001 /* GlassButton.swift */; };
 		ALGK01022C00000100000001 /* GlassCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = BLGK01022C00000100000001 /* GlassCard.swift */; };
@@ -106,6 +110,10 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		B10000992C00000100000001 /* MemoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemoryView.swift; sourceTree = "<group>"; };
+		B10000982C00000100000001 /* ActionsCatalogView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActionsCatalogView.swift; sourceTree = "<group>"; };
+		B10000972C00000100000001 /* LiveWaveformView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveWaveformView.swift; sourceTree = "<group>"; };
+		B10000962C00000100000001 /* PearlOrbView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PearlOrbView.swift; sourceTree = "<group>"; };
 		B10000952C00000100000001 /* IRISAppIntents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IRISAppIntents.swift; sourceTree = "<group>"; };
 		BLGK01012C00000100000001 /* GlassButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlassButton.swift; sourceTree = "<group>"; };
 		BLGK01022C00000100000001 /* GlassCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlassCard.swift; sourceTree = "<group>"; };
@@ -320,6 +328,10 @@
 			children = (
 				GLGK00012C00000100000001 /* LiquidGlassKit */,
 				B10000892C00000100000001 /* VoiceAgentView.swift */,
+				B10000992C00000100000001 /* MemoryView.swift */,
+				B10000982C00000100000001 /* ActionsCatalogView.swift */,
+				B10000972C00000100000001 /* LiveWaveformView.swift */,
+				B10000962C00000100000001 /* PearlOrbView.swift */,
 				B10000462C00000100000001 /* AssistantChatView.swift */,
 				B10000472C00000100000001 /* GmailConnectionView.swift */,
 				B10000482C00000100000001 /* SettingsView.swift */,
@@ -688,6 +700,10 @@ G100003C2C00000100000001 /* Intents */ = {
 				A10000482C00000100000001 /* SettingsView.swift in Sources */,
 				A10000882C00000100000001 /* SpeechManager.swift in Sources */,
 				A10000892C00000100000001 /* VoiceAgentView.swift in Sources */,
+				A10000992C00000100000001 /* MemoryView.swift in Sources */,
+				A10000982C00000100000001 /* ActionsCatalogView.swift in Sources */,
+				A10000972C00000100000001 /* LiveWaveformView.swift in Sources */,
+				A10000962C00000100000001 /* PearlOrbView.swift in Sources */,
 				A10000902C00000100000001 /* BrainDownloadCoordinator.swift in Sources */,
 				A10000012C00000100000001 /* IRIS_IApp.swift in Sources */,
 				A10000022C00000100000001 /* ContentView.swift in Sources */,

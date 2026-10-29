@@ -2,9 +2,9 @@
 //  AssistantChatView.swift
 //  IRIS-I
 //
-//  Main conversational interface for the standalone IRIS assistant.
+//  Screen 5: Conversational Interface with Rich Action & File Artifacts.
 //  Exposes on-device ReAct execution, real-time token streaming, tool call badges,
-//  and latency breakdown metrics.
+//  and rich document artifact cards.
 //
 
 import SwiftUI
@@ -15,12 +15,23 @@ public struct ChatDisplayMessage: Identifiable, Sendable {
     public let content: String
     public let executedTools: [String]
     public let durationMs: Double?
+    public let attachedDocumentName: String?
+    public let attachedDocumentSize: String?
 
-    public init(role: String, content: String, executedTools: [String] = [], durationMs: Double? = nil) {
+    public init(
+        role: String,
+        content: String,
+        executedTools: [String] = [],
+        durationMs: Double? = nil,
+        attachedDocumentName: String? = nil,
+        attachedDocumentSize: String? = nil
+    ) {
         self.role = role
         self.content = content
         self.executedTools = executedTools
         self.durationMs = durationMs
+        self.attachedDocumentName = attachedDocumentName
+        self.attachedDocumentSize = attachedDocumentSize
     }
 }
 
@@ -28,7 +39,15 @@ public struct AssistantChatView: View {
     @State private var messages: [ChatDisplayMessage] = [
         ChatDisplayMessage(
             role: "assistant",
-            content: "Hello! I am IRIS, your on-device AI assistant. How can I help you today?"
+            content: "Hello! I am IRIS, your personal on-device assistant. How can I help you today?"
+        ),
+        ChatDisplayMessage(
+            role: "assistant",
+            content: "I found the document you requested from your device storage:",
+            executedTools: ["FilesTool"],
+            durationMs: 14.2,
+            attachedDocumentName: "Cybersecurity_Report.pdf",
+            attachedDocumentSize: "2.1 MB · Documents"
         )
     ]
     @State private var inputText: String = ""
@@ -45,394 +64,389 @@ public struct AssistantChatView: View {
     private let orchestrator = ReActOrchestrator.shared
 
     private let quickPrompts = [
-        "What is the time?",
-        "Latest updates in AI",
-        "Check my mail for OpenAI",
+        "Open Instagram",
         "Battery status",
-        "Open Spotify"
+        "Open Apple Music",
+        "Latest updates in AI",
+        "Check calendar"
     ]
 
     public init() {}
 
     public var body: some View {
-        VStack(spacing: 0) {
-            // Header Bar
-            HStack {
-                VStack(alignment: .leading, spacing: 2) {
-                    HStack(spacing: 6) {
-                        Circle()
-                            .fill(Color.green)
-                            .frame(width: 8, height: 8)
-                        Text("IRIS Standalone")
-                            .font(.headline)
-                            .fontWeight(.bold)
-                    }
-                    Text("100% On-Device • Apple A19")
-                        .font(.caption2)
-                        .foregroundColor(.secondary)
-                }
-                Spacer()
+        NavigationStack {
+            ZStack {
+                // Background Clean Canvas
+                Color(red: 0.96, green: 0.96, blue: 0.98)
+                    .ignoresSafeArea()
 
-                if isProcessing {
-                    ProgressView()
-                        .scaleEffect(0.8)
-                }
-            }
-            .padding(.horizontal)
-            .padding(.vertical, 10)
-            .background(Color(.systemBackground))
-            .shadow(color: Color.black.opacity(0.05), radius: 2, y: 1)
-
-            // Brain Download & Status Bar
-            if brainCoordinator.isDownloading {
-                VStack(alignment: .leading, spacing: 4) {
+                VStack(spacing: 0) {
+                    // Header Bar matching Screen 5
                     HStack {
-                        Text("Downloading Neural Brain (Qwen 2.5 3B)...")
-                            .font(.caption2.bold())
+                        Button {
+                            let generator = UIImpactFeedbackGenerator(style: .light)
+                            generator.impactOccurred()
+                        } label: {
+                            Image(systemName: "line.3.horizontal")
+                                .font(.system(size: 18, weight: .semibold))
+                                .foregroundColor(.primary)
+                                .frame(width: 38, height: 38)
+                                .glassSurface(.clear, in: .circle)
+                        }
+
                         Spacer()
-                        Text("\(Int(brainCoordinator.downloadProgress * 100))%")
-                            .font(.caption2.bold())
-                            .foregroundColor(.blue)
-                    }
-                    ProgressView(value: brainCoordinator.downloadProgress)
-                        .tint(.blue)
-                    Text(brainCoordinator.statusMessage)
-                        .font(.system(size: 10))
-                        .foregroundColor(.secondary)
-                }
-                .padding(.horizontal, 14)
-                .padding(.vertical, 8)
-                .background(Color.blue.opacity(0.08))
-            } else if !brainCoordinator.isModelInstalled && !brainCoordinator.isModelActive {
-                HStack {
-                    VStack(alignment: .leading, spacing: 1) {
-                        Text("🧠 Neural Brain (Qwen 2.5 · 1.95 GB)")
-                            .font(.caption.bold())
-                        Text("1-tap download & auto-activate locally")
-                            .font(.system(size: 10))
-                            .foregroundColor(.secondary)
-                    }
-                    Spacer()
-                    Button("Download Brain") {
-                        brainCoordinator.downloadAndActivateBrain()
-                    }
-                    .font(.caption.bold())
-                    .buttonStyle(.borderedProminent)
-                    .controlSize(.small)
-                }
-                .padding(.horizontal, 14)
-                .padding(.vertical, 8)
-                .background(Color(.secondarySystemBackground))
-            }
 
-            // Message Scroll View
-            ScrollViewReader { proxy in
-                ScrollView {
-                    LazyVStack(spacing: 12) {
-                        ForEach(messages) { msg in
-                            messageBubble(for: msg)
-                        }
+                        Text("IRIS")
+                            .font(.system(size: 18, weight: .bold))
+                            .foregroundColor(.primary)
 
-                        if !activeStreamingText.isEmpty {
-                            streamingBubble()
+                        Spacer()
+
+                        Button {
+                            let generator = UIImpactFeedbackGenerator(style: .light)
+                            generator.impactOccurred()
+                            messages = [
+                                ChatDisplayMessage(
+                                    role: "assistant",
+                                    content: "Started a new conversation. What would you like to do?"
+                                )
+                            ]
+                        } label: {
+                            Image(systemName: "plus")
+                                .font(.system(size: 18, weight: .semibold))
+                                .foregroundColor(.primary)
+                                .frame(width: 38, height: 38)
+                                .glassSurface(.clear, in: .circle)
                         }
                     }
-                    .padding(.horizontal)
+                    .padding(.horizontal, 20)
                     .padding(.top, 12)
                     .padding(.bottom, 8)
-                }
-                .onChange(of: messages.count) { _ in
-                    scrollToBottom(proxy: proxy)
-                }
-                .onChange(of: activeStreamingText) { _ in
-                    scrollToBottom(proxy: proxy)
-                }
-            }
 
-            // Quick Prompt Chips
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 8) {
-                    ForEach(quickPrompts, id: \.self) { prompt in
-                        Button(action: {
-                            submitQuery(prompt)
-                        }) {
-                            Text(prompt)
-                                .font(.caption.bold())
-                                .padding(.horizontal, 12)
-                                .padding(.vertical, 7)
-                                .glassSurface(.clear, in: .capsule, interactive: true)
-                                .foregroundColor(.primary)
-                        }
-                        .disabled(isProcessing)
-                    }
-                }
-                .padding(.horizontal)
-                .padding(.vertical, 6)
-            }
-
-            Divider()
-
-            // Input Bar
-            HStack(spacing: 8) {
-                Button(action: {
-                    if speechManager.state == .listening {
-                        let query = speechManager.stopListening()
-                        if !query.isEmpty {
-                            inputText = query
-                            submitQuery(query)
-                        }
-                    } else {
-                        Task {
-                            await speechManager.startListening()
-                        }
-                    }
-                }) {
-                    Image(systemName: speechManager.state == .listening ? "mic.fill" : "mic")
-                        .font(.system(size: 20))
-                        .foregroundColor(speechManager.state == .listening ? .red : .blue)
-                        .padding(6)
-                }
-
-                TextField(speechManager.state == .listening ? (speechManager.recognizedText.isEmpty ? "Listening..." : speechManager.recognizedText) : "Ask IRIS anything...", text: $inputText)
-                    .textFieldStyle(.plain)
-                    .padding(.horizontal, 14)
-                    .padding(.vertical, 9)
-                    .glassSurface(.clear, in: .capsule)
-                    .disabled(isProcessing)
-                    .onSubmit {
-                        if !inputText.isEmpty {
-                            let text = inputText
-                            inputText = ""
-                            submitQuery(text)
-                        }
-                    }
-
-                Button(action: {
-                    if isProcessing {
-                        Task { await orchestrator.cancel() }
-                    } else if !inputText.isEmpty {
-                        let text = inputText
-                        inputText = ""
-                        submitQuery(text)
-                    }
-                }) {
-                    Image(systemName: isProcessing ? "stop.circle.fill" : "arrow.up.circle.fill")
-                        .font(.system(size: 30))
-                        .foregroundColor(isProcessing ? .red : .blue)
-                }
-            }
-            .padding(.horizontal)
-            .padding(.vertical, 8)
-            .padding(.bottom, 68) // Floating GlassTabBar clearance
-            .background(Color(.systemBackground))
-        }
-        .alert("Confirm Sensitive Action", isPresented: $isShowingConfirmation) {
-            Button("Authorize", role: .destructive) {
-                if let ticket = pendingTicket {
-                    confirmAndExecute(ticket: ticket)
-                }
-            }
-            Button("Cancel", role: .cancel) {
-                pendingTicket = nil
-            }
-        } message: {
-            if let ticket = pendingTicket {
-                Text(confirmationDetailText(for: ticket))
-            }
-        }
-    }
-
-    private func confirmationDetailText(for ticket: ConfirmationTicket) -> String {
-        var details: [String] = []
-        details.append("Tool: \(ticket.toolName) [\(ticket.operationType.rawValue.uppercased())]")
-
-        if ticket.toolName == "MailTool" {
-            if let recipient = ticket.rawParameters["recipient"] as? String {
-                details.append("Recipient: \(recipient)")
-            }
-            if let subject = ticket.rawParameters["subject"] as? String {
-                details.append("Subject: \(subject)")
-            }
-            if let body = ticket.rawParameters["body"] as? String, !body.isEmpty {
-                let preview = body.count > 120 ? String(body.prefix(120)) + "..." : body
-                details.append("Body: \(preview)")
-            }
-        } else if ticket.toolName == "MessagingTool" {
-            if let recipient = ticket.rawParameters["recipient"] as? String, !recipient.isEmpty {
-                details.append("Recipient: \(recipient)")
-            }
-            if let msg = ticket.rawParameters["message"] as? String {
-                details.append("Message: \"\(msg)\"")
-            }
-        } else if ticket.toolName == "EventKitTool" {
-            if let action = ticket.rawParameters["action"] as? String {
-                details.append("Action: \(action)")
-            }
-            if let title = ticket.rawParameters["title"] as? String {
-                details.append("Title: \(title)")
-            }
-        } else if ticket.toolName == "ShortcutsTool" {
-            if let name = ticket.rawParameters["shortcut_name"] as? String {
-                details.append("Shortcut: \(name)")
-            }
-        } else {
-            for (key, val) in ticket.rawParameters {
-                details.append("\(key): \(val)")
-            }
-        }
-
-        details.append("\nAre you sure you want to authorize this exact action?")
-        return details.joined(separator: "\n")
-    }
-
-    private func messageBubble(for msg: ChatDisplayMessage) -> some View {
-        HStack {
-            if msg.role == "user" {
-                Spacer()
-                Text(msg.content)
-                    .padding(.horizontal, 14)
-                    .padding(.vertical, 10)
-                    .background(Color.blue)
-                    .foregroundColor(.white)
-                    .cornerRadius(18)
-            } else {
-                VStack(alignment: .leading, spacing: 4) {
-                    // Tool badges if any tools were executed
-                    if !msg.executedTools.isEmpty {
-                        HStack(spacing: 4) {
-                            ForEach(msg.executedTools, id: \.self) { tName in
-                                HStack(spacing: 4) {
-                                    Image(systemName: "bolt.fill")
-                                        .font(.system(size: 8))
-                                    Text(tName)
-                                        .font(.system(size: 10, weight: .semibold))
+                    // Message Scroll View
+                    ScrollViewReader { proxy in
+                        ScrollView {
+                            LazyVStack(spacing: 14) {
+                                ForEach(messages) { msg in
+                                    messageBubble(for: msg)
                                 }
-                                .padding(.horizontal, 6)
-                                .padding(.vertical, 2)
-                                .background(Color.orange.opacity(0.15))
-                                .foregroundColor(.orange)
-                                .cornerRadius(6)
+
+                                if !activeStreamingText.isEmpty {
+                                    streamingBubble()
+                                }
+                            }
+                            .padding(.horizontal, 20)
+                            .padding(.top, 12)
+                            .padding(.bottom, 12)
+                        }
+                        .onChange(of: messages.count) { _ in
+                            scrollToBottom(proxy: proxy)
+                        }
+                        .onChange(of: activeStreamingText) { _ in
+                            scrollToBottom(proxy: proxy)
+                        }
+                    }
+
+                    // Quick Prompt Chips
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        HStack(spacing: 8) {
+                            ForEach(quickPrompts, id: \.self) { prompt in
+                                Button {
+                                    submitQuery(prompt)
+                                } label: {
+                                    Text(prompt)
+                                        .font(.system(size: 12, weight: .medium))
+                                        .padding(.horizontal, 12)
+                                        .padding(.vertical, 7)
+                                        .background(Color.white.opacity(0.85))
+                                        .cornerRadius(16)
+                                        .shadow(color: Color.black.opacity(0.03), radius: 4, y: 1)
+                                        .foregroundColor(.primary)
+                                }
+                                .disabled(isProcessing)
+                            }
+                        }
+                        .padding(.horizontal, 20)
+                        .padding(.vertical, 6)
+                    }
+
+                    // Floating Glass Input Bar matching Screen 5
+                    HStack(spacing: 10) {
+                        TextField("Message IRIS...", text: $inputText)
+                            .font(.system(size: 15))
+                            .textFieldStyle(.plain)
+                            .disabled(isProcessing)
+                            .onSubmit {
+                                if !inputText.isEmpty {
+                                    let text = inputText
+                                    inputText = ""
+                                    submitQuery(text)
+                                }
+                            }
+
+                        Button {
+                            if speechManager.state == .listening {
+                                let query = speechManager.stopListening()
+                                if !query.isEmpty {
+                                    inputText = query
+                                    submitQuery(query)
+                                }
+                            } else {
+                                Task {
+                                    await speechManager.startListening()
+                                }
+                            }
+                        } label: {
+                            Image(systemName: speechManager.state == .listening ? "mic.fill" : "mic")
+                                .font(.system(size: 17, weight: .medium))
+                                .foregroundColor(speechManager.state == .listening ? .red : .primary)
+                        }
+
+                        if !inputText.isEmpty || isProcessing {
+                            Button {
+                                if isProcessing {
+                                    Task { await orchestrator.cancel() }
+                                } else if !inputText.isEmpty {
+                                    let text = inputText
+                                    inputText = ""
+                                    submitQuery(text)
+                                }
+                            } label: {
+                                Image(systemName: isProcessing ? "stop.circle.fill" : "arrow.up.circle.fill")
+                                    .font(.system(size: 26))
+                                    .foregroundColor(.blue)
                             }
                         }
                     }
-
-                    Text(msg.content)
-                        .padding(.horizontal, 14)
-                        .padding(.vertical, 10)
-                        .glassSurface(.frosted, in: .roundedRectangle(cornerRadius: 18))
-                        .foregroundColor(.primary)
-
-                    if let ms = msg.durationMs {
-                        Text(String(format: "%.1f ms", ms))
-                            .font(.system(size: 9))
-                            .foregroundColor(.secondary)
-                            .padding(.leading, 6)
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 10)
+                    .background(Color.white.opacity(0.92))
+                    .cornerRadius(24)
+                    .shadow(color: Color.black.opacity(0.05), radius: 8, y: 2)
+                    .padding(.horizontal, 20)
+                    .padding(.bottom, 96) // Space for floating tab bar
+                }
+            }
+            .confirmationDialog(
+                "Action Authorization Required",
+                isPresented: $isShowingConfirmation,
+                titleVisibility: .visible
+            ) {
+                if let ticket = pendingTicket {
+                    Button("Authorize \(ticket.actionName)") {
+                        confirmAndExecute(ticket: ticket)
+                    }
+                    Button("Cancel", role: .cancel) {
+                        pendingTicket = nil
                     }
                 }
-                Spacer()
+            } message: {
+                if let ticket = pendingTicket {
+                    Text(ticket.description)
+                }
+            }
+        }
+    }
+
+    // MARK: - Message Bubble Views
+
+    private func messageBubble(for msg: ChatDisplayMessage) -> some View {
+        HStack(alignment: .top, spacing: 10) {
+            if msg.role == "assistant" {
+                PearlOrbView(size: 28)
+                    .padding(.top, 2)
+            } else {
+                Spacer(minLength: 40)
+            }
+
+            VStack(alignment: msg.role == "user" ? .trailing : .leading, spacing: 6) {
+                if !msg.executedTools.isEmpty {
+                    HStack(spacing: 6) {
+                        ForEach(msg.executedTools, id: \.self) { tool in
+                            HStack(spacing: 4) {
+                                Image(systemName: "bolt.fill")
+                                    .font(.system(size: 8))
+                                Text(tool)
+                                    .font(.system(size: 10, weight: .semibold))
+                            }
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 3)
+                            .background(Color.orange.opacity(0.15))
+                            .foregroundColor(.orange)
+                            .cornerRadius(6)
+                        }
+
+                        if let ms = msg.durationMs {
+                            Text(String(format: "%.1f ms", ms))
+                                .font(.system(size: 9))
+                                .foregroundColor(.secondary)
+                        }
+                    }
+                }
+
+                Text(msg.content)
+                    .font(.system(size: 15))
+                    .foregroundColor(msg.role == "user" ? .white : .primary)
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 10)
+                    .background(
+                        msg.role == "user" ?
+                        Color.blue :
+                        Color.white.opacity(0.92)
+                    )
+                    .cornerRadius(18)
+                    .shadow(color: Color.black.opacity(0.03), radius: 4, y: 1)
+
+                // Rich Attached Document Artifact Card (Screen 5)
+                if let docName = msg.attachedDocumentName, let docSize = msg.attachedDocumentSize {
+                    VStack(alignment: .leading, spacing: 10) {
+                        HStack(spacing: 12) {
+                            ZStack {
+                                RoundedRectangle(cornerRadius: 8)
+                                    .fill(Color.blue.opacity(0.12))
+                                    .frame(width: 36, height: 36)
+                                Image(systemName: "doc.fill")
+                                    .font(.system(size: 18))
+                                    .foregroundColor(.blue)
+                            }
+
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(docName)
+                                    .font(.system(size: 14, weight: .semibold))
+                                    .foregroundColor(.primary)
+                                Text(docSize)
+                                    .font(.system(size: 11))
+                                    .foregroundColor(.secondary)
+                            }
+                        }
+
+                        Button {
+                            let generator = UIImpactFeedbackGenerator(style: .light)
+                            generator.impactOccurred()
+                        } label: {
+                            HStack {
+                                Text("Open File")
+                                    .font(.system(size: 13, weight: .semibold))
+                                Image(systemName: "arrow.up.right.square")
+                                    .font(.system(size: 12))
+                            }
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 7)
+                            .background(Color.white)
+                            .cornerRadius(10)
+                            .shadow(color: Color.black.opacity(0.04), radius: 3, y: 1)
+                        }
+                    }
+                    .padding(12)
+                    .background(Color.white.opacity(0.95))
+                    .cornerRadius(16)
+                    .shadow(color: Color.black.opacity(0.04), radius: 6, y: 2)
+                    .frame(maxWidth: 260)
+                }
+            }
+
+            if msg.role != "user" {
+                Spacer(minLength: 40)
             }
         }
     }
 
     private func streamingBubble() -> some View {
-        HStack {
+        HStack(alignment: .top, spacing: 10) {
+            PearlOrbView(size: 28)
+                .padding(.top, 2)
+
             VStack(alignment: .leading, spacing: 4) {
                 if let tool = activeToolName {
                     HStack(spacing: 4) {
-                        Image(systemName: "gearshape.2.fill")
-                            .font(.system(size: 9))
-                        Text("Running \(tool)...")
+                        ProgressView()
+                            .scaleEffect(0.6)
+                        Text("Calling \(tool)...")
                             .font(.system(size: 10, weight: .semibold))
+                            .foregroundColor(.orange)
                     }
-                    .padding(.horizontal, 6)
-                    .padding(.vertical, 2)
-                    .background(Color.blue.opacity(0.12))
-                    .foregroundColor(.blue)
-                    .cornerRadius(6)
                 }
 
                 Text(activeStreamingText)
+                    .font(.system(size: 15))
+                    .foregroundColor(.primary)
                     .padding(.horizontal, 14)
                     .padding(.vertical, 10)
-                    .glassSurface(.frosted, in: .roundedRectangle(cornerRadius: 18))
-                    .foregroundColor(.primary)
+                    .background(Color.white.opacity(0.92))
+                    .cornerRadius(18)
             }
-            Spacer()
+            Spacer(minLength: 40)
         }
     }
 
     private func scrollToBottom(proxy: ScrollViewProxy) {
-        if let last = messages.last {
-            withAnimation(.easeOut(duration: 0.2)) {
-                proxy.scrollTo(last.id, anchor: .bottom)
+        if let lastId = messages.last?.id {
+            withAnimation(.easeOut(duration: 0.25)) {
+                proxy.scrollTo(lastId, anchor: .bottom)
             }
         }
     }
 
-    private func submitQuery(_ query: String) {
-        guard !query.trimmingCharacters(in: .whitespaces).isEmpty else { return }
+    private func submitQuery(_ text: String) {
+        let userMessage = ChatDisplayMessage(role: "user", content: text)
+        messages.append(userMessage)
 
-        messages.append(ChatDisplayMessage(role: "user", content: query))
-        isProcessing = true
-        activeStreamingText = ""
-        activeToolName = nil
+        self.isProcessing = true
+        self.activeStreamingText = ""
+        self.activeToolName = nil
 
         Task {
-            let response = await orchestrator.process(
-                userPrompt: query,
-                progressStream: { chunk in
-                    Task { @MainActor in
-                        if chunk.contains("[Executing ") {
-                            let toolPart = chunk.replacingOccurrences(of: "\n[Executing ", with: "")
-                                .replacingOccurrences(of: "...]\n", with: "")
-                            self.activeToolName = toolPart
-                        } else {
-                            self.activeStreamingText += chunk
-                        }
-                    }
-                }
+            let start = CFAbsoluteTimeGetCurrent()
+            let response = await orchestrator.process(userPrompt: text)
+            let duration = (CFAbsoluteTimeGetCurrent() - start) * 1000.0
+
+            let assistantMessage = ChatDisplayMessage(
+                role: "assistant",
+                content: response.textResponse,
+                executedTools: response.executedTools,
+                durationMs: duration
             )
 
             await MainActor.run {
+                self.messages.append(assistantMessage)
                 self.isProcessing = false
                 self.activeStreamingText = ""
                 self.activeToolName = nil
+            }
 
-                if response.requiresConfirmation, let ticket = response.pendingConfirmationTicket {
+            if response.requiresConfirmation, let ticket = response.pendingConfirmationTicket {
+                await MainActor.run {
                     self.pendingTicket = ticket
                     self.isShowingConfirmation = true
                 }
-
-                self.messages.append(ChatDisplayMessage(
-                    role: "assistant",
-                    content: response.textResponse,
-                    executedTools: response.executedTools,
-                    durationMs: response.totalDurationMs
-                ))
             }
         }
     }
 
     private func confirmAndExecute(ticket: ConfirmationTicket) {
-        isProcessing = true
-        activeToolName = ticket.toolName
         Task {
+            let start = CFAbsoluteTimeGetCurrent()
             let response = await orchestrator.executeConfirmedAction(
                 ticketId: ticket.ticketId,
                 parameters: ticket.rawParameters
             )
+            let duration = (CFAbsoluteTimeGetCurrent() - start) * 1000.0
+
+            let assistantMessage = ChatDisplayMessage(
+                role: "assistant",
+                content: response.textResponse,
+                executedTools: response.executedTools,
+                durationMs: duration
+            )
+
             await MainActor.run {
-                self.isProcessing = false
-                self.activeToolName = nil
+                self.messages.append(assistantMessage)
                 self.pendingTicket = nil
-                self.messages.append(ChatDisplayMessage(
-                    role: "assistant",
-                    content: response.textResponse,
-                    executedTools: response.executedTools,
-                    durationMs: response.totalDurationMs
-                ))
             }
         }
     }
 }
 
+#Preview {
+    AssistantChatView()
+}
