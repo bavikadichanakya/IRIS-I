@@ -203,13 +203,13 @@ public struct GlassTabBar<Value: Hashable>: View {
     private func item(for tab: GlassTab<Value>) -> some View {
         let isSelected = tab.value == selection
         return Button {
-            withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+            withAnimation(.spring(response: 0.38, dampingFraction: 0.72)) {
                 selection = tab.value
             }
         } label: {
             VStack(spacing: 3) {
                 Image(systemName: tab.systemImage)
-                    .font(.system(size: 18, weight: .medium))
+                    .font(.system(size: isSelected ? 19 : 17, weight: isSelected ? .bold : .medium))
                     .symbolVariant(isSelected ? .fill : .none)
                     .overlay(alignment: .topTrailing) {
                         if let badge = tab.badge {
@@ -218,17 +218,17 @@ public struct GlassTabBar<Value: Hashable>: View {
                     }
                 if showsLabels {
                     Text(tab.title)
-                        .font(.caption2.weight(.medium))
+                        .font(.system(size: 11, weight: isSelected ? .semibold : .medium))
                         .lineLimit(1)
                 }
             }
-            .foregroundStyle(isSelected ? AnyShapeStyle(.tint) : AnyShapeStyle(.secondary))
+            .foregroundStyle(isSelected ? AnyShapeStyle(Color.white) : AnyShapeStyle(Color.secondary))
+            .scaleEffect(isSelected ? 1.05 : 1.0)
             .frame(maxWidth: .infinity)
-            .padding(.vertical, 6)
+            .padding(.vertical, 7)
             .background {
                 if isSelected {
-                    Capsule()
-                        .fill(.primary.opacity(0.08))
+                    LiquidGlassLens()
                         .matchedGeometryEffect(id: "selection", in: indicator)
                 }
             }
@@ -304,5 +304,112 @@ struct TabBarActionLayout: Layout {
         }
         let bar = CGRect(x: 0, y: 0, width: barWidth, height: side)
         return (bar, CGRect(x: barWidth + spacing, y: 0, width: side, height: side))
+    }
+}
+
+/// An Apple-level elevated 3D liquid glass lens indicator with chromatic dispersion and specular reflections.
+public struct LiquidGlassLens: View {
+    public init() {}
+
+    public var body: some View {
+        ZStack {
+            // 1. Soft ambient elevation shadow
+            Capsule()
+                .fill(Color.black.opacity(0.40))
+                .blur(radius: 6)
+                .offset(y: 4)
+
+            // 2. Underlying frosted glass blur
+            Capsule()
+                .fill(.ultraThinMaterial)
+
+            // 3. Dark optical depth tint
+            Capsule()
+                .fill(Color.black.opacity(0.20))
+
+            // 4. Glossy specular top dome reflection
+            Capsule()
+                .fill(
+                    LinearGradient(
+                        stops: [
+                            .init(color: .white.opacity(0.40), location: 0.0),
+                            .init(color: .white.opacity(0.10), location: 0.35),
+                            .init(color: .clear, location: 0.65)
+                        ],
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                )
+
+            // 5. Chromatic dispersion - Top edge rainbow caustics (cyan -> violet -> specular white -> teal)
+            Capsule()
+                .strokeBorder(
+                    LinearGradient(
+                        stops: [
+                            .init(color: Color(red: 0.1, green: 0.8, blue: 1.0).opacity(0.95), location: 0.15),
+                            .init(color: Color(red: 0.8, green: 0.3, blue: 1.0).opacity(0.85), location: 0.38),
+                            .init(color: Color.white.opacity(0.98), location: 0.50),
+                            .init(color: Color(red: 0.2, green: 0.9, blue: 0.7).opacity(0.85), location: 0.62),
+                            .init(color: Color(red: 0.4, green: 0.6, blue: 1.0).opacity(0.95), location: 0.85)
+                        ],
+                        startPoint: .leading,
+                        endPoint: .trailing
+                    ),
+                    lineWidth: 1.5
+                )
+                .mask {
+                    VStack {
+                        Rectangle()
+                            .fill(LinearGradient(colors: [.black, .clear], startPoint: .top, endPoint: .bottom))
+                            .frame(height: 18)
+                        Spacer()
+                    }
+                }
+
+            // 6. Chromatic dispersion - Bottom edge rainbow caustics (amber -> orange -> magenta -> teal)
+            Capsule()
+                .strokeBorder(
+                    LinearGradient(
+                        stops: [
+                            .init(color: Color(red: 1.0, green: 0.55, blue: 0.1).opacity(0.9), location: 0.18),
+                            .init(color: Color(red: 1.0, green: 0.2, blue: 0.5).opacity(0.8), location: 0.40),
+                            .init(color: Color.white.opacity(0.95), location: 0.50),
+                            .init(color: Color(red: 0.1, green: 0.9, blue: 0.8).opacity(0.85), location: 0.62),
+                            .init(color: Color(red: 0.9, green: 0.8, blue: 0.1).opacity(0.9), location: 0.82)
+                        ],
+                        startPoint: .leading,
+                        endPoint: .trailing
+                    ),
+                    lineWidth: 1.5
+                )
+                .mask {
+                    VStack {
+                        Spacer()
+                        Rectangle()
+                            .fill(LinearGradient(colors: [.clear, .black], startPoint: .top, endPoint: .bottom))
+                            .frame(height: 18)
+                    }
+                }
+
+            // 7. Full perimeter razor-thin specular outline
+            Capsule()
+                .strokeBorder(
+                    LinearGradient(
+                        colors: [
+                            .white.opacity(0.7),
+                            .white.opacity(0.12),
+                            .white.opacity(0.4)
+                        ],
+                        startPoint: .top,
+                        endPoint: .bottom
+                    ),
+                    lineWidth: 0.75
+                )
+        }
+        .padding(.vertical, -8)
+        .padding(.horizontal, -3)
+        .shadow(color: .black.opacity(0.40), radius: 8, x: 0, y: 4)
+        .shadow(color: Color(red: 0.1, green: 0.8, blue: 1.0).opacity(0.20), radius: 5, x: 0, y: -2)
+        .shadow(color: Color(red: 1.0, green: 0.5, blue: 0.1).opacity(0.18), radius: 5, x: 0, y: 2)
     }
 }
