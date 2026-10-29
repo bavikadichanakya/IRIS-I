@@ -189,7 +189,7 @@ public actor LocalModelRunner {
 
         self.lifecycleState = .inferring(promptSnippet: String(prompt.prefix(40)))
 
-        let stream = engine.generateStream(
+        let stream = await engine.generateStream(
             prompt: prompt,
             maxTokens: maxTokens,
             temperature: temperature

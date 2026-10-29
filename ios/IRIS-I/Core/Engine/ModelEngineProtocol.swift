@@ -58,7 +58,7 @@ public protocol ModelEngineProtocol: AnyObject, Sendable {
         prompt: String,
         maxTokens: Int,
         temperature: Float
-    ) -> AsyncThrowingStream<String, Error>
+    ) async -> AsyncThrowingStream<String, Error>
 
     func cancel() async
     func latestTelemetry() async -> InferenceTelemetry

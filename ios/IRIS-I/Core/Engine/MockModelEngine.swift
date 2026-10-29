@@ -58,7 +58,7 @@ public actor MockModelEngine: ModelEngineProtocol {
         prompt: String,
         maxTokens: Int = 512,
         temperature: Float = 0.7
-    ) -> AsyncThrowingStream<String, Error> {
+    ) async -> AsyncThrowingStream<String, Error> {
         self.isCancelled = false
 
         return AsyncThrowingStream { continuation in
