@@ -130,15 +130,15 @@ public struct VoiceAgentView: View {
                 Text("IRIS")
                     .font(.system(size: 38, weight: .bold, design: .default))
                     .tracking(1.5)
-                    .foregroundColor(.primary)
+                    .foregroundColor(.black)
 
                 Text("Your personal assistant")
                     .font(.system(size: 16, weight: .medium))
-                    .foregroundColor(.secondary)
+                    .foregroundColor(Color(white: 0.35))
 
                 Text("Always with you.")
                     .font(.system(size: 15))
-                    .foregroundColor(Color.secondary.opacity(0.85))
+                    .foregroundColor(Color(white: 0.45))
             }
             .padding(.top, 10)
 
@@ -166,8 +166,10 @@ public struct VoiceAgentView: View {
             HStack(spacing: 6) {
                 Image(systemName: "waveform")
                     .font(.system(size: 13, weight: .semibold))
+                    .foregroundColor(.black)
                 Text(speechManager.state == .processing ? "Thinking..." : "Listening...")
                     .font(.system(size: 13, weight: .semibold))
+                    .foregroundColor(.black)
                 Image(systemName: "checkmark")
                     .font(.system(size: 11, weight: .bold))
                     .foregroundColor(.blue)
@@ -180,13 +182,13 @@ public struct VoiceAgentView: View {
                 } label: {
                     Image(systemName: "arrow.counterclockwise")
                         .font(.system(size: 12, weight: .semibold))
-                        .foregroundColor(.secondary)
+                        .foregroundColor(Color(white: 0.40))
                 }
             }
             .padding(.horizontal, 16)
             .padding(.vertical, 8)
             .frame(width: 220)
-            .background(Color.white.opacity(0.9))
+            .background(Color.white.opacity(0.95))
             .cornerRadius(20)
             .shadow(color: Color.black.opacity(0.04), radius: 6, y: 2)
 
@@ -208,11 +210,11 @@ public struct VoiceAgentView: View {
             VStack(spacing: 4) {
                 Text(speechManager.state == .processing ? "Processing..." : "I'm listening")
                     .font(.system(size: 22, weight: .bold))
-                    .foregroundColor(.primary)
+                    .foregroundColor(.black)
 
                 Text(speechManager.recognizedText.isEmpty ? "Speak naturally" : "\"\(speechManager.recognizedText)\"")
                     .font(.system(size: 15))
-                    .foregroundColor(.secondary)
+                    .foregroundColor(Color(white: 0.35))
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, 30)
             }
@@ -228,14 +230,14 @@ public struct VoiceAgentView: View {
             HStack(spacing: 8) {
                 Text(speechManager.recognizedText.isEmpty ? "Requested Action" : speechManager.recognizedText)
                     .font(.system(size: 14, weight: .medium))
-                    .foregroundColor(.primary)
+                    .foregroundColor(.black)
                 Image(systemName: "pencil")
                     .font(.system(size: 12))
-                    .foregroundColor(.secondary)
+                    .foregroundColor(Color(white: 0.40))
             }
             .padding(.horizontal, 16)
             .padding(.vertical, 8)
-            .background(Color.white.opacity(0.9))
+            .background(Color.white)
             .cornerRadius(20)
             .shadow(color: Color.black.opacity(0.04), radius: 6, y: 2)
 
@@ -246,10 +248,10 @@ public struct VoiceAgentView: View {
                     VStack(alignment: .leading, spacing: 1) {
                         Text("IRIS")
                             .font(.system(size: 12, weight: .bold))
-                            .foregroundColor(.secondary)
+                            .foregroundColor(Color(white: 0.40))
                         Text(activeAppName.isEmpty ? "Executing..." : "Opening \(activeAppName)...")
                             .font(.system(size: 15, weight: .semibold))
-                            .foregroundColor(.primary)
+                            .foregroundColor(.black)
                     }
                     Spacer()
                 }
@@ -261,16 +263,16 @@ public struct VoiceAgentView: View {
                         HStack(spacing: 8) {
                             Image(systemName: step.isCompleted ? "checkmark.circle.fill" : "circle")
                                 .font(.system(size: 14))
-                                .foregroundColor(step.isCompleted ? .black : .secondary)
+                                .foregroundColor(step.isCompleted ? .black : Color(white: 0.50))
                             Text(step.title)
                                 .font(.system(size: 13, weight: step.isCompleted ? .medium : .regular))
-                                .foregroundColor(step.isCompleted ? .primary : .secondary)
+                                .foregroundColor(step.isCompleted ? .black : Color(white: 0.40))
                         }
                     }
                 }
             }
             .padding(16)
-            .background(Color.white.opacity(0.92))
+            .background(Color.white)
             .cornerRadius(18)
             .shadow(color: Color.black.opacity(0.04), radius: 8, y: 3)
             .padding(.horizontal, 20)
@@ -294,11 +296,11 @@ public struct VoiceAgentView: View {
 
                 Text(activeAppName)
                     .font(.system(size: 16, weight: .bold))
-                    .foregroundColor(.primary)
+                    .foregroundColor(.black)
 
                 Text(activeResultTitle)
                     .font(.system(size: 12))
-                    .foregroundColor(.secondary)
+                    .foregroundColor(Color(white: 0.35))
             }
             .padding(.vertical, 10)
 
@@ -336,7 +338,7 @@ public struct VoiceAgentView: View {
             .background(Color.white.opacity(0.9))
             .cornerRadius(16)
             .shadow(color: Color.black.opacity(0.03), radius: 4, y: 2)
-            .foregroundColor(.primary)
+            .foregroundColor(.black)
         }
         .buttonStyle(ScaleOnPressStyle())
     }
@@ -351,9 +353,11 @@ public struct VoiceAgentView: View {
             } label: {
                 Image(systemName: "line.3.horizontal")
                     .font(.system(size: 18, weight: .semibold))
-                    .foregroundColor(.primary)
+                    .foregroundColor(.black)
                     .frame(width: 40, height: 40)
-                    .glassSurface(.clear, in: .circle)
+                    .background(Color.white.opacity(0.9))
+                    .clipShape(Circle())
+                    .shadow(color: Color.black.opacity(0.04), radius: 4, y: 1)
             }
 
             Spacer()
@@ -367,7 +371,8 @@ public struct VoiceAgentView: View {
                 }
                 .padding(.horizontal, 10)
                 .padding(.vertical, 5)
-                .glassSurface(.tinted(.green), in: .capsule)
+                .background(Color.green.opacity(0.12))
+                .cornerRadius(12)
             }
 
             Spacer()
@@ -380,9 +385,11 @@ public struct VoiceAgentView: View {
                 } label: {
                     Image(systemName: "sparkles")
                         .font(.system(size: 16, weight: .semibold))
-                        .foregroundColor(.primary)
+                        .foregroundColor(.black)
                         .frame(width: 40, height: 40)
-                        .glassSurface(.clear, in: .circle)
+                        .background(Color.white.opacity(0.9))
+                        .clipShape(Circle())
+                        .shadow(color: Color.black.opacity(0.04), radius: 4, y: 1)
                 }
             }
         }
@@ -399,13 +406,14 @@ public struct VoiceAgentView: View {
                 } label: {
                     HStack(spacing: 6) {
                         Image(systemName: "mic.fill")
+                            .foregroundColor(.black)
                         Text("Ask another request")
                             .font(.system(size: 14, weight: .semibold))
+                            .foregroundColor(.black)
                     }
-                    .foregroundColor(.primary)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 12)
-                    .background(Color.white.opacity(0.92))
+                    .background(Color.white)
                     .cornerRadius(24)
                     .shadow(color: Color.black.opacity(0.04), radius: 6, y: 2)
                 }
@@ -419,9 +427,9 @@ public struct VoiceAgentView: View {
                     } label: {
                         Image(systemName: "xmark")
                             .font(.system(size: 18, weight: .bold))
-                            .foregroundColor(.secondary)
+                            .foregroundColor(Color(white: 0.35))
                             .frame(width: 52, height: 52)
-                            .background(Color.white.opacity(0.9))
+                            .background(Color.white)
                             .clipShape(Circle())
                             .shadow(color: Color.black.opacity(0.04), radius: 6, y: 2)
                     }
@@ -435,10 +443,10 @@ public struct VoiceAgentView: View {
                         }
                     } label: {
                         RoundedRectangle(cornerRadius: 6)
-                            .fill(Color.primary)
+                            .fill(Color.black)
                             .frame(width: 18, height: 18)
                             .frame(width: 52, height: 52)
-                            .background(Color.white.opacity(0.9))
+                            .background(Color.white)
                             .clipShape(Circle())
                             .shadow(color: Color.black.opacity(0.04), radius: 6, y: 2)
                     }
@@ -452,26 +460,26 @@ public struct VoiceAgentView: View {
                         VStack(alignment: .leading, spacing: 2) {
                             Text("Hey IRIS")
                                 .font(.system(size: 16, weight: .bold))
-                                .foregroundColor(.primary)
+                                .foregroundColor(.black)
                             Text("Tap to speak or just say it")
                                 .font(.system(size: 13))
-                                .foregroundColor(.secondary)
+                                .foregroundColor(Color(white: 0.40))
                         }
 
                         Spacer()
 
                         ZStack {
                             Circle()
-                                .fill(Color.black.opacity(0.05))
+                                .fill(Color.black.opacity(0.06))
                                 .frame(width: 38, height: 38)
                             Image(systemName: "mic.fill")
                                 .font(.system(size: 16, weight: .semibold))
-                                .foregroundColor(.primary)
+                                .foregroundColor(.black)
                         }
                     }
                     .padding(.horizontal, 20)
                     .padding(.vertical, 14)
-                    .background(Color.white.opacity(0.92))
+                    .background(Color.white)
                     .cornerRadius(28)
                     .shadow(color: Color.black.opacity(0.04), radius: 10, y: 3)
                     .overlay(

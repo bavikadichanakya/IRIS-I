@@ -33,7 +33,7 @@ public struct SettingsView: View {
                     HStack {
                         Text("Settings")
                             .font(.system(size: 32, weight: .bold))
-                            .foregroundColor(.primary)
+                            .foregroundColor(.black)
                         Spacer()
                     }
                     .padding(.horizontal, 20)
@@ -54,10 +54,10 @@ public struct SettingsView: View {
                                     VStack(alignment: .leading, spacing: 3) {
                                         Text("IRIS")
                                             .font(.system(size: 17, weight: .bold))
-                                            .foregroundColor(.primary)
+                                            .foregroundColor(.black)
                                         Text(brainCoordinator.isModelActive ? "Qwen 2.5 3B (A19 Metal)" : "Tap to manage brain")
                                             .font(.system(size: 13))
-                                            .foregroundColor(.secondary)
+                                            .foregroundColor(Color(white: 0.40))
                                     }
 
                                     Spacer()
@@ -68,15 +68,15 @@ public struct SettingsView: View {
                                             .frame(width: 8, height: 8)
                                         Text(brainCoordinator.isModelActive ? "Active" : (brainCoordinator.isDownloading ? "Downloading" : "Ready"))
                                             .font(.system(size: 13, weight: .semibold))
-                                            .foregroundColor(brainCoordinator.isModelActive ? .green : .secondary)
+                                            .foregroundColor(brainCoordinator.isModelActive ? .green : Color(white: 0.40))
                                     }
 
                                     Image(systemName: "chevron.right")
                                         .font(.system(size: 14, weight: .semibold))
-                                        .foregroundColor(Color.secondary.opacity(0.6))
+                                        .foregroundColor(Color(white: 0.60))
                                 }
                                 .padding(16)
-                                .background(Color.white.opacity(0.92))
+                                .background(Color.white)
                                 .cornerRadius(18)
                                 .shadow(color: Color.black.opacity(0.04), radius: 8, y: 2)
                                 .overlay(
@@ -218,17 +218,17 @@ public struct SettingsView: View {
 
             Text(title)
                 .font(.system(size: 15, weight: .medium))
-                .foregroundColor(.primary)
+                .foregroundColor(.black)
 
             Spacer()
 
             Text(value)
                 .font(.system(size: 14))
-                .foregroundColor(.secondary)
+                .foregroundColor(Color(white: 0.40))
 
             Image(systemName: "chevron.right")
                 .font(.system(size: 13, weight: .semibold))
-                .foregroundColor(Color.secondary.opacity(0.4))
+                .foregroundColor(Color(white: 0.65))
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 14)
@@ -247,7 +247,7 @@ public struct SettingsView: View {
 
             Text(title)
                 .font(.system(size: 15, weight: .medium))
-                .foregroundColor(.primary)
+                .foregroundColor(.black)
 
             Spacer()
 

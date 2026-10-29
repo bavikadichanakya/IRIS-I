@@ -89,16 +89,18 @@ public struct AssistantChatView: View {
                         } label: {
                             Image(systemName: "line.3.horizontal")
                                 .font(.system(size: 18, weight: .semibold))
-                                .foregroundColor(.primary)
+                                .foregroundColor(.black)
                                 .frame(width: 38, height: 38)
-                                .glassSurface(.clear, in: .circle)
+                                .background(Color.white.opacity(0.9))
+                                .clipShape(Circle())
+                                .shadow(color: Color.black.opacity(0.04), radius: 4, y: 1)
                         }
 
                         Spacer()
 
                         Text("IRIS")
                             .font(.system(size: 18, weight: .bold))
-                            .foregroundColor(.primary)
+                            .foregroundColor(.black)
 
                         Spacer()
 
@@ -114,9 +116,11 @@ public struct AssistantChatView: View {
                         } label: {
                             Image(systemName: "plus")
                                 .font(.system(size: 18, weight: .semibold))
-                                .foregroundColor(.primary)
+                                .foregroundColor(.black)
                                 .frame(width: 38, height: 38)
-                                .glassSurface(.clear, in: .circle)
+                                .background(Color.white.opacity(0.9))
+                                .clipShape(Circle())
+                                .shadow(color: Color.black.opacity(0.04), radius: 4, y: 1)
                         }
                     }
                     .padding(.horizontal, 20)
@@ -158,10 +162,10 @@ public struct AssistantChatView: View {
                                         .font(.system(size: 12, weight: .medium))
                                         .padding(.horizontal, 12)
                                         .padding(.vertical, 7)
-                                        .background(Color.white.opacity(0.85))
+                                        .background(Color.white)
                                         .cornerRadius(16)
                                         .shadow(color: Color.black.opacity(0.03), radius: 4, y: 1)
-                                        .foregroundColor(.primary)
+                                        .foregroundColor(.black)
                                 }
                                 .disabled(isProcessing)
                             }
@@ -174,6 +178,7 @@ public struct AssistantChatView: View {
                     HStack(spacing: 10) {
                         TextField("Message IRIS...", text: $inputText)
                             .font(.system(size: 15))
+                            .foregroundColor(.black)
                             .textFieldStyle(.plain)
                             .disabled(isProcessing)
                             .onSubmit {
@@ -199,7 +204,7 @@ public struct AssistantChatView: View {
                         } label: {
                             Image(systemName: speechManager.state == .listening ? "mic.fill" : "mic")
                                 .font(.system(size: 17, weight: .medium))
-                                .foregroundColor(speechManager.state == .listening ? .red : .primary)
+                                .foregroundColor(speechManager.state == .listening ? .red : .black)
                         }
 
                         if !inputText.isEmpty || isProcessing {
@@ -286,7 +291,7 @@ public struct AssistantChatView: View {
 
                 Text(msg.content)
                     .font(.system(size: 15))
-                    .foregroundColor(msg.role == "user" ? .white : .primary)
+                    .foregroundColor(msg.role == "user" ? .white : .black)
                     .padding(.horizontal, 14)
                     .padding(.vertical, 10)
                     .background(
@@ -313,10 +318,10 @@ public struct AssistantChatView: View {
                             VStack(alignment: .leading, spacing: 2) {
                                 Text(docName)
                                     .font(.system(size: 14, weight: .semibold))
-                                    .foregroundColor(.primary)
+                                    .foregroundColor(.black)
                                 Text(docSize)
                                     .font(.system(size: 11))
-                                    .foregroundColor(.secondary)
+                                    .foregroundColor(Color(white: 0.40))
                             }
                         }
 
@@ -327,8 +332,10 @@ public struct AssistantChatView: View {
                             HStack {
                                 Text("Open File")
                                     .font(.system(size: 13, weight: .semibold))
+                                    .foregroundColor(.blue)
                                 Image(systemName: "arrow.up.right.square")
                                     .font(.system(size: 12))
+                                    .foregroundColor(.blue)
                             }
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 7)
@@ -369,7 +376,7 @@ public struct AssistantChatView: View {
 
                 Text(activeStreamingText)
                     .font(.system(size: 15))
-                    .foregroundColor(.primary)
+                    .foregroundColor(.black)
                     .padding(.horizontal, 14)
                     .padding(.vertical, 10)
                     .background(Color.white.opacity(0.92))

@@ -136,7 +136,7 @@ public struct ActionsCatalogView: View {
                     HStack {
                         Text("Actions")
                             .font(.system(size: 32, weight: .bold))
-                            .foregroundColor(.primary)
+                            .foregroundColor(.black)
 
                         Spacer()
 
@@ -146,9 +146,11 @@ public struct ActionsCatalogView: View {
                         } label: {
                             Image(systemName: "plus")
                                 .font(.system(size: 18, weight: .semibold))
-                                .foregroundColor(.primary)
+                                .foregroundColor(.black)
                                 .frame(width: 38, height: 38)
-                                .glassSurface(.clear, in: .circle)
+                                .background(Color.white.opacity(0.9))
+                                .clipShape(Circle())
+                                .shadow(color: Color.black.opacity(0.06), radius: 4, y: 2)
                         }
                     }
                     .padding(.horizontal, 20)
@@ -158,21 +160,22 @@ public struct ActionsCatalogView: View {
                     // Search Bar
                     HStack(spacing: 8) {
                         Image(systemName: "magnifyingglass")
-                            .foregroundColor(.secondary)
+                            .foregroundColor(Color(white: 0.45))
                         TextField("Search actions...", text: $searchText)
                             .font(.system(size: 16))
+                            .foregroundColor(.black)
                         if !searchText.isEmpty {
                             Button {
                                 searchText = ""
                             } label: {
                                 Image(systemName: "xmark.circle.fill")
-                                    .foregroundColor(.secondary)
+                                    .foregroundColor(Color(white: 0.5))
                             }
                         }
                     }
                     .padding(.horizontal, 14)
                     .padding(.vertical, 10)
-                    .background(Color.white.opacity(0.85))
+                    .background(Color.white)
                     .cornerRadius(14)
                     .padding(.horizontal, 20)
                     .padding(.bottom, 16)
@@ -228,17 +231,17 @@ public struct ActionsCatalogView: View {
                 VStack(alignment: .leading, spacing: 3) {
                     Text(item.title)
                         .font(.system(size: 16, weight: .semibold))
-                        .foregroundColor(.primary)
+                        .foregroundColor(.black)
                     Text(item.subtitle)
                         .font(.system(size: 13))
-                        .foregroundColor(.secondary)
+                        .foregroundColor(Color(white: 0.40))
                 }
 
                 Spacer()
 
                 Image(systemName: "chevron.right")
                     .font(.system(size: 14, weight: .semibold))
-                    .foregroundColor(Color.secondary.opacity(0.6))
+                    .foregroundColor(Color(white: 0.65))
             }
             .padding(.horizontal, 16)
             .padding(.vertical, 12)

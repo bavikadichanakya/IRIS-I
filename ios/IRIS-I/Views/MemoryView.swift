@@ -86,7 +86,7 @@ public struct MemoryView: View {
                     HStack {
                         Text("Memory")
                             .font(.system(size: 32, weight: .bold))
-                            .foregroundColor(.primary)
+                            .foregroundColor(.black)
 
                         Spacer()
 
@@ -96,9 +96,11 @@ public struct MemoryView: View {
                         } label: {
                             Image(systemName: "plus")
                                 .font(.system(size: 18, weight: .semibold))
-                                .foregroundColor(.primary)
+                                .foregroundColor(.black)
                                 .frame(width: 38, height: 38)
-                                .glassSurface(.clear, in: .circle)
+                                .background(Color.white.opacity(0.9))
+                                .clipShape(Circle())
+                                .shadow(color: Color.black.opacity(0.04), radius: 4, y: 1)
                         }
                     }
                     .padding(.horizontal, 20)
@@ -116,7 +118,7 @@ public struct MemoryView: View {
                             } label: {
                                 Text(segments[index])
                                     .font(.system(size: 14, weight: isSelected ? .semibold : .medium))
-                                    .foregroundColor(isSelected ? .primary : .secondary)
+                                    .foregroundColor(isSelected ? .black : Color(white: 0.40))
                                     .frame(maxWidth: .infinity)
                                     .padding(.vertical, 8)
                                     .background {
@@ -170,21 +172,21 @@ public struct MemoryView: View {
                     VStack(alignment: .leading, spacing: 3) {
                         Text(item.title)
                             .font(.system(size: 15, weight: .semibold))
-                            .foregroundColor(.primary)
+                            .foregroundColor(.black)
                         Text(item.timestamp)
                             .font(.system(size: 12))
-                            .foregroundColor(.secondary)
+                            .foregroundColor(Color(white: 0.40))
                     }
 
                     Spacer()
 
                     Image(systemName: "chevron.right")
                         .font(.system(size: 13, weight: .semibold))
-                        .foregroundColor(Color.secondary.opacity(0.5))
+                        .foregroundColor(Color(white: 0.60))
                 }
                 .padding(.horizontal, 16)
                 .padding(.vertical, 12)
-                .background(Color.white.opacity(0.85))
+                .background(Color.white)
                 .cornerRadius(16)
                 .shadow(color: Color.black.opacity(0.03), radius: 6, y: 2)
             }
@@ -200,11 +202,11 @@ public struct MemoryView: View {
                         .padding(.top, 2)
                     Text(note)
                         .font(.system(size: 14))
-                        .foregroundColor(.primary)
+                        .foregroundColor(.black)
                     Spacer()
                 }
                 .padding(16)
-                .background(Color.white.opacity(0.85))
+                .background(Color.white)
                 .cornerRadius(16)
                 .shadow(color: Color.black.opacity(0.03), radius: 6, y: 2)
             }
@@ -224,14 +226,14 @@ public struct MemoryView: View {
         HStack {
             Text(label)
                 .font(.system(size: 15, weight: .medium))
-                .foregroundColor(.primary)
+                .foregroundColor(.black)
             Spacer()
             Text(value)
                 .font(.system(size: 14))
-                .foregroundColor(.secondary)
+                .foregroundColor(Color(white: 0.40))
         }
         .padding(16)
-        .background(Color.white.opacity(0.85))
+        .background(Color.white)
         .cornerRadius(16)
         .shadow(color: Color.black.opacity(0.03), radius: 6, y: 2)
     }
