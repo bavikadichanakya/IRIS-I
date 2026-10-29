@@ -28,12 +28,22 @@ public final class BrainDownloadCoordinator: ObservableObject {
     private var downloadTask: Task<Void, Never>?
 
     private init() {
-        refreshState()
+        self.isModelInstalled = storage.isModelInstalled(catalog.baseline3B)
+        Task { @MainActor in
+            await self.refreshStateAsync()
+        }
     }
 
     public func refreshState() {
         self.isModelInstalled = storage.isModelInstalled(catalog.baseline3B)
-        self.isModelActive = runner.isModelLoaded
+        Task { @MainActor in
+            await self.refreshStateAsync()
+        }
+    }
+
+    public func refreshStateAsync() async {
+        self.isModelInstalled = storage.isModelInstalled(catalog.baseline3B)
+        self.isModelActive = await runner.isModelLoaded
         if isModelActive {
             self.statusMessage = "Brain Active (100% On-Device)"
         } else if isModelInstalled {
@@ -85,7 +95,7 @@ public final class BrainDownloadCoordinator: ObservableObject {
 
             // Verify installation on disk
             self.isDownloading = false
-            self.refreshState()
+            await self.refreshStateAsync()
 
             if storage.isModelInstalled(manifest) {
                 self.statusMessage = "Download complete! Activating neural brain..."
@@ -102,7 +112,7 @@ public final class BrainDownloadCoordinator: ObservableObject {
             do {
                 self.statusMessage = "Loading Qwen 2.5 3B into Metal unified memory..."
                 try await runner.loadModel(manifest: manifest, contextSize: 2048, forceMockEngine: false)
-                self.refreshState()
+                await self.refreshStateAsync()
                 self.statusMessage = "Neural Brain Active (100% On-Device · A19)"
                 SpeechManager.shared.speak(text: "Local neural brain downloaded and activated. I'm ready.")
             } catch {
@@ -117,7 +127,7 @@ public final class BrainDownloadCoordinator: ObservableObject {
             do {
                 self.statusMessage = "Activating instant test engine..."
                 try await runner.loadModel(manifest: catalog.baseline3B, contextSize: 2048, forceMockEngine: true)
-                self.refreshState()
+                await self.refreshStateAsync()
                 self.statusMessage = "Instant Test Brain Active"
                 SpeechManager.shared.speak(text: "Instant test brain activated.")
             } catch {
@@ -141,7 +151,7 @@ public final class BrainDownloadCoordinator: ObservableObject {
     public func unloadBrain() {
         Task {
             await runner.unloadModel()
-            self.refreshState()
+            await self.refreshStateAsync()
             self.statusMessage = "Brain unloaded"
         }
     }
