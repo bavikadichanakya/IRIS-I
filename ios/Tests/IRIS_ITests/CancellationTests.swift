@@ -103,6 +103,7 @@ final class CancellationTests: XCTestCase {
             // Stream should terminate
         }
 
-        XCTAssertFalse(await runner.isModelLoaded, "Model must be cleanly unloaded")
+        let runnerLoadedAfter = await runner.isModelLoaded
+        XCTAssertFalse(runnerLoadedAfter, "Model must be cleanly unloaded")
     }
 }

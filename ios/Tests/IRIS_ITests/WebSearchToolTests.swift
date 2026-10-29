@@ -40,7 +40,7 @@ final class WebSearchToolTests: XCTestCase {
             title: "OpenAI Announces GPT-5",
             url: "https://openai.com/news",
             snippet: "The new model features advanced reasoning.",
-            source: "Web Search"
+            date: "2026-10-29"
         )
 
         let dict = item.asDictionary

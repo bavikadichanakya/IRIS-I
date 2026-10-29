@@ -49,8 +49,10 @@ final class RealEngineIntegrationTests: XCTestCase {
             contextSize: 2048
         )
 
-        XCTAssertTrue(await engine.isLoaded, "Real LlamaCppEngine must report isLoaded = true")
-        XCTAssertFalse(await engine.isMockEngine, "Real engine must never report isMockEngine = true")
+        let engLoaded52 = await engine.isLoaded
+        XCTAssertTrue(engLoaded52, "Real LlamaCppEngine must report isLoaded = true")
+        let engIsMock53 = await engine.isMockEngine
+        XCTAssertFalse(engIsMock53, "Real engine must never report isMockEngine = true")
 
         // 2. Real Prompt Streaming Generation (Network-Free)
         let prompt = "Respond in one sentence: What is IRIS-I?"
@@ -75,8 +77,10 @@ final class RealEngineIntegrationTests: XCTestCase {
 
         // 4. Real Model Unload & Resource Release
         await engine.unload()
-        XCTAssertFalse(await engine.isLoaded, "Real engine must be unloaded cleanly")
-        XCTAssertNil(await engine.loadedManifest, "Loaded manifest must be cleared")
+        let engLoaded78 = await engine.isLoaded
+        XCTAssertFalse(engLoaded78, "Real engine must be unloaded cleanly")
+        let engMan79 = await engine.loadedManifest
+        XCTAssertNil(engMan79, "Loaded manifest must be cleared")
     }
 
     func testRealEngineCancellationAndSubsequentInference() async throws {

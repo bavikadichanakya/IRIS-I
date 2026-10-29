@@ -74,11 +74,14 @@ final class ModelLifecycleTests: XCTestCase {
 
         for cycle in 1...10 {
             try await runner.loadModel(manifest: catalog.baseline3B, contextSize: 2048, forceMockEngine: true)
-            XCTAssertTrue(await runner.isModelLoaded, "Cycle \(cycle): Must be loaded")
+            let cycleLoaded = await runner.isModelLoaded
+            XCTAssertTrue(cycleLoaded, "Cycle \(cycle): Must be loaded")
 
             await runner.unloadModel()
-            XCTAssertFalse(await runner.isModelLoaded, "Cycle \(cycle): Must be unloaded cleanly")
-            XCTAssertNil(await runner.currentManifest, "Cycle \(cycle): Manifest must be nil after unload")
+            let cycleUnloaded = await runner.isModelLoaded
+            XCTAssertFalse(cycleUnloaded, "Cycle \(cycle): Must be unloaded cleanly")
+            let cycleManNil = await runner.currentManifest
+            XCTAssertNil(cycleManNil, "Cycle \(cycle): Manifest must be nil after unload")
         }
     }
 
@@ -105,7 +108,8 @@ final class ModelLifecycleTests: XCTestCase {
 
         // Start with a loaded baseline mock
         try await runner.loadModel(manifest: catalog.baseline3B, contextSize: 2048, forceMockEngine: true)
-        XCTAssertTrue(await runner.isModelLoaded)
+        let runnerLoaded108 = await runner.isModelLoaded
+        XCTAssertTrue(runnerLoaded108)
 
         // Attempt switch to real engine with non-existent file
         do {
@@ -127,10 +131,13 @@ final class ModelLifecycleTests: XCTestCase {
     func testUnloadFreesState() async throws {
         let catalog = ModelCatalog.shared
         try await runner.loadModel(manifest: catalog.baseline3B, contextSize: 2048, forceMockEngine: true)
-        XCTAssertTrue(await runner.isModelLoaded)
+        let runnerLoaded108 = await runner.isModelLoaded
+        XCTAssertTrue(runnerLoaded108)
 
         await runner.unloadModel()
-        XCTAssertFalse(await runner.isModelLoaded)
-        XCTAssertNil(await runner.currentManifest)
+        let runnerUnloaded133 = await runner.isModelLoaded
+        XCTAssertFalse(runnerUnloaded133)
+        let runnerManifestNil134 = await runner.currentManifest
+        XCTAssertNil(runnerManifestNil134)
     }
 }
