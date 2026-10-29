@@ -154,6 +154,13 @@ public actor GmailConnector: AccountConnector, MailProviderProtocol {
         }
     }
 
+    /// Clears any custom Client ID and redirect URI overrides from Keychain and disconnects.
+    public func clearClientConfiguration() async {
+        keychain.remove(forKey: "custom_gmail_client_id")
+        keychain.remove(forKey: "custom_gmail_redirect_uri")
+        try? await disconnect()
+    }
+
     // MARK: - AccountConnector State
 
     public var state: ConnectorState {

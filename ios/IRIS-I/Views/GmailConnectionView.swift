@@ -53,34 +53,52 @@ public struct GmailConnectionView: View {
                             .foregroundColor(.green)
                         Text("Linked Account:")
                             .font(.subheadline)
-                            .foregroundColor(.secondary)
+                            .foregroundColor(Color(white: 0.40))
                         Text(email)
                             .font(.subheadline)
                             .fontWeight(.medium)
+                            .foregroundColor(.black)
                     }
 
                     VStack(alignment: .leading, spacing: 4) {
                         Text("Active Scopes:")
                             .font(.caption)
-                            .foregroundColor(.secondary)
+                            .foregroundColor(Color(white: 0.40))
                         Text("• gmail.readonly (search & read authorized emails)\n• gmail.compose (create local drafts)\n• gmail.send (send emails upon user confirmation)")
                             .font(.caption2)
-                            .foregroundColor(.secondary)
+                            .foregroundColor(Color(white: 0.45))
                     }
 
-                    Button(role: .destructive, action: {
-                        showingDisconnectAlert = true
-                    }) {
-                        HStack {
-                            Image(systemName: "link.badge.plus")
-                            Text("Disconnect Gmail Account")
+                    HStack(spacing: 10) {
+                        Button {
+                            showingConfigSheet = true
+                        } label: {
+                            HStack(spacing: 4) {
+                                Image(systemName: "pencil")
+                                Text("Edit Config")
+                            }
+                            .font(.caption.bold())
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 8)
+                            .background(Color.blue.opacity(0.12))
+                            .foregroundColor(.blue)
+                            .cornerRadius(10)
                         }
-                        .font(.subheadline)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 8)
-                        .background(Color.red.opacity(0.1))
-                        .foregroundColor(.red)
-                        .cornerRadius(10)
+
+                        Button(role: .destructive, action: {
+                            showingDisconnectAlert = true
+                        }) {
+                            HStack(spacing: 4) {
+                                Image(systemName: "link.badge.plus")
+                                Text("Disconnect")
+                            }
+                            .font(.caption.bold())
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 8)
+                            .background(Color.red.opacity(0.1))
+                            .foregroundColor(.red)
+                            .cornerRadius(10)
+                        }
                     }
                 }
 
@@ -96,16 +114,17 @@ public struct GmailConnectionView: View {
             case .disconnected, .error:
                 VStack(alignment: .leading, spacing: 10) {
                     if !isConfigured {
-                        VStack(alignment: .leading, spacing: 6) {
+                        VStack(alignment: .leading, spacing: 8) {
                             HStack {
                                 Image(systemName: "exclamationmark.triangle.fill")
                                     .foregroundColor(.orange)
                                 Text("Client ID Required")
                                     .font(.subheadline.bold())
+                                    .foregroundColor(.black)
                             }
                             Text("To link your live Google account, configure a Google Cloud iOS OAuth Client ID.")
                                 .font(.caption)
-                                .foregroundColor(.secondary)
+                                .foregroundColor(Color(white: 0.40))
 
                             Button(action: {
                                 showingConfigSheet = true
@@ -115,25 +134,80 @@ public struct GmailConnectionView: View {
                                     Text("Configure Client ID")
                                 }
                                 .font(.caption.bold())
-                                .padding(.horizontal, 12)
-                                .padding(.vertical, 6)
+                                .padding(.horizontal, 14)
+                                .padding(.vertical, 8)
                                 .background(Color.orange.opacity(0.15))
                                 .foregroundColor(.orange)
                                 .cornerRadius(8)
                             }
                         }
                     } else {
-                        Text("Link your Gmail account to check emails from OpenAI, search messages, and manage outgoing emails.")
-                            .font(.caption)
-                            .foregroundColor(.secondary)
+                        VStack(alignment: .leading, spacing: 10) {
+                            // Configured Client ID status card with Edit and Undo/Reset buttons
+                            HStack {
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text("CONFIGURED CLIENT ID")
+                                        .font(.system(size: 9, weight: .bold))
+                                        .foregroundColor(Color(white: 0.45))
+                                    Text(inputClientId.isEmpty ? "iOS OAuth Client ID" : inputClientId)
+                                        .font(.system(size: 11, design: .monospaced))
+                                        .lineLimit(1)
+                                        .truncationMode(.middle)
+                                        .foregroundColor(.black)
+                                }
+                                Spacer()
+                                Button {
+                                    showingConfigSheet = true
+                                } label: {
+                                    HStack(spacing: 3) {
+                                        Image(systemName: "pencil")
+                                        Text("Edit")
+                                    }
+                                    .font(.caption2.bold())
+                                    .padding(.horizontal, 8)
+                                    .padding(.vertical, 5)
+                                    .background(Color.blue.opacity(0.12))
+                                    .foregroundColor(.blue)
+                                    .cornerRadius(6)
+                                }
 
-                        if let err = errorMessage {
-                            Text(err)
+                                Button {
+                                    Task {
+                                        await GmailConnector.shared.clearClientConfiguration()
+                                        inputClientId = ""
+                                        inputRedirectUri = ""
+                                        await refreshState()
+                                    }
+                                } label: {
+                                    HStack(spacing: 3) {
+                                        Image(systemName: "arrow.uturn.backward")
+                                        Text("Undo")
+                                    }
+                                    .font(.caption2.bold())
+                                    .padding(.horizontal, 8)
+                                    .padding(.vertical, 5)
+                                    .background(Color.red.opacity(0.12))
+                                    .foregroundColor(.red)
+                                    .cornerRadius(6)
+                                }
+                            }
+                            .padding(10)
+                            .background(Color.white)
+                            .cornerRadius(10)
+                            .shadow(color: Color.black.opacity(0.04), radius: 4, y: 1)
+
+                            Text("Link your Gmail account to check emails from OpenAI, search messages, and manage outgoing emails.")
                                 .font(.caption)
-                                .foregroundColor(.red)
-                        }
+                                .foregroundColor(Color(white: 0.40))
 
-                        connectButton(label: "Connect with Google")
+                            if let err = errorMessage {
+                                Text(err)
+                                    .font(.caption)
+                                    .foregroundColor(.red)
+                            }
+
+                            connectButton(label: "Connect with Google")
+                        }
                     }
                 }
 
@@ -167,7 +241,7 @@ public struct GmailConnectionView: View {
                             .disableAutocorrection(true)
                     }
 
-                    Section(footer: Text("Register an iOS Client ID in Google Cloud Console with bundle ID 'com.iris.assistant'. The callback scheme is derived automatically.")) {
+                    Section(footer: Text("Register an iOS Client ID in Google Cloud Console with bundle ID 'com.iris.ios.assistant'. The standard redirect URI is derived automatically.")) {
                         Button("Save Configuration") {
                             Task {
                                 await GmailConnector.shared.saveClientConfiguration(
@@ -179,9 +253,22 @@ public struct GmailConnectionView: View {
                             }
                         }
                         .disabled(inputClientId.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+
+                        if isConfigured {
+                            Button("Undo / Clear Client ID", role: .destructive) {
+                                Task {
+                                    await GmailConnector.shared.clearClientConfiguration()
+                                    inputClientId = ""
+                                    inputRedirectUri = ""
+                                    showingConfigSheet = false
+                                    await refreshState()
+                                }
+                            }
+                        }
                     }
                 }
                 .navigationTitle("OAuth Configuration")
+                .preferredColorScheme(.light)
                 .toolbar {
                     ToolbarItem(placement: .cancellationAction) {
                         Button("Cancel") { showingConfigSheet = false }
@@ -189,6 +276,7 @@ public struct GmailConnectionView: View {
                 }
             }
         }
+        .preferredColorScheme(.light)
         .alert("Disconnect Gmail?", isPresented: $showingDisconnectAlert) {
             Button("Disconnect & Revoke", role: .destructive) {
                 Task {
