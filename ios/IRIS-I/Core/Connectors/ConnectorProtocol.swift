@@ -72,3 +72,4 @@ public protocol MailProviderProtocol: Sendable {
     func createDraft(recipient: String, subject: String, body: String) async throws -> String
     func sendEmail(recipient: String, subject: String, body: String) async throws -> String
 }
+

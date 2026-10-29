@@ -114,3 +114,4 @@ final class MailToolTests: XCTestCase {
         XCTAssertNotNil(result.error)
     }
 }
+

@@ -45,3 +45,4 @@ final class WebSearchToolTests: XCTestCase {
         XCTAssertEqual(dict["snippet"] as? String, "The new model features advanced reasoning.")
     }
 }
+
