@@ -2,24 +2,18 @@
 //  MailTool.swift
 //  IRIS-I
 //
-//  Standalone email tool for checking inbox, filtering senders (e.g. OpenAI),
-//  and composing messages directly from iOS.
+//  Standalone email tool for searching inboxes (e.g. OpenAI emails), creating drafts,
+//  and sending authenticated emails directly from iOS via linked providers (Gmail).
+//  Explicitly distinguishes local drafts from sent messages and returns 'not_connected'
+//  when no mail account is linked.
 //
 
 import Foundation
 import UIKit
 
-public struct EmailItem: Sendable {
-    public let id: String
-    public let sender: String
-    public let subject: String
-    public let snippet: String
-    public let receivedDate: Date
-}
-
 public struct MailTool: IRISAgentTool {
     public let name = "MailTool"
-    public let description = "Checks inbox for emails from specific senders (e.g., OpenAI) and composes email messages."
+    public let description = "Accesses authenticated mailboxes to check inbox, search emails (e.g., from OpenAI), create drafts, or send messages."
     public let category = "communication"
     public let permissionLevel = PermissionLevel.protectedLevel
 
@@ -28,8 +22,8 @@ public struct MailTool: IRISAgentTool {
         properties: [
             "action": ToolPropertySchema(
                 type: "string",
-                description: "Action to perform: 'check_inbox' or 'compose_mail'",
-                enumValues: ["check_inbox", "compose_mail"]
+                description: "Action to perform: 'check_inbox', 'compose_mail', 'create_draft', or 'send_email'",
+                enumValues: ["check_inbox", "compose_mail", "create_draft", "send_email"]
             ),
             "sender_filter": ToolPropertySchema(
                 type: "string",
@@ -37,21 +31,39 @@ public struct MailTool: IRISAgentTool {
             ),
             "recipient": ToolPropertySchema(
                 type: "string",
-                description: "Email address of recipient for compose_mail"
+                description: "Email address of recipient for compose_mail, create_draft, or send_email"
             ),
             "subject": ToolPropertySchema(
                 type: "string",
-                description: "Subject line for compose_mail"
+                description: "Subject line for the email"
             ),
             "body": ToolPropertySchema(
                 type: "string",
-                description: "Body text for compose_mail"
+                description: "Body content of the email"
             )
         ],
         required: ["action"]
     )
 
-    public init() {}
+    private let provider: any MailProviderProtocol
+
+    public init(provider: any MailProviderProtocol = GmailConnector.shared) {
+        self.provider = provider
+    }
+
+    public func operationType(for arguments: [String: Any]) -> ActionOperationType {
+        let action = (arguments["action"] as? String)?.lowercased() ?? "check_inbox"
+        switch action {
+        case "check_inbox", "search":
+            return .read
+        case "compose_mail", "create_draft":
+            return .draft
+        case "send_email", "send":
+            return .send
+        default:
+            return .read
+        }
+    }
 
     public func execute(arguments: [String: Any]) async -> AgentExecutionResult {
         let startTime = CFAbsoluteTimeGetCurrent()
@@ -59,45 +71,74 @@ public struct MailTool: IRISAgentTool {
 
         switch action {
         case "check_inbox":
-            let senderFilter = (arguments["sender_filter"] as? String)?.lowercased().trimmingCharacters(in: .whitespaces)
+            let senderFilter = (arguments["sender_filter"] as? String)?.trimmingCharacters(in: .whitespaces)
 
-            // Query configured mailbox or mock store
-            let matchedEmails = fetchEmails(matching: senderFilter)
-            let duration = (CFAbsoluteTimeGetCurrent() - startTime) * 1000.0
-
-            if matchedEmails.isEmpty {
-                let filterMsg = senderFilter != nil ? " from '\(senderFilter!)'" : ""
-                return AgentExecutionResult.success(
+            let state = await provider.state
+            guard state.isConnected else {
+                let duration = (CFAbsoluteTimeGetCurrent() - startTime) * 1000.0
+                return AgentExecutionResult(
                     tool: name,
-                    verified: true,
-                    payload: [
-                        "found_count": 0,
-                        "emails": [],
-                        "message": "No new emails found\(filterMsg)."
+                    outcome: .failed,
+                    outputPayload: [
+                        "status": "not_connected",
+                        "message": "No email account is linked. To check your email or search for messages, please link your Gmail account in IRIS-I Settings."
                     ],
+                    error: "Mail provider is not connected.",
                     durationMs: duration
                 )
             }
 
-            let emailSummaries = matchedEmails.map { email in
-                "From: \(email.sender)\nSubject: \(email.subject)\nSnippet: \(email.snippet)"
+            var query = ""
+            if let filter = senderFilter, !filter.isEmpty {
+                query = "from:\(filter)"
             }
 
-            let msg = "Found \(matchedEmails.count) email(s):\n" + emailSummaries.joined(separator: "\n---\n")
+            do {
+                let messages = try await provider.searchMessages(query: query, maxResults: 5)
+                let duration = (CFAbsoluteTimeGetCurrent() - startTime) * 1000.0
 
-            return AgentExecutionResult.success(
-                tool: name,
-                verified: true,
-                payload: [
-                    "found_count": matchedEmails.count,
-                    "emails": emailSummaries,
-                    "message": msg
-                ],
-                durationMs: duration
-            )
+                if messages.isEmpty {
+                    let filterMsg = senderFilter != nil ? " from '\(senderFilter!)'" : ""
+                    return AgentExecutionResult.success(
+                        tool: name,
+                        verified: true,
+                        payload: [
+                            "found_count": 0,
+                            "emails": [],
+                            "message": "No new emails found\(filterMsg) in your connected mailbox."
+                        ],
+                        durationMs: duration
+                    )
+                }
+
+                let emailSummaries = messages.map { email in
+                    "From: \(email.sender)\nSubject: \(email.subject)\nSnippet: \(email.snippet)"
+                }
+
+                let summaryText = "Found \(messages.count) email(s):\n" + emailSummaries.joined(separator: "\n---\n")
+
+                return AgentExecutionResult.success(
+                    tool: name,
+                    verified: true,
+                    payload: [
+                        "found_count": messages.count,
+                        "emails": emailSummaries,
+                        "message": summaryText
+                    ],
+                    durationMs: duration
+                )
+            } catch {
+                let duration = (CFAbsoluteTimeGetCurrent() - startTime) * 1000.0
+                return AgentExecutionResult.failure(
+                    tool: name,
+                    error: "Failed to search inbox: \(error.localizedDescription)",
+                    durationMs: duration
+                )
+            }
 
         case "compose_mail":
-            guard let recipient = arguments["recipient"] as? String else {
+            // System mailto URL scheme (draft handoff)
+            guard let recipient = arguments["recipient"] as? String, !recipient.isEmpty else {
                 return AgentExecutionResult.failure(
                     tool: name,
                     error: "Missing 'recipient' parameter for compose_mail.",
@@ -108,7 +149,6 @@ public struct MailTool: IRISAgentTool {
             let subject = arguments["subject"] as? String ?? ""
             let body = arguments["body"] as? String ?? ""
 
-            // Construct documented mailto: URL
             var components = URLComponents()
             components.scheme = "mailto"
             components.path = recipient
@@ -120,7 +160,7 @@ public struct MailTool: IRISAgentTool {
             guard let mailURL = components.url else {
                 return AgentExecutionResult.failure(
                     tool: name,
-                    error: "Failed to construct mailto URL.",
+                    error: "Failed to construct valid mailto URL.",
                     durationMs: (CFAbsoluteTimeGetCurrent() - startTime) * 1000.0
                 )
             }
@@ -136,14 +176,16 @@ public struct MailTool: IRISAgentTool {
             let duration = (CFAbsoluteTimeGetCurrent() - startTime) * 1000.0
 
             if opened {
-                return AgentExecutionResult.success(
+                return AgentExecutionResult(
                     tool: name,
-                    verified: false, // Handoff completed, unobservable inside mail client
-                    payload: [
+                    outcome: .completedUnverified,
+                    outputPayload: [
+                        "status": "handed_off_unverified",
                         "recipient": recipient,
                         "subject": subject,
-                        "message": "Dispatched email draft to iOS Mail for \(recipient)."
+                        "message": "Opened email draft in default iOS Mail app for \(recipient). Note: Completion within Mail app cannot be verified."
                     ],
+                    error: nil,
                     durationMs: duration
                 )
             } else {
@@ -154,50 +196,112 @@ public struct MailTool: IRISAgentTool {
                 )
             }
 
+        case "create_draft":
+            guard let recipient = arguments["recipient"] as? String, !recipient.isEmpty else {
+                return AgentExecutionResult.failure(
+                    tool: name,
+                    error: "Missing 'recipient' parameter for create_draft.",
+                    durationMs: (CFAbsoluteTimeGetCurrent() - startTime) * 1000.0
+                )
+            }
+
+            let subject = arguments["subject"] as? String ?? "(No Subject)"
+            let body = arguments["body"] as? String ?? ""
+
+            let state = await provider.state
+            guard state.isConnected else {
+                let duration = (CFAbsoluteTimeGetCurrent() - startTime) * 1000.0
+                return AgentExecutionResult(
+                    tool: name,
+                    outcome: .failed,
+                    outputPayload: [
+                        "status": "not_connected",
+                        "message": "No email account is linked. Please link your Gmail account in IRIS-I Settings to create cloud drafts."
+                    ],
+                    error: "Mail provider is not connected.",
+                    durationMs: duration
+                )
+            }
+
+            do {
+                let draftId = try await provider.createDraft(recipient: recipient, subject: subject, body: body)
+                let duration = (CFAbsoluteTimeGetCurrent() - startTime) * 1000.0
+                return AgentExecutionResult.success(
+                    tool: name,
+                    verified: true,
+                    payload: [
+                        "draft_id": draftId,
+                        "recipient": recipient,
+                        "subject": subject,
+                        "message": "Draft created successfully in your linked Gmail account (Draft ID: \(draftId))."
+                    ],
+                    durationMs: duration
+                )
+            } catch {
+                let duration = (CFAbsoluteTimeGetCurrent() - startTime) * 1000.0
+                return AgentExecutionResult.failure(
+                    tool: name,
+                    error: "Failed to create draft: \(error.localizedDescription)",
+                    durationMs: duration
+                )
+            }
+
+        case "send_email":
+            guard let recipient = arguments["recipient"] as? String, !recipient.isEmpty else {
+                return AgentExecutionResult.failure(
+                    tool: name,
+                    error: "Missing 'recipient' parameter for send_email.",
+                    durationMs: (CFAbsoluteTimeGetCurrent() - startTime) * 1000.0
+                )
+            }
+
+            let subject = arguments["subject"] as? String ?? ""
+            let body = arguments["body"] as? String ?? ""
+
+            let state = await provider.state
+            guard state.isConnected else {
+                let duration = (CFAbsoluteTimeGetCurrent() - startTime) * 1000.0
+                return AgentExecutionResult(
+                    tool: name,
+                    outcome: .failed,
+                    outputPayload: [
+                        "status": "not_connected",
+                        "message": "No email account is linked. Please link your Gmail account in IRIS-I Settings to send emails."
+                    ],
+                    error: "Mail provider is not connected.",
+                    durationMs: duration
+                )
+            }
+
+            do {
+                let messageId = try await provider.sendEmail(recipient: recipient, subject: subject, body: body)
+                let duration = (CFAbsoluteTimeGetCurrent() - startTime) * 1000.0
+                return AgentExecutionResult.success(
+                    tool: name,
+                    verified: true,
+                    payload: [
+                        "message_id": messageId,
+                        "recipient": recipient,
+                        "subject": subject,
+                        "message": "Email sent successfully via Gmail API to \(recipient) (Message ID: \(messageId))."
+                    ],
+                    durationMs: duration
+                )
+            } catch {
+                let duration = (CFAbsoluteTimeGetCurrent() - startTime) * 1000.0
+                return AgentExecutionResult.failure(
+                    tool: name,
+                    error: "Failed to send email: \(error.localizedDescription)",
+                    durationMs: duration
+                )
+            }
+
         default:
             return AgentExecutionResult.failure(
                 tool: name,
-                error: "Unknown action '\(action)'. Supported actions: check_inbox, compose_mail.",
+                error: "Unknown action '\(action)'. Supported actions: check_inbox, compose_mail, create_draft, send_email.",
                 durationMs: (CFAbsoluteTimeGetCurrent() - startTime) * 1000.0
             )
         }
     }
-
-    private func fetchEmails(matching senderFilter: String?) -> [EmailItem] {
-        // Sample recent items representing real-world inbox state
-        let sampleInbox: [EmailItem] = [
-            EmailItem(
-                id: "msg_001",
-                sender: "OpenAI <support@openai.com>",
-                subject: "Your API Usage and Platform Updates",
-                snippet: "Here is your monthly summary. New features have been released for developer projects...",
-                receivedDate: Date()
-            ),
-            EmailItem(
-                id: "msg_002",
-                sender: "Apple Developer <news@insideapple.apple.com>",
-                subject: "App Store Submission Updates",
-                snippet: "Learn about the latest SDK guidelines for iOS 17 and iPhone 17 hardware...",
-                receivedDate: Date().addingTimeInterval(-3600)
-            ),
-            EmailItem(
-                id: "msg_003",
-                sender: "GitHub <notifications@github.com>",
-                subject: "[bavikadichanakya/IRIS-BOX] New commit merged to main",
-                snippet: "Commit 3b3f921 was merged into main by bavikadichanakya.",
-                receivedDate: Date().addingTimeInterval(-7200)
-            )
-        ]
-
-        guard let filter = senderFilter, !filter.isEmpty else {
-            return sampleInbox
-        }
-
-        return sampleInbox.filter { item in
-            item.sender.lowercased().contains(filter) ||
-            item.subject.lowercased().contains(filter) ||
-            item.snippet.lowercased().contains(filter)
-        }
-    }
 }
-

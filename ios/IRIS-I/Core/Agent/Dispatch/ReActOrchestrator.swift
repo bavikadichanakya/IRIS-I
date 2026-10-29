@@ -29,21 +29,21 @@ public actor ReActOrchestrator {
 
     private var maxIterations: Int = 5
     private var isCancelled: Bool = false
+    private var isInitialized: Bool = false
 
-    public init() {
-        registerBuiltInTools()
-    }
+    public init() {}
 
-    private func registerBuiltInTools() {
-        Task {
-            await toolRegistry.register(tool: SystemInfoTool())
-            await toolRegistry.register(tool: WebSearchTool())
-            await toolRegistry.register(tool: MailTool())
-            await toolRegistry.register(tool: MessagingTool())
-            await toolRegistry.register(tool: EventKitTool())
-            await toolRegistry.register(tool: AppOpenerTool())
-            await toolRegistry.register(tool: ShortcutsTool())
-        }
+    /// Deterministically registers all built-in tools before any operations are executed.
+    public func ensureInitialized() async {
+        guard !isInitialized else { return }
+        await toolRegistry.register(tool: SystemInfoTool())
+        await toolRegistry.register(tool: WebSearchTool())
+        await toolRegistry.register(tool: MailTool())
+        await toolRegistry.register(tool: MessagingTool())
+        await toolRegistry.register(tool: EventKitTool())
+        await toolRegistry.register(tool: AppOpenerTool())
+        await toolRegistry.register(tool: ShortcutsTool())
+        isInitialized = true
     }
 
     public func cancel() {
@@ -60,6 +60,7 @@ public actor ReActOrchestrator {
         confirmationToken: String? = nil,
         progressStream: (@Sendable (String) -> Void)? = nil
     ) async -> OrchestratorResponse {
+        await ensureInitialized()
         self.isCancelled = false
         let totalStartTime = CFAbsoluteTimeGetCurrent()
 
@@ -73,12 +74,15 @@ public actor ReActOrchestrator {
                 let totalDuration = (CFAbsoluteTimeGetCurrent() - totalStartTime) * 1000.0
 
                 let responseText: String
-                if let msg = toolResult.outputPayload["message"] as? String {
+                if toolResult.outcome == .failed {
+                    responseText = "Action failed: \(toolResult.error ?? "Unknown error.")"
+                } else if toolResult.outcome == .completedUnverified {
+                    let msg = (toolResult.outputPayload["message"] as? String) ?? "Action handed off to external system (unverified outcome)."
+                    responseText = "Handed off: \(msg)"
+                } else if let msg = toolResult.outputPayload["message"] as? String {
                     responseText = msg
                 } else if let summary = toolResult.outputPayload["summary"] as? String {
                     responseText = summary
-                } else if let err = toolResult.error {
-                    responseText = "Error executing \(toolName): \(err)"
                 } else {
                     responseText = "Executed \(toolName) successfully."
                 }
@@ -176,13 +180,19 @@ public actor ReActOrchestrator {
 
                     let result = await tool.execute(arguments: parsedTool.arguments)
 
-                    // Convert payload to JSON string
+                    // Convert payload to JSON string with outcome metadata
+                    var payload = result.outputPayload
+                    payload["_outcome"] = result.outcome.rawValue
+                    if let err = result.error {
+                        payload["error"] = err
+                    }
+
                     let jsonStr: String
-                    if let data = try? JSONSerialization.data(withJSONObject: result.outputPayload),
+                    if let data = try? JSONSerialization.data(withJSONObject: payload),
                        let str = String(data: data, encoding: .utf8) {
                         jsonStr = str
                     } else {
-                        jsonStr = "{\"status\": \"\(result.outcome.rawValue)\"}"
+                        jsonStr = "{\"outcome\": \"\(result.outcome.rawValue)\"}"
                     }
 
                     let feedback = formatter.formatToolFeedback(toolName: tool.name, resultJson: jsonStr)
@@ -231,6 +241,94 @@ public actor ReActOrchestrator {
             routingDurationMs: routingDuration,
             totalDurationMs: totalDuration,
             stepCount: iteration
+        )
+    }
+
+    /// Directly executes an authorized pending action ticket without re-querying or hallucinating via the LLM.
+    public func executeConfirmedAction(
+        ticketId: String,
+        parameters: [String: Any]
+    ) async -> OrchestratorResponse {
+        await ensureInitialized()
+        let startTime = CFAbsoluteTimeGetCurrent()
+
+        guard let ticket = await ConfirmationManager.shared.getPendingTicket(ticketId: ticketId) else {
+            return OrchestratorResponse(
+                textResponse: "Authorization error: Confirmation ticket expired, was already consumed, or was not found.",
+                executedTools: [],
+                requiresConfirmation: false,
+                pendingConfirmationTicket: nil,
+                routingDurationMs: 0,
+                totalDurationMs: (CFAbsoluteTimeGetCurrent() - startTime) * 1000.0,
+                stepCount: 1
+            )
+        }
+
+        guard let tool = await toolRegistry.getTool(named: ticket.toolName) else {
+            return OrchestratorResponse(
+                textResponse: "Authorization error: Tool '\(ticket.toolName)' is no longer available.",
+                executedTools: [],
+                requiresConfirmation: false,
+                pendingConfirmationTicket: nil,
+                routingDurationMs: 0,
+                totalDurationMs: (CFAbsoluteTimeGetCurrent() - startTime) * 1000.0,
+                stepCount: 1
+            )
+        }
+
+        // Validate and consume the single-use ticket with canonical parameter hashing
+        do {
+            _ = try await ConfirmationManager.shared.validateAndConsume(
+                ticketId: ticketId,
+                toolName: ticket.toolName,
+                parameters: parameters
+            )
+        } catch {
+            return OrchestratorResponse(
+                textResponse: "Security violation: \(error.localizedDescription)",
+                executedTools: [],
+                requiresConfirmation: false,
+                pendingConfirmationTicket: nil,
+                routingDurationMs: 0,
+                totalDurationMs: (CFAbsoluteTimeGetCurrent() - startTime) * 1000.0,
+                stepCount: 1
+            )
+        }
+
+        // Execute the tool with original approved parameters
+        let result = await tool.execute(arguments: parameters)
+        let totalDuration = (CFAbsoluteTimeGetCurrent() - startTime) * 1000.0
+
+        let responseText: String
+        switch result.outcome {
+        case .completed:
+            if let msg = result.outputPayload["message"] as? String {
+                responseText = msg
+            } else if let summary = result.outputPayload["summary"] as? String {
+                responseText = summary
+            } else {
+                responseText = "Authorized action executed successfully: \(tool.name)."
+            }
+        case .completedUnverified:
+            let msg = (result.outputPayload["message"] as? String) ?? "Action handed off to external system (unverified outcome)."
+            responseText = "Handed off: \(msg)"
+        case .failed:
+            let err = result.error ?? (result.outputPayload["error"] as? String) ?? "Unknown failure."
+            responseText = "Action failed: \(err)"
+        case .accepted:
+            responseText = "Action accepted for processing."
+        case .unknown:
+            responseText = "Action completed with unknown status."
+        }
+
+        return OrchestratorResponse(
+            textResponse: responseText,
+            executedTools: [tool.name],
+            requiresConfirmation: false,
+            pendingConfirmationTicket: nil,
+            routingDurationMs: 0,
+            totalDurationMs: totalDuration,
+            stepCount: 1
         )
     }
 }

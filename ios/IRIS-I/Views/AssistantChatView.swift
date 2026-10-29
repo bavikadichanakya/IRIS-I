@@ -312,13 +312,16 @@ public struct AssistantChatView: View {
 
     private func confirmAndExecute(ticket: ConfirmationTicket) {
         isProcessing = true
+        activeToolName = ticket.toolName
         Task {
-            let response = await orchestrator.process(
-                userPrompt: "Execute confirmed action",
-                confirmationToken: ticket.ticketId
+            let response = await orchestrator.executeConfirmedAction(
+                ticketId: ticket.ticketId,
+                parameters: ticket.rawParameters
             )
             await MainActor.run {
                 self.isProcessing = false
+                self.activeToolName = nil
+                self.pendingTicket = nil
                 self.messages.append(ChatDisplayMessage(
                     role: "assistant",
                     content: response.textResponse,

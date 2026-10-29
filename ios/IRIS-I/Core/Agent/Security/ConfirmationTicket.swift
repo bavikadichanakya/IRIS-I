@@ -11,6 +11,7 @@ import CryptoKit
 public struct ConfirmationTicket: Sendable {
     public let ticketId: String
     public let toolName: String
+    public let operationType: ActionOperationType
     public let paramsHash: String
     public let rawParameters: [String: Any]
     public let createdAt: Date
@@ -23,11 +24,13 @@ public struct ConfirmationTicket: Sendable {
 
     public init(
         toolName: String,
+        operationType: ActionOperationType = .destructive,
         parameters: [String: Any],
         ttlSeconds: TimeInterval = 300.0
     ) {
         self.ticketId = "cfm_\(UUID().uuidString.prefix(16))"
         self.toolName = toolName
+        self.operationType = operationType
         self.rawParameters = parameters
         self.paramsHash = Self.computeDigest(parameters)
         let now = Date()
@@ -39,6 +42,7 @@ public struct ConfirmationTicket: Sendable {
     private init(
         ticketId: String,
         toolName: String,
+        operationType: ActionOperationType,
         paramsHash: String,
         rawParameters: [String: Any],
         createdAt: Date,
@@ -47,6 +51,7 @@ public struct ConfirmationTicket: Sendable {
     ) {
         self.ticketId = ticketId
         self.toolName = toolName
+        self.operationType = operationType
         self.paramsHash = paramsHash
         self.rawParameters = rawParameters
         self.createdAt = createdAt
@@ -58,6 +63,7 @@ public struct ConfirmationTicket: Sendable {
         ConfirmationTicket(
             ticketId: self.ticketId,
             toolName: self.toolName,
+            operationType: self.operationType,
             paramsHash: self.paramsHash,
             rawParameters: self.rawParameters,
             createdAt: self.createdAt,
@@ -84,13 +90,34 @@ public actor ConfirmationManager {
 
     public init() {}
 
-    public func issueTicket(for tool: String, parameters: [String: Any], ttl: TimeInterval = 300.0) -> ConfirmationTicket {
-        let ticket = ConfirmationTicket(toolName: tool, parameters: parameters, ttlSeconds: ttl)
+    public func issueTicket(
+        for tool: String,
+        operationType: ActionOperationType = .destructive,
+        parameters: [String: Any],
+        ttl: TimeInterval = 300.0
+    ) -> ConfirmationTicket {
+        let ticket = ConfirmationTicket(
+            toolName: tool,
+            operationType: operationType,
+            parameters: parameters,
+            ttlSeconds: ttl
+        )
         activeTickets[ticket.ticketId] = ticket
         return ticket
     }
 
-    public func validateAndConsume(ticketId: String, parameters: [String: Any]) throws -> ConfirmationTicket {
+    public func getPendingTicket(ticketId: String) -> ConfirmationTicket? {
+        guard let ticket = activeTickets[ticketId], !ticket.isConsumed, !ticket.isExpired else {
+            return nil
+        }
+        return ticket
+    }
+
+    public func validateAndConsume(
+        ticketId: String,
+        toolName: String? = nil,
+        parameters: [String: Any]
+    ) throws -> ConfirmationTicket {
         guard let ticket = activeTickets[ticketId] else {
             throw ConfirmationError.invalidTicket
         }
@@ -102,6 +129,10 @@ public actor ConfirmationManager {
         if ticket.isExpired {
             activeTickets.removeValue(forKey: ticketId)
             throw ConfirmationError.expiredTicket
+        }
+
+        if let expectedTool = toolName, ticket.toolName != expectedTool {
+            throw ConfirmationError.toolMismatch(expected: ticket.toolName, actual: expectedTool)
         }
 
         let incomingHash = ConfirmationTicket.computeDigest(parameters)
@@ -122,19 +153,27 @@ public actor ConfirmationManager {
     }
 }
 
-public enum ConfirmationError: LocalizedError, Sendable {
+public typealias ConfirmationTicketRegistry = ConfirmationManager
+
+public enum ConfirmationError: LocalizedError, Sendable, Equatable {
     case invalidTicket
     case alreadyConsumed
     case expiredTicket
     case parameterMismatch
+    case toolMismatch(expected: String, actual: String)
 
     public var errorDescription: String? {
         switch self {
-        case .invalidTicket: return "Confirmation ticket is invalid or does not exist."
-        case .alreadyConsumed: return "Confirmation ticket has already been consumed (replay prevention)."
-        case .expiredTicket: return "Confirmation ticket has expired. Please re-authorize the action."
-        case .parameterMismatch: return "Action parameters were altered after confirmation was issued."
+        case .invalidTicket:
+            return "Confirmation ticket is invalid or does not exist."
+        case .alreadyConsumed:
+            return "Confirmation ticket has already been consumed (replay prevention)."
+        case .expiredTicket:
+            return "Confirmation ticket has expired. Please re-authorize the action."
+        case .parameterMismatch:
+            return "Action parameters were altered after confirmation was issued."
+        case .toolMismatch(let expected, let actual):
+            return "Action tool mismatch: expected '\(expected)', received '\(actual)'."
         }
     }
 }
-

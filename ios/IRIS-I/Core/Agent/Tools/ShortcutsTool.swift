@@ -2,8 +2,9 @@
 //  ShortcutsTool.swift
 //  IRIS-I
 //
-//  Executes user-configured Apple Shortcuts via shortcuts:// scheme to pull or push
-//  data across third-party applications (Notes, Spotify, WhatsApp, HomeKit, etc.).
+//  Executes user-configured Apple Shortcuts via shortcuts:// scheme to trigger
+//  workflows across third-party applications (Notes, Spotify, WhatsApp, HomeKit, etc.).
+//  Explicitly distinguishes URL dispatch from completion within the target application.
 //
 
 import Foundation
@@ -11,7 +12,7 @@ import UIKit
 
 public struct ShortcutsTool: IRISAgentTool {
     public let name = "ShortcutsTool"
-    public let description = "Executes Apple Siri Shortcuts to trigger multi-app workflows, pull notes, or control services."
+    public let description = "Executes Apple Siri Shortcuts to trigger multi-app workflows, pull notes, or control external services."
     public let category = "automation"
     public let permissionLevel = PermissionLevel.protectedLevel
 
@@ -31,6 +32,11 @@ public struct ShortcutsTool: IRISAgentTool {
     )
 
     public init() {}
+
+    public func operationType(for arguments: [String: Any]) -> ActionOperationType {
+        // Triggering external system shortcuts represents a remote command/automation action
+        return .remoteCommand
+    }
 
     public func execute(arguments: [String: Any]) async -> AgentExecutionResult {
         let startTime = CFAbsoluteTimeGetCurrent()
@@ -69,13 +75,15 @@ public struct ShortcutsTool: IRISAgentTool {
         let duration = (CFAbsoluteTimeGetCurrent() - startTime) * 1000.0
 
         if opened {
-            return AgentExecutionResult.success(
+            return AgentExecutionResult(
                 tool: self.name,
-                verified: false,
-                payload: [
+                outcome: .completedUnverified,
+                outputPayload: [
+                    "status": "handed_off_unverified",
                     "shortcut_name": name,
-                    "message": "Triggered Apple Shortcut '\(name)'."
+                    "message": "Dispatched shortcut '\(name)' to the Apple Shortcuts app. Note: Outcome within the target app cannot be verified by IRIS-I."
                 ],
+                error: nil,
                 durationMs: duration
             )
         } else {
@@ -87,4 +95,3 @@ public struct ShortcutsTool: IRISAgentTool {
         }
     }
 }
-

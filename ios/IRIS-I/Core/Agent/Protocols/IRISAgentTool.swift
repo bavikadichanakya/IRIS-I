@@ -29,6 +29,15 @@ public enum ToolExecutionOutcome: String, Codable, Sendable {
     case failed
 }
 
+/// Action-specific operation classifications separating read, draft, send, destructive, and remote commands.
+public enum ActionOperationType: String, Codable, Sendable {
+    case read
+    case draft
+    case send
+    case destructive
+    case remoteCommand
+}
+
 /// Structured parameter schema definition compatible with standard JSON Schema.
 public struct ToolParameterSchema: Codable, Sendable {
     public let type: String
@@ -155,6 +164,9 @@ public protocol IRISAgentTool: Sendable {
     var permissionLevel: PermissionLevel { get }
     var category: String { get }
 
+    /// Returns the exact operation type for a given argument set.
+    func operationType(for arguments: [String: Any]) -> ActionOperationType
+
     /// Executes the tool action with parsed argument dictionary.
     func execute(arguments: [String: Any]) async -> AgentExecutionResult
 }
@@ -168,5 +180,15 @@ extension IRISAgentTool {
             category: category
         )
     }
-}
 
+    public func operationType(for arguments: [String: Any]) -> ActionOperationType {
+        switch permissionLevel {
+        case .publicLevel:
+            return .read
+        case .protectedLevel:
+            return .draft
+        case .sensitiveLevel:
+            return .destructive
+        }
+    }
+}
