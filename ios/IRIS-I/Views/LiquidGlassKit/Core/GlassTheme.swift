@@ -66,6 +66,9 @@ public struct GlassTheme: Sendable, Hashable {
     /// Frosted glass, 20 pt corners, soft shadow.
     public static let standard = GlassTheme()
 
+    /// Alias for standard frosted glass theme.
+    public static let frosted = GlassTheme(material: .frosted)
+
     /// Clear glass with a smaller shadow and fainter edge.
     public static let subtle = GlassTheme(
         material: .clear,

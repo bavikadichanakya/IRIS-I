@@ -46,7 +46,7 @@ public struct ContentView: View {
             .padding(.bottom, 6)
         }
         .ignoresSafeArea(.keyboard, edges: .bottom)
-        .glassTheme(.frosted)
+        .glassTheme(.standard)
     }
 }
 
