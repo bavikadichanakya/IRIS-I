@@ -109,7 +109,7 @@ public struct StartListeningIntent: AppIntent {
     public static var description = IntentDescription("Wakes IRIS and immediately begins listening for voice commands in the Dynamic Island.")
 
     public static var isDiscoverable: Bool = true
-    public static var openAppWhenRun: Bool = false
+    public static var openAppWhenRun: Bool = true
 
     public init() {}
 
@@ -121,9 +121,7 @@ public struct StartListeningIntent: AppIntent {
         #endif
 
         // 2. Start speech recognizer / AVAudioEngine listening sequence
-        Task {
-            await SpeechManager.shared.startListening()
-        }
+        await SpeechManager.shared.startListening()
 
         return .result()
     }
