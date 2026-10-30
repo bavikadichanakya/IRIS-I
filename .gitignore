@@ -57,3 +57,6 @@ xcuserdata/
 
 # Temporary tools & diagnostics
 xtool-main/
+
+ios/build/
+ios/Frameworks/Info.plist

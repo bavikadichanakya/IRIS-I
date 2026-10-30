@@ -16,15 +16,15 @@ import XCTest
 final class VoiceSessionCoordinatorTests: XCTestCase {
 
     @MainActor
-    override func setUp() async throws {
-        try await super.setUp()
+    override func setUp() {
+        super.setUp()
         VoiceSessionCoordinator.shared.resetForTesting()
     }
 
     @MainActor
-    override func tearDown() async throws {
+    override func tearDown() {
         VoiceSessionCoordinator.shared.resetForTesting()
-        try await super.tearDown()
+        super.tearDown()
     }
 
     @MainActor
@@ -37,19 +37,21 @@ final class VoiceSessionCoordinatorTests: XCTestCase {
     }
 
     @MainActor
-    func testCancellationTransitionsState() async throws {
+    func testCancellationTransitionsState() {
         let coordinator = VoiceSessionCoordinator.shared
         coordinator.cancelVoiceSession()
         XCTAssertEqual(coordinator.state, .cancelled)
+        coordinator.resetForTesting()
     }
 
     @MainActor
-    func testSessionErrorTransitionsToFailed() async throws {
+    func testSessionErrorTransitionsToFailed() {
         let coordinator = VoiceSessionCoordinator.shared
         let errMessage = "Microphone access denied"
         coordinator.handleSessionError(errMessage)
         XCTAssertEqual(coordinator.state, .failed(reason: errMessage))
         XCTAssertEqual(coordinator.errorMessage, errMessage)
+        coordinator.resetForTesting()
     }
 
     @MainActor
@@ -95,6 +97,7 @@ final class VoiceSessionCoordinatorTests: XCTestCase {
         coordinator.stopVoiceSession(finalTranscript: "open YouTube")
         // Should transition to thinking state with stripped query
         XCTAssertEqual(coordinator.state, .thinking(prompt: "open youtube"))
+        coordinator.resetForTesting()
     }
 
     @MainActor
@@ -110,6 +113,7 @@ final class VoiceSessionCoordinatorTests: XCTestCase {
         coordinator.submitRecognizedCommand("Hey IRIS")
         // Wake-word only should transition to responding with ready prompt
         XCTAssertEqual(coordinator.state, .responding(text: "What can I do for you?", audioLevel: 0.5))
+        coordinator.resetForTesting()
     }
 
     @MainActor
