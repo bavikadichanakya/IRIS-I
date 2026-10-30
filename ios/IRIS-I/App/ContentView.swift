@@ -61,6 +61,13 @@ public struct ContentView: View {
         .task {
             await BrainDownloadCoordinator.shared.autoProvisionOrActivateOnLaunch()
         }
+        .onOpenURL { url in
+            if url.scheme == "iris" {
+                if url.host == "voice-session-active" || url.path.contains("voice-session-active") {
+                    self.selectedTab = .home
+                }
+            }
+        }
     }
 }
 

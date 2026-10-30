@@ -1,0 +1,140 @@
+//
+//  SpeechRecognitionManager.swift
+//  IRIS-I
+//
+//  Dedicated SFSpeechRecognizer manager streaming audio buffers from
+//  AudioSessionManager and emitting partial and final speech transcripts.
+//
+
+import Foundation
+#if canImport(Speech)
+import Speech
+#endif
+import AVFoundation
+
+public protocol SpeechRecognitionManagerDelegate: AnyObject, Sendable {
+    func speechRecognitionManager(_ manager: SpeechRecognitionManager, didUpdatePartialTranscript transcript: String)
+    func speechRecognitionManager(_ manager: SpeechRecognitionManager, didFinishWithFinalTranscript transcript: String)
+    func speechRecognitionManager(_ manager: SpeechRecognitionManager, didFailWithError error: Error)
+}
+
+@MainActor
+public final class SpeechRecognitionManager: NSObject {
+    public static let shared = SpeechRecognitionManager()
+
+    public weak var delegate: SpeechRecognitionManagerDelegate?
+
+    #if canImport(Speech)
+    private var recognizer: SFSpeechRecognizer? = SFSpeechRecognizer(locale: Locale(identifier: "en-US"))
+    private var recognitionRequest: SFSpeechAudioBufferRecognitionRequest?
+    private var recognitionTask: SFSpeechRecognitionTask?
+    #endif
+
+    private var silenceTask: Task<Void, Never>?
+    private let silenceDurationNanoseconds: UInt64 = 1_500_000_000 // 1.5s silence triggers auto-submission
+
+    private override init() {
+        super.init()
+    }
+
+    public func requestSpeechAuthorization() async -> Bool {
+        #if canImport(Speech)
+        await withCheckedContinuation { continuation in
+            SFSpeechRecognizer.requestAuthorization { status in
+                continuation.resume(returning: status == .authorized)
+            }
+        }
+        #else
+        return true
+        #endif
+    }
+
+    public var isSpeechAuthorized: Bool {
+        #if canImport(Speech)
+        SFSpeechRecognizer.authorizationStatus() == .authorized
+        #else
+        return true
+        #endif
+    }
+
+    public var isAvailable: Bool {
+        #if canImport(Speech)
+        recognizer?.isAvailable ?? false
+        #else
+        return false
+        #endif
+    }
+
+    public func startRecognition() throws {
+        #if canImport(Speech)
+        stopRecognition()
+
+        guard let recognizer = self.recognizer, recognizer.isAvailable else {
+            throw NSError(domain: "IRIS.Speech", code: -1, userInfo: [NSLocalizedDescriptionKey: "Speech recognizer is unavailable."])
+        }
+
+        let request = SFSpeechAudioBufferRecognitionRequest()
+        request.shouldReportPartialResults = true
+        request.requiresOnDeviceRecognition = false // Use hybrid or offline as available
+        self.recognitionRequest = request
+
+        self.recognitionTask = recognizer.recognitionTask(with: request) { [weak self] result, error in
+            Task { @MainActor [weak self] in
+                guard let self = self else { return }
+
+                if let error = error {
+                    self.delegate?.speechRecognitionManager(self, didFailWithError: error)
+                    self.stopRecognition()
+                    return
+                }
+
+                if let result = result {
+                    let transcript = result.bestTranscription.formattedString
+                    self.delegate?.speechRecognitionManager(self, didUpdatePartialTranscript: transcript)
+
+                    if result.isFinal {
+                        self.delegate?.speechRecognitionManager(self, didFinishWithFinalTranscript: transcript)
+                        self.stopRecognition()
+                    } else {
+                        // Reset silence timer on partial results
+                        self.resetSilenceTimer(currentTranscript: transcript)
+                    }
+                }
+            }
+        }
+        #endif
+    }
+
+    public func appendAudioBuffer(_ buffer: AVAudioPCMBuffer) {
+        #if canImport(Speech)
+        recognitionRequest?.append(buffer)
+        #endif
+    }
+
+    private func resetSilenceTimer(currentTranscript: String) {
+        silenceTask?.cancel()
+        silenceTask = Task { @MainActor in
+            do {
+                try await Task.sleep(nanoseconds: self.silenceDurationNanoseconds)
+                guard !Task.isCancelled else { return }
+                let trimmed = currentTranscript.trimmingCharacters(in: .whitespacesAndNewlines)
+                if !trimmed.isEmpty {
+                    self.delegate?.speechRecognitionManager(self, didFinishWithFinalTranscript: trimmed)
+                    self.stopRecognition()
+                }
+            } catch {}
+        }
+    }
+
+    public func stopRecognition() {
+        silenceTask?.cancel()
+        silenceTask = nil
+
+        #if canImport(Speech)
+        recognitionRequest?.endAudio()
+        recognitionRequest = nil
+        recognitionTask?.cancel()
+        recognitionTask = nil
+        #endif
+    }
+}

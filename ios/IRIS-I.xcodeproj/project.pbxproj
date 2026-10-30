@@ -7,6 +7,11 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		AVSC00012C00000100000001 /* VoiceSessionCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = BVSC00012C00000100000001 /* VoiceSessionCoordinator.swift */; };
+		AASM00012C00000100000001 /* AudioSessionManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = BASM00012C00000100000001 /* AudioSessionManager.swift */; };
+		ASRM00012C00000100000001 /* SpeechRecognitionManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = BSRM00012C00000100000001 /* SpeechRecognitionManager.swift */; };
+		AVRM00012C00000100000001 /* VoiceResponseManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = BVRM00012C00000100000001 /* VoiceResponseManager.swift */; };
+		ATVS00012C00000100000001 /* VoiceSessionCoordinatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BTVS00012C00000100000001 /* VoiceSessionCoordinatorTests.swift */; };
 		AW0000012C00000100000001 /* IRISWidgets.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = RW0000012C00000100000001 /* IRISWidgets.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		AW0000022C00000100000001 /* IrisWidgetsBundle.swift in Sources */ = {isa = PBXBuildFile; fileRef = BW0000022C00000100000001 /* IrisWidgetsBundle.swift */; };
 		AW0000032C00000100000001 /* IrisLiveActivity.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100009D2C00000100000001 /* IrisLiveActivity.swift */; };
@@ -128,6 +133,11 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		BVSC00012C00000100000001 /* VoiceSessionCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceSessionCoordinator.swift; sourceTree = "<group>"; };
+		BASM00012C00000100000001 /* AudioSessionManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioSessionManager.swift; sourceTree = "<group>"; };
+		BSRM00012C00000100000001 /* SpeechRecognitionManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeechRecognitionManager.swift; sourceTree = "<group>"; };
+		BVRM00012C00000100000001 /* VoiceResponseManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceResponseManager.swift; sourceTree = "<group>"; };
+		BTVS00012C00000100000001 /* VoiceSessionCoordinatorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceSessionCoordinatorTests.swift; sourceTree = "<group>"; };
 		RW0000012C00000100000001 /* IRISWidgets.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = IRISWidgets.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		BW0000022C00000100000001 /* IrisWidgetsBundle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IrisWidgetsBundle.swift; sourceTree = "<group>"; };
 		BW0000032C00000100000001 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
@@ -447,7 +457,8 @@
 				B20000382C00000100000001 /* ToolCallParserTests.swift */,
 				B20000392C00000100000001 /* WebSearchToolTests.swift */,
 				B20000012C00000100000001 /* ModelIntegrityTests.swift */,
-				B20000022C00000100000001 /* ModelLifecycleTests.swift */,
+								B20000022C00000100000001 /* ModelLifecycleTests.swift */,
+				BTVS00012C00000100000001 /* VoiceSessionCoordinatorTests.swift */,
 				B20000032C00000100000001 /* CancellationTests.swift */,
 				B20000042C00000100000001 /* RealEngineIntegrationTests.swift */,
 			);
@@ -477,7 +488,8 @@
 			isa = PBXGroup;
 			children = (
 				B10000302C00000100000001 /* FastIntentRouter.swift */,
-				B10000312C00000100000001 /* ReActOrchestrator.swift */,
+								B10000312C00000100000001 /* ReActOrchestrator.swift */,
+				BVSC00012C00000100000001 /* VoiceSessionCoordinator.swift */,
 			);
 			path = Dispatch;
 			sourceTree = "<group>";
@@ -576,7 +588,10 @@
 		G10000882C00000100000001 /* Audio */ = {
 			isa = PBXGroup;
 			children = (
-				B10000882C00000100000001 /* SpeechManager.swift */,
+								B10000882C00000100000001 /* SpeechManager.swift */,
+				BASM00012C00000100000001 /* AudioSessionManager.swift */,
+				BSRM00012C00000100000001 /* SpeechRecognitionManager.swift */,
+				BVRM00012C00000100000001 /* VoiceResponseManager.swift */,
 			);
 			path = Audio;
 			sourceTree = "<group>";
@@ -797,7 +812,11 @@ G100003C2C00000100000001 /* Intents */ = {
 				A10000462C00000100000001 /* AssistantChatView.swift in Sources */,
 				A10000472C00000100000001 /* GmailConnectionView.swift in Sources */,
 				A10000482C00000100000001 /* SettingsView.swift in Sources */,
-				A10000882C00000100000001 /* SpeechManager.swift in Sources */,
+								A10000882C00000100000001 /* SpeechManager.swift in Sources */,
+				AVSC00012C00000100000001 /* VoiceSessionCoordinator.swift in Sources */,
+				AASM00012C00000100000001 /* AudioSessionManager.swift in Sources */,
+				ASRM00012C00000100000001 /* SpeechRecognitionManager.swift in Sources */,
+				AVRM00012C00000100000001 /* VoiceResponseManager.swift in Sources */,
 				A10000892C00000100000001 /* VoiceAgentView.swift in Sources */,
 				A10000992C00000100000001 /* MemoryView.swift in Sources */,
 				A10000982C00000100000001 /* ActionsCatalogView.swift in Sources */,
@@ -850,7 +869,8 @@ G100003C2C00000100000001 /* Intents */ = {
 				A20000382C00000100000001 /* ToolCallParserTests.swift in Sources */,
 				A20000392C00000100000001 /* WebSearchToolTests.swift in Sources */,
 				A20000012C00000100000001 /* ModelIntegrityTests.swift in Sources */,
-				A20000022C00000100000001 /* ModelLifecycleTests.swift in Sources */,
+								A20000022C00000100000001 /* ModelLifecycleTests.swift in Sources */,
+				ATVS00012C00000100000001 /* VoiceSessionCoordinatorTests.swift in Sources */,
 				A20000032C00000100000001 /* CancellationTests.swift in Sources */,
 				A20000042C00000100000001 /* RealEngineIntegrationTests.swift in Sources */,
 			);

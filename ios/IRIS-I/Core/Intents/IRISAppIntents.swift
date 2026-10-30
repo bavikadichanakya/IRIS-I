@@ -26,10 +26,7 @@ public struct AskIRISIntent: AppIntent {
 
     @MainActor
     public func perform() async throws -> some IntentResult {
-        #if canImport(ActivityKit)
-        IRISDynamicIslandManager.shared.startLiveActivity()
-        #endif
-        await SpeechManager.shared.startListening()
+        await VoiceSessionCoordinator.shared.startVoiceSession()
         return .result()
     }
 }
@@ -110,20 +107,14 @@ public struct OpenAppWithIRISIntent: AppIntent {
 public struct StartIRISVoiceIntent: AppIntent {
     public static var title: LocalizedStringResource = "Wake IRIS Voice"
     public static var description = IntentDescription("Wakes IRIS and immediately begins listening for voice commands in the Dynamic Island.")
-    public static var openAppWhenRun: Bool = false
+    public static var openAppWhenRun: Bool = true
     public static var isDiscoverable: Bool = true
 
     public init() {}
 
+    @MainActor
     public func perform() async throws -> some IntentResult {
-        await MainActor.run {
-            #if canImport(ActivityKit)
-            IRISDynamicIslandManager.shared.startLiveActivity()
-            #endif
-            Task {
-                await SpeechManager.shared.startListening()
-            }
-        }
+        await VoiceSessionCoordinator.shared.startVoiceSession()
         return .result()
     }
 }
@@ -140,14 +131,7 @@ public struct StartListeningIntent: AppIntent {
 
     @MainActor
     public func perform() async throws -> some IntentResult {
-        // 1. Trigger the Live Activity in Dynamic Island
-        #if canImport(ActivityKit)
-        IRISDynamicIslandManager.shared.startLiveActivity()
-        #endif
-
-        // 2. Start speech recognizer / AVAudioEngine listening sequence
-        await SpeechManager.shared.startListening()
-
+        await VoiceSessionCoordinator.shared.startVoiceSession()
         return .result()
     }
 }
