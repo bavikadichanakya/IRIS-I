@@ -289,9 +289,10 @@ public struct FastIntentRouter: Sendable {
             // Guard against arbitrary physical sentences like "open the door" or "open a debate"
             if !containsStopword && words.count <= 3 {
                 let duration = (CFAbsoluteTimeGetCurrent() - startTime) * 1000.0
+                let resolved = Self.validSingleAppNames[appCandidate] ?? appCandidate.capitalized
                 return .matched(
                     toolName: "AppOpenerTool",
-                    arguments: ["app_name": appCandidate],
+                    arguments: ["app_name": resolved],
                     routingDurationMs: duration
                 )
             }
