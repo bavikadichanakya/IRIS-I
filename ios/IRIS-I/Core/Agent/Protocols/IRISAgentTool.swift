@@ -223,6 +223,10 @@ public struct AgentExecutionResult: Sendable {
     public let confirmationToken: String?
     public let executionDurationMs: Double
 
+    public var verified: Bool {
+        outcome == .completedVerified
+    }
+
     public init(
         success: Bool,
         toolName: String,

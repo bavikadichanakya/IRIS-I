@@ -299,7 +299,7 @@ public actor AppLaunchRegistry {
         }
 
         // 3. Resolve verified descriptor strictly without guessing fake schemes
-        guard let descriptor = descriptor(for: lowName) else {
+        guard let descriptor = await descriptor(for: lowName) else {
             throw AppLaunchError.unsupportedApp(appName: name)
         }
 

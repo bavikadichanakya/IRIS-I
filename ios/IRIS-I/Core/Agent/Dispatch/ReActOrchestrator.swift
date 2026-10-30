@@ -405,6 +405,9 @@ public actor ReActOrchestrator {
         case .failed:
             let err = result.error ?? (result.outputPayload["error"] as? String) ?? "Unknown failure."
             responseText = "Action failed: \(err)"
+        case .unsupported:
+            let err = result.error ?? (result.outputPayload["error"] as? String) ?? "Action or application is unsupported on this device."
+            responseText = "Unsupported: \(err)"
         case .accepted:
             responseText = (result.outputPayload["message"] as? String) ?? "Action accepted for processing."
         case .inProgress:
