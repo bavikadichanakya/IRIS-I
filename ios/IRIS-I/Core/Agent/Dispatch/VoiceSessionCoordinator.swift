@@ -192,7 +192,7 @@ public final class VoiceSessionCoordinator: ObservableObject {
     public func submitRecognizedCommand(_ command: String) {
         cleanupAudioPipeline()
 
-        let cleanQuery = stripWakeWords(command)
+        let cleanQuery = VoiceSessionCoordinator.stripWakeWords(command)
         guard !cleanQuery.isEmpty else {
             // User said only "Hey IRIS" -> respond with ready prompt
             speakResponse("What can I do for you?", isGreeting: true)
@@ -229,6 +229,18 @@ public final class VoiceSessionCoordinator: ObservableObject {
 
     // MARK: - Internal Helpers
 
+    public func resetForTesting() {
+        cleanupAudioPipeline()
+        responseManager.stopSpeaking()
+        self.state = .idle
+        self.activeTranscript = ""
+        self.latestResponse = ""
+        self.currentAudioLevel = 0.0
+        self.errorMessage = nil
+        self.activeSessionId = nil
+        self.isStartingSession = false
+    }
+
     private func speakResponse(_ text: String, isGreeting: Bool) {
         self.state = .responding(text: text, audioLevel: 0.5)
         self.dynamicIsland.updateSessionState(.responding, audioLevel: 0.5)
@@ -240,7 +252,7 @@ public final class VoiceSessionCoordinator: ObservableObject {
         speechManager.stopRecognition()
     }
 
-    private func stripWakeWords(_ text: String) -> String {
+    public static func stripWakeWords(_ text: String) -> String {
         let lower = text.lowercased().trimmingCharacters(in: .punctuationCharacters.union(.whitespacesAndNewlines))
         var clean = lower
         for variant in ["hey iris", "hey, iris", "iris"] {

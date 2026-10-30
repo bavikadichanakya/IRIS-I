@@ -16,8 +16,21 @@ import XCTest
 final class VoiceSessionCoordinatorTests: XCTestCase {
 
     @MainActor
+    override func setUp() async throws {
+        try await super.setUp()
+        VoiceSessionCoordinator.shared.resetForTesting()
+    }
+
+    @MainActor
+    override func tearDown() async throws {
+        VoiceSessionCoordinator.shared.resetForTesting()
+        try await super.tearDown()
+    }
+
+    @MainActor
     func testInitialStateIsIdle() {
         let coordinator = VoiceSessionCoordinator.shared
+        coordinator.resetForTesting()
         XCTAssertEqual(coordinator.state, .idle)
         XCTAssertEqual(coordinator.currentAudioLevel, 0.0)
         XCTAssertTrue(coordinator.activeTranscript.isEmpty)
@@ -62,5 +75,12 @@ final class VoiceSessionCoordinatorTests: XCTestCase {
     func testAudioSessionManagerInitialState() {
         let manager = AudioSessionManager.shared
         XCTAssertEqual(manager.latestLevel, 0.0)
+    }
+
+    func testWakeWordStripping() {
+        XCTAssertEqual(VoiceSessionCoordinator.stripWakeWords("Hey IRIS, what time is it?"), "what time is it?")
+        XCTAssertEqual(VoiceSessionCoordinator.stripWakeWords("iris tell me the weather"), "tell me the weather")
+        XCTAssertEqual(VoiceSessionCoordinator.stripWakeWords("Hey, IRIS! Open notes."), "open notes.")
+        XCTAssertEqual(VoiceSessionCoordinator.stripWakeWords("hey iris"), "")
     }
 }
