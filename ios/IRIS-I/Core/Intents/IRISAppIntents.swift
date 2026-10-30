@@ -16,10 +16,10 @@ import AppIntents
 @available(iOS 16.0, macOS 13.0, watchOS 9.0, tvOS 16.0, *)
 public struct AskIRISIntent: AppIntent {
     public static var title: LocalizedStringResource = "Ask IRIS"
-    public static var description = IntentDescription("Wakes IRIS and immediately begins listening for voice commands in the Dynamic Island.")
+    public static var description = IntentDescription("Wakes IRIS and begins listening for voice commands.")
 
-    /// Runs directly in the Dynamic Island without opening the full app window
-    public static var openAppWhenRun: Bool = false
+    /// Brings app to foreground so iOS legitimately allows microphone audio capture
+    public static var openAppWhenRun: Bool = true
     public static var isDiscoverable: Bool = true
 
     public init() {}
@@ -29,9 +29,7 @@ public struct AskIRISIntent: AppIntent {
         #if canImport(ActivityKit)
         IRISDynamicIslandManager.shared.startLiveActivity()
         #endif
-        Task {
-            await SpeechManager.shared.startListening()
-        }
+        await SpeechManager.shared.startListening()
         return .result()
     }
 }
@@ -120,10 +118,10 @@ public struct StartIRISVoiceIntent: AppIntent {
 @available(iOS 16.0, macOS 13.0, watchOS 9.0, tvOS 16.0, *)
 public struct StartListeningIntent: AppIntent {
     public static var title: LocalizedStringResource = "Start Iris Voice Agent"
-    public static var description = IntentDescription("Wakes IRIS and immediately begins listening for voice commands in the Dynamic Island.")
+    public static var description = IntentDescription("Wakes IRIS and begins listening for voice commands.")
 
     public static var isDiscoverable: Bool = true
-    public static var openAppWhenRun: Bool = false
+    public static var openAppWhenRun: Bool = true
 
     public init() {}
 
@@ -135,9 +133,7 @@ public struct StartListeningIntent: AppIntent {
         #endif
 
         // 2. Start speech recognizer / AVAudioEngine listening sequence
-        Task {
-            await SpeechManager.shared.startListening()
-        }
+        await SpeechManager.shared.startListening()
 
         return .result()
     }
