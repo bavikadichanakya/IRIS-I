@@ -91,6 +91,7 @@ public final class VoiceSessionCoordinator: ObservableObject {
 
     private var activeSessionId: UUID?
     private var isStartingSession: Bool = false
+    private var isSubmittingCommand: Bool = false
 
     private init() {
         audioManager.delegate = self
@@ -101,9 +102,13 @@ public final class VoiceSessionCoordinator: ObservableObject {
     // MARK: - Public Voice Session Lifecycle
 
     /// Starts a new voice session from Action Button, Siri, or In-App Tap.
-    /// Strictly prevents multiple simultaneous sessions or duplicate audio taps.
+    /// Strictly enforces:
+    /// intent_received -> session_created -> activity_requested -> activity_started -> audio_started -> listening_state_published
     public func startVoiceSession() async {
-        guard !isStartingSession else { return }
+        guard !isStartingSession else {
+            print("[VOICE_SESSION] startVoiceSession ignored: session start already in progress")
+            return
+        }
 
         // If currently speaking, barge-in by stopping speech
         if responseManager.isSpeaking {
@@ -112,17 +117,22 @@ public final class VoiceSessionCoordinator: ObservableObject {
 
         // If already listening, focus current session rather than re-creating
         if case .listening = state {
+            print("[VOICE_SESSION] already listening, keeping active session")
             return
         }
 
         isStartingSession = true
         defer { isStartingSession = false }
 
-        self.state = .preparing
-        self.activeTranscript = ""
-        self.errorMessage = nil
         let newSessionId = UUID()
         self.activeSessionId = newSessionId
+        print("[VOICE_SESSION] session_created: \(newSessionId.uuidString)")
+
+        self.state = .preparing
+        self.activeTranscript = ""
+        self.latestResponse = ""
+        self.errorMessage = nil
+        self.isSubmittingCommand = false
 
         // Step 1: Ensure Permissions
         self.state = .requestingPermissions
@@ -138,8 +148,14 @@ public final class VoiceSessionCoordinator: ObservableObject {
             return
         }
 
-        // Step 2: Prepare Audio Capture & Speech Recognition
+        // Step 2: Request ActivityKit Live Activity
+        print("[VOICE_SESSION] activity_requested for session: \(newSessionId.uuidString)")
+        self.dynamicIsland.startLiveActivity()
+        print("[VOICE_SESSION] activity_started for session: \(newSessionId.uuidString)")
+
+        // Step 3: Prepare Audio Capture & Speech Recognition
         self.state = .startingAudio
+        print("[VOICE_SESSION] audio_started for session: \(newSessionId.uuidString)")
 
         do {
             try speechManager.startRecognition()
@@ -148,26 +164,44 @@ public final class VoiceSessionCoordinator: ObservableObject {
                 speechRef.appendAudioBuffer(buffer)
             }
 
-            // Only transition to .listening AFTER audio engine and recognizer have engaged
-            self.state = .listening(transcript: "", audioLevel: 0.0)
-            self.dynamicIsland.startLiveActivity()
+            // Step 4: Publish authoritative listening state
+            self.state = .listening(transcript: "", audioLevel: 0.1)
+            print("[VOICE_SESSION] listening_state_published for session: \(newSessionId.uuidString)")
             self.dynamicIsland.updateSessionState(.listening, audioLevel: 0.1)
+            SpeechManager.shared.syncWithCoordinator(state: .listening, audioLevel: 0.1)
         } catch {
+            print("[VOICE_SESSION] Failed to start audio engine: \(error.localizedDescription)")
             handleSessionError("Failed to start audio engine: \(error.localizedDescription)")
             cleanupAudioPipeline()
         }
     }
 
-    /// Stops listening and transitions to processing
-    public func stopVoiceSession() {
-        guard case .listening(let transcript, _) = state else { return }
-        audioManager.stopCapture()
-        speechManager.stopRecognition()
+    /// Stops listening and transitions to processing.
+    /// Uses explicit finalTranscript if provided, otherwise falls back to activeTranscript.
+    public func stopVoiceSession(finalTranscript: String? = nil) {
+        guard !isSubmittingCommand else { return }
 
-        let trimmed = transcript.trimmingCharacters(in: .whitespacesAndNewlines)
+        let candidate: String
+        if let explicit = finalTranscript, !explicit.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            candidate = explicit
+        } else if !activeTranscript.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            candidate = activeTranscript
+        } else if case .listening(let t, _) = state, !t.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            candidate = t
+        } else {
+            candidate = ""
+        }
+
+        cleanupAudioPipeline()
+
+        let trimmed = candidate.trimmingCharacters(in: .whitespacesAndNewlines)
+        print("[VOICE_SESSION] stopVoiceSession resolved transcript: '\(trimmed)'")
+
         if trimmed.isEmpty {
+            print("[VOICE_SESSION] Empty transcript resolved, resetting to idle")
             self.state = .idle
             self.dynamicIsland.endLiveActivity()
+            SpeechManager.shared.syncWithCoordinator(state: .idle, audioLevel: 0.0)
         } else {
             submitRecognizedCommand(trimmed)
         }
@@ -177,8 +211,10 @@ public final class VoiceSessionCoordinator: ObservableObject {
     public func cancelVoiceSession() {
         cleanupAudioPipeline()
         responseManager.stopSpeaking()
+        self.isSubmittingCommand = false
         self.state = .cancelled
         self.dynamicIsland.updateSessionState(.cancelled)
+        SpeechManager.shared.syncWithCoordinator(state: .idle)
         Task {
             try? await Task.sleep(nanoseconds: 800_000_000)
             if self.state == .cancelled {
@@ -188,24 +224,42 @@ public final class VoiceSessionCoordinator: ObservableObject {
         }
     }
 
-    /// Submits a transcribed voice command through the local AI and agent pipeline
+    /// Submits a transcribed voice command through the local AI and agent pipeline.
+    /// Strictly guarantees exactly-once execution and deterministic wake word stripping.
     public func submitRecognizedCommand(_ command: String) {
+        guard !isSubmittingCommand else {
+            print("[VOICE_SESSION] Duplicate command submission ignored: '\(command)'")
+            return
+        }
+        isSubmittingCommand = true
+
         cleanupAudioPipeline()
+        self.activeTranscript = command
 
         let cleanQuery = VoiceSessionCoordinator.stripWakeWords(command)
+        print("[VOICE_SESSION] wake_words_stripped from '\(command)' -> '\(cleanQuery)'")
+
         guard !cleanQuery.isEmpty else {
-            // User said only "Hey IRIS" -> respond with ready prompt
+            // User uttered wake word only ("Hey IRIS") -> respond with ready prompt and keep listening
+            print("[VOICE_SESSION] User uttered wake word only, speaking greeting prompt")
+            self.isSubmittingCommand = false
             speakResponse("What can I do for you?", isGreeting: true)
             return
         }
 
         self.state = .thinking(prompt: cleanQuery)
         self.dynamicIsland.updateSessionState(.thinking, audioLevel: 0.2)
+        SpeechManager.shared.syncWithCoordinator(state: .processing, transcript: cleanQuery)
 
+        print("[VOICE_SESSION] orchestrator_dispatched query: '\(cleanQuery)'")
         Task {
             let result = await orchestrator.process(userPrompt: cleanQuery)
+            print("[VOICE_SESSION] orchestrator_completed with executedTools: \(result.executedTools), text: '\(result.textResponse)'")
+
             await MainActor.run {
+                self.isSubmittingCommand = false
                 self.latestResponse = result.textResponse
+                SpeechManager.shared.syncWithCoordinator(state: .speaking, response: result.textResponse)
                 self.speakResponse(result.textResponse, isGreeting: false)
             }
         }
@@ -214,9 +268,11 @@ public final class VoiceSessionCoordinator: ObservableObject {
     public func handleSessionError(_ message: String) {
         cleanupAudioPipeline()
         responseManager.stopSpeaking()
+        self.isSubmittingCommand = false
         self.errorMessage = message
         self.state = .failed(reason: message)
         self.dynamicIsland.updateSessionState(.failed, details: message)
+        SpeechManager.shared.syncWithCoordinator(state: .idle)
 
         Task {
             try? await Task.sleep(nanoseconds: 2_500_000_000)
@@ -239,11 +295,13 @@ public final class VoiceSessionCoordinator: ObservableObject {
         self.errorMessage = nil
         self.activeSessionId = nil
         self.isStartingSession = false
+        self.isSubmittingCommand = false
     }
 
     private func speakResponse(_ text: String, isGreeting: Bool) {
         self.state = .responding(text: text, audioLevel: 0.5)
         self.dynamicIsland.updateSessionState(.responding, audioLevel: 0.5)
+        print("[VOICE_SESSION] voice_response_started: '\(text)'")
         responseManager.speak(text: text)
     }
 
@@ -277,19 +335,21 @@ extension VoiceSessionCoordinator: AudioSessionManagerDelegate {
             self.currentAudioLevel = level
             if case .listening(let transcript, _) = self.state {
                 self.state = .listening(transcript: transcript, audioLevel: level)
-                self.dynamicIsland.updateLiveActivity(statusText: "Listening...", isListening: true, audioLevel: level)
+                self.dynamicIsland.updateLiveActivity(statusText: "Listening...", isListening: true, audioLevel: level, transcript: transcript)
+                SpeechManager.shared.syncWithCoordinator(state: .listening, audioLevel: level, transcript: transcript)
             }
         }
     }
 
     nonisolated public func audioSessionManagerDidReceiveInterruption(_ manager: AudioSessionManager) {
         Task { @MainActor in
+            print("[VOICE_SESSION] Audio session received hardware interruption")
             self.cancelVoiceSession()
         }
     }
 
     nonisolated public func audioSessionManagerDidChangeRoute(_ manager: AudioSessionManager, toBluetooth: Bool) {
-        // Route changed (e.g. AirPods connected/disconnected)
+        print("[VOICE_SESSION] Audio route changed. toBluetooth: \(toBluetooth)")
     }
 }
 
@@ -301,22 +361,27 @@ extension VoiceSessionCoordinator: SpeechRecognitionManagerDelegate {
             self.activeTranscript = transcript
             if case .listening(_, let level) = self.state {
                 self.state = .listening(transcript: transcript, audioLevel: level)
+                self.dynamicIsland.updateLiveActivity(statusText: "Listening...", isListening: true, audioLevel: level, transcript: transcript)
+                SpeechManager.shared.syncWithCoordinator(state: .listening, audioLevel: level, transcript: transcript)
             }
         }
     }
 
     nonisolated public func speechRecognitionManager(_ manager: SpeechRecognitionManager, didFinishWithFinalTranscript transcript: String) {
         Task { @MainActor in
+            print("[VOICE_SESSION] Final transcript callback received: '\(transcript)'")
             self.activeTranscript = transcript
-            self.stopVoiceSession()
+            self.stopVoiceSession(finalTranscript: transcript)
         }
     }
 
     nonisolated public func speechRecognitionManager(_ manager: SpeechRecognitionManager, didFailWithError error: Error) {
-        // Ignore cancelled errors
-        if (error as NSError).code == 203 || (error as NSError).domain == "kAFAssistantErrorDomain" {
+        let nsError = error as NSError
+        if nsError.code == 203 || nsError.domain == "kAFAssistantErrorDomain" || nsError.domain == "kLSRErrorDomain" {
+            // Ignore benign cancellation errors
             return
         }
+        print("[VOICE_SESSION] Speech recognition error: \(error.localizedDescription)")
         Task { @MainActor in
             self.handleSessionError(error.localizedDescription)
         }
@@ -334,11 +399,14 @@ extension VoiceSessionCoordinator: VoiceResponseManagerDelegate {
 
     nonisolated public func voiceResponseManagerDidFinishSpeaking(_ manager: VoiceResponseManager) {
         Task { @MainActor in
+            print("[VOICE_SESSION] voice_response_finished. Summary: '\(self.latestResponse)'")
             self.state = .completed(summary: self.latestResponse)
-            self.dynamicIsland.updateSessionState(.completedVerified)
+            self.dynamicIsland.updateSessionState(.completedVerified, details: self.latestResponse)
+            SpeechManager.shared.syncWithCoordinator(state: .idle)
             Task {
-                try? await Task.sleep(nanoseconds: 1_200_000_000)
+                try? await Task.sleep(nanoseconds: 1_800_000_000)
                 if case .completed = self.state {
+                    print("[VOICE_SESSION] session_completed. Resetting to idle.")
                     self.state = .idle
                     self.dynamicIsland.endLiveActivity()
                 }
@@ -348,8 +416,10 @@ extension VoiceSessionCoordinator: VoiceResponseManagerDelegate {
 
     nonisolated public func voiceResponseManagerDidCancelSpeaking(_ manager: VoiceResponseManager) {
         Task { @MainActor in
+            print("[VOICE_SESSION] voice_response_cancelled")
             self.state = .idle
             self.dynamicIsland.endLiveActivity()
+            SpeechManager.shared.syncWithCoordinator(state: .idle)
         }
     }
 }

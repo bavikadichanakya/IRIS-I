@@ -74,7 +74,7 @@ public final class SpeechRecognitionManager: NSObject, @unchecked Sendable {
 
         let request = SFSpeechAudioBufferRecognitionRequest()
         request.shouldReportPartialResults = true
-        request.requiresOnDeviceRecognition = false // Use hybrid or offline as available
+        request.requiresOnDeviceRecognition = false // Fast hybrid or on-device
         self.recognitionRequest = request
 
         self.recognitionTask = recognizer.recognitionTask(with: request) { [weak self] result, error in
@@ -82,7 +82,11 @@ public final class SpeechRecognitionManager: NSObject, @unchecked Sendable {
                 guard let self = self else { return }
 
                 if let error = error {
-                    self.delegate?.speechRecognitionManager(self, didFailWithError: error)
+                    let nsError = error as NSError
+                    if nsError.code != 203 && nsError.domain != "kAFAssistantErrorDomain" {
+                        print("[SPEECH_REC] Recognition error: \(error.localizedDescription)")
+                        self.delegate?.speechRecognitionManager(self, didFailWithError: error)
+                    }
                     self.stopRecognition()
                     return
                 }
@@ -92,6 +96,7 @@ public final class SpeechRecognitionManager: NSObject, @unchecked Sendable {
                     self.delegate?.speechRecognitionManager(self, didUpdatePartialTranscript: transcript)
 
                     if result.isFinal {
+                        print("[SPEECH_REC] Final speech result received: '\(transcript)'")
                         self.delegate?.speechRecognitionManager(self, didFinishWithFinalTranscript: transcript)
                         self.stopRecognition()
                     } else {
@@ -118,6 +123,7 @@ public final class SpeechRecognitionManager: NSObject, @unchecked Sendable {
                 guard !Task.isCancelled else { return }
                 let trimmed = currentTranscript.trimmingCharacters(in: .whitespacesAndNewlines)
                 if !trimmed.isEmpty {
+                    print("[SPEECH_REC] Silence auto-endpoint reached (1.5s). Final transcript: '\(trimmed)'")
                     self.delegate?.speechRecognitionManager(self, didFinishWithFinalTranscript: trimmed)
                     self.stopRecognition()
                 }

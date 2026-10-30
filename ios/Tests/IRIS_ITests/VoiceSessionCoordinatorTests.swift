@@ -2,8 +2,8 @@
 //  VoiceSessionCoordinatorTests.swift
 //  IRIS-ITests
 //
-//  Unit tests verifying VoiceSessionCoordinator lifecycle, single-session residency,
-//  state transitions, cancellation, error handling, and wake-word parsing.
+//  Comprehensive unit tests verifying VoiceSessionCoordinator lifecycle, single-session residency,
+//  state transitions, cancellation, error handling, wake-word parsing, and tool execution parity.
 //
 
 import XCTest
@@ -82,6 +82,71 @@ final class VoiceSessionCoordinatorTests: XCTestCase {
         XCTAssertEqual(VoiceSessionCoordinator.stripWakeWords("Hey IRIS, what time is it?"), "what time is it")
         XCTAssertEqual(VoiceSessionCoordinator.stripWakeWords("iris tell me the weather"), "tell me the weather")
         XCTAssertEqual(VoiceSessionCoordinator.stripWakeWords("Hey, IRIS! Open notes."), "open notes")
+        XCTAssertEqual(VoiceSessionCoordinator.stripWakeWords("Hey IRIS open YouTube"), "open youtube")
+        XCTAssertEqual(VoiceSessionCoordinator.stripWakeWords("IRIS open YouTube"), "open youtube")
+        XCTAssertEqual(VoiceSessionCoordinator.stripWakeWords("open YouTube"), "open youtube")
         XCTAssertEqual(VoiceSessionCoordinator.stripWakeWords("hey iris"), "")
+        XCTAssertEqual(VoiceSessionCoordinator.stripWakeWords(""), "")
+    }
+
+    @MainActor
+    func testStopVoiceSessionWithExplicitTranscript() {
+        let coordinator = VoiceSessionCoordinator.shared
+        coordinator.stopVoiceSession(finalTranscript: "open YouTube")
+        // Should transition to thinking state with stripped query
+        XCTAssertEqual(coordinator.state, .thinking(prompt: "open youtube"))
+    }
+
+    @MainActor
+    func testStopVoiceSessionWithEmptyTranscriptResetsToIdle() {
+        let coordinator = VoiceSessionCoordinator.shared
+        coordinator.stopVoiceSession(finalTranscript: "   ")
+        XCTAssertEqual(coordinator.state, .idle)
+    }
+
+    @MainActor
+    func testSubmitRecognizedCommandWakeWordOnlyTriggersGreeting() {
+        let coordinator = VoiceSessionCoordinator.shared
+        coordinator.submitRecognizedCommand("Hey IRIS")
+        // Wake-word only should transition to responding with ready prompt
+        XCTAssertEqual(coordinator.state, .responding(text: "What can I do for you?", audioLevel: 0.5))
+    }
+
+    @MainActor
+    func testSpeechManagerSyncWithCoordinator() {
+        let speech = SpeechManager.shared
+        speech.syncWithCoordinator(state: .listening, audioLevel: 0.42, transcript: "testing")
+        XCTAssertEqual(speech.state, .listening)
+        XCTAssertEqual(speech.audioLevel, 0.42)
+        XCTAssertEqual(speech.recognizedText, "testing")
+
+        speech.syncWithCoordinator(state: .idle, audioLevel: 0.0)
+        XCTAssertEqual(speech.state, .idle)
+    }
+
+    func testFastIntentRoutingOpenYouTubeParity() {
+        let router = FastIntentRouter()
+        let result = router.route(query: "open YouTube")
+        switch result {
+        case .matched(let toolName, let arguments, let duration):
+            XCTAssertEqual(toolName, "AppOpenerTool")
+            XCTAssertEqual(arguments["app_name"] as? String, "YouTube")
+            XCTAssertLessThan(duration, 10.0)
+        case .unmatched:
+            XCTFail("Expected 'open YouTube' to match AppOpenerTool")
+        }
+    }
+
+    func testFastIntentRoutingTimeParity() {
+        let router = FastIntentRouter()
+        let result = router.route(query: "what is the time")
+        switch result {
+        case .matched(let toolName, let arguments, let duration):
+            XCTAssertEqual(toolName, "SystemInfoTool")
+            XCTAssertEqual(arguments["action"] as? String, "time")
+            XCTAssertLessThan(duration, 10.0)
+        case .unmatched:
+            XCTFail("Expected 'what is the time' to match SystemInfoTool")
+        }
     }
 }

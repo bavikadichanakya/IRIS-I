@@ -26,6 +26,7 @@ public struct AskIRISIntent: AppIntent {
 
     @MainActor
     public func perform() async throws -> some IntentResult {
+        print("[INTENT] intent_received: AskIRISIntent")
         await VoiceSessionCoordinator.shared.startVoiceSession()
         return .result()
     }
@@ -50,25 +51,19 @@ public struct AskIRISWithTextIntent: AppIntent {
     }
 
     public func perform() async throws -> some IntentResult {
+        print("[INTENT] intent_received: AskIRISWithTextIntent")
         let trimmed = command.trimmingCharacters(in: .whitespacesAndNewlines)
         if trimmed.isEmpty {
             // Seamless zero-prompt fallback: start voice listening
-            await MainActor.run {
-                #if canImport(ActivityKit)
-                IRISDynamicIslandManager.shared.startLiveActivity()
-                #endif
-            }
-            await SpeechManager.shared.startListening()
+            await VoiceSessionCoordinator.shared.startVoiceSession()
             return .result()
         }
 
         let orchestrator = ReActOrchestrator.shared
         let response = await orchestrator.process(userPrompt: trimmed)
         await MainActor.run {
-            #if canImport(ActivityKit)
             IRISDynamicIslandManager.shared.updateLiveActivity(statusText: "Responding...", isListening: false, audioLevel: 0.6)
-            #endif
-            SpeechManager.shared.speak(text: response.textResponse)
+            VoiceResponseManager.shared.speak(text: response.textResponse)
         }
         return .result()
     }
@@ -114,6 +109,7 @@ public struct StartIRISVoiceIntent: AppIntent {
 
     @MainActor
     public func perform() async throws -> some IntentResult {
+        print("[INTENT] intent_received: StartIRISVoiceIntent")
         await VoiceSessionCoordinator.shared.startVoiceSession()
         return .result()
     }
@@ -131,6 +127,7 @@ public struct StartListeningIntent: AppIntent {
 
     @MainActor
     public func perform() async throws -> some IntentResult {
+        print("[INTENT] intent_received: StartListeningIntent")
         await VoiceSessionCoordinator.shared.startVoiceSession()
         return .result()
     }

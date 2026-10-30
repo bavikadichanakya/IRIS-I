@@ -54,6 +54,10 @@ public struct ContentView: View {
                 .padding(.bottom, 6)
             }
 
+            // Top Floating In-App Dynamic Island Capsule
+            DynamicIslandPillView()
+                .padding(.top, 10)
+                .zIndex(100)
         }
         .ignoresSafeArea(.keyboard, edges: .bottom)
         .glassTheme(.standard)

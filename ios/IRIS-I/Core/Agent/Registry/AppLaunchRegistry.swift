@@ -275,6 +275,7 @@ public actor AppLaunchRegistry {
     @MainActor
     public func launchApp(name: String, parameter: String? = nil) async throws -> URL {
         let lowName = name.lowercased().trimmingCharacters(in: .whitespaces)
+        print("[APP_LAUNCH] Attempting to launch app: '\(name)' (resolved key: '\(lowName)')")
 
         // 1. Special Case: iOS System Settings via official public API
         if lowName == "settings" || lowName == "app settings" || lowName == "system settings" {
@@ -283,6 +284,7 @@ public actor AppLaunchRegistry {
                 throw AppLaunchError.systemLaunchFailed("Invalid settings URL")
             }
             let success = await UIApplication.shared.open(settingsURL)
+            print("[APP_LAUNCH] Settings launch result: \(success)")
             if success {
                 return settingsURL
             } else {
@@ -295,11 +297,13 @@ public actor AppLaunchRegistry {
 
         // 2. Reject private schemes like App-Prefs:
         if lowName.contains("prefs:") || parameter?.lowercased().contains("prefs:") == true {
+            print("[APP_LAUNCH] Rejected prohibited private scheme attempt: '\(lowName)'")
             throw AppLaunchError.unregisteredScheme("App-Prefs is a private API and cannot be used.")
         }
 
         // 3. Resolve verified descriptor strictly without guessing fake schemes
         guard let descriptor = await descriptor(for: lowName) else {
+            print("[APP_LAUNCH] App '\(name)' not found in verified registry")
             throw AppLaunchError.unsupportedApp(appName: name)
         }
 
@@ -317,24 +321,31 @@ public actor AppLaunchRegistry {
 
         #if canImport(UIKit)
         // Phase 1: Try Native URL Scheme if canOpenURL allows it
-        if let schemeURL = URL(string: targetString), UIApplication.shared.canOpenURL(schemeURL) {
-            let opened = await UIApplication.shared.open(schemeURL)
-            if opened {
-                return schemeURL
+        if let schemeURL = URL(string: targetString) {
+            let canOpen = UIApplication.shared.canOpenURL(schemeURL)
+            print("[APP_LAUNCH] Trying native URL scheme: \(schemeURL.absoluteString) (canOpenURL: \(canOpen))")
+            if canOpen {
+                let opened = await UIApplication.shared.open(schemeURL, options: [:])
+                print("[APP_LAUNCH] UIApplication.shared.open result: \(opened)")
+                if opened {
+                    return schemeURL
+                }
             }
         }
 
         // Phase 2: Try Universal Link with .universalLinksOnly: true
         // Official iOS public API: launches the native app if installed, failing cleanly if not installed
         if let universalBase = descriptor.universalLinkURL {
+            print("[APP_LAUNCH] Trying universal link: \(universalBase.absoluteString)")
             let openedNative = await UIApplication.shared.open(universalBase, options: [.universalLinksOnly: true])
+            print("[APP_LAUNCH] Universal link open result: \(openedNative)")
             if openedNative {
                 return universalBase
             }
         }
 
         // Phase 3: Neither native scheme nor universal link opened a native app
-        // Truthful outcome: the application is not installed on this device
+        print("[APP_LAUNCH] Launch failed for '\(descriptor.appName)': app does not appear installed")
         throw AppLaunchError.appNotInstalled(appName: descriptor.appName, appStoreURL: descriptor.appStoreURL)
         #else
         throw AppLaunchError.systemLaunchFailed("UIKit unavailable on this platform")
