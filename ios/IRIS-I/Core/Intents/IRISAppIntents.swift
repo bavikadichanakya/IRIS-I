@@ -17,28 +17,36 @@ public struct AskIRISIntent: AppIntent {
     public static var title: LocalizedStringResource = "Ask IRIS"
     public static var description = IntentDescription("Executes natural-language voice or text commands with the on-device IRIS assistant engine.")
 
-    /// Headless background execution: does not require bringing IRIS UI to the foreground for general queries
-    public static var openAppWhenRun: Bool = false
+    /// Brings IRIS directly into the foreground so the Dynamic Island and live microphone activate with zero dialogs
+    public static var openAppWhenRun: Bool = true
 
-    @Parameter(title: "Command", requestValueDialog: "What can IRIS do for you?")
-    public var command: String
+    @Parameter(title: "Command")
+    public var command: String?
 
     public init() {}
 
-    public init(command: String) {
+    public init(command: String?) {
         self.command = command
     }
 
-    public func perform() async throws -> some IntentResult & ProvidesDialog {
-        let trimmed = command.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmed.isEmpty else {
-            return .result(dialog: "I didn't catch that. What would you like me to do?")
+    public func perform() async throws -> some IntentResult {
+        if let query = command?.trimmingCharacters(in: .whitespacesAndNewlines), !query.isEmpty {
+            let orchestrator = ReActOrchestrator.shared
+            let response = await orchestrator.process(userPrompt: query)
+            await TTSManager.shared.speak(text: response.textResponse)
+            return .result()
+        } else {
+            // Instant wake from Action Button: start listening immediately with the Dynamic Island UI
+            await MainActor.run {
+                #if canImport(ActivityKit)
+                IRISDynamicIslandManager.shared.startLiveActivity()
+                #endif
+                Task {
+                    await SpeechManager.shared.startListening()
+                }
+            }
+            return .result()
         }
-
-        let orchestrator = ReActOrchestrator.shared
-        let response = await orchestrator.process(userPrompt: trimmed)
-
-        return .result(dialog: IntentDialog(stringLiteral: response.textResponse))
     }
 }
 

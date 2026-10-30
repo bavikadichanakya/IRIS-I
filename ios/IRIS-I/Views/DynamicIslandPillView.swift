@@ -3,7 +3,7 @@
 //  IRIS-I
 //
 //  Dynamic Island Floating Interactive Pill matching design blueprint:
-//  [ (●) Pearl Orb ]  [ Hey IRIS \n Listening... ]  [ |||||| (mic) ]
+//  [ (●) Pearl Orb ]  [ Hey IRIS \n Listening... ]  [ ||||||| (mic) ]
 //
 
 import SwiftUI
@@ -17,11 +17,11 @@ public struct DynamicIslandPillView: View {
         if speechManager.state == .listening || speechManager.state == .processing || speechManager.state == .speaking || speechManager.wakeWordDetected {
             pillContent
                 .transition(.asymmetric(
-                    insertion: .scale(scale: 0.85).combined(with: .opacity).combined(with: .move(edge: .top)),
-                    removal: .scale(scale: 0.9).combined(with: .opacity).combined(with: .move(edge: .top))
+                    insertion: .scale(scale: 0.88).combined(with: .opacity).combined(with: .move(edge: .top)),
+                    removal: .scale(scale: 0.90).combined(with: .opacity).combined(with: .move(edge: .top))
                 ))
-                .animation(.spring(response: 0.38, dampingFraction: 0.72), value: speechManager.state)
-                .animation(.spring(response: 0.38, dampingFraction: 0.72), value: speechManager.wakeWordDetected)
+                .animation(.spring(response: 0.36, dampingFraction: 0.75), value: speechManager.state)
+                .animation(.spring(response: 0.36, dampingFraction: 0.75), value: speechManager.wakeWordDetected)
         }
     }
 
@@ -36,49 +36,58 @@ public struct DynamicIslandPillView: View {
             }
         } label: {
             HStack(spacing: 10) {
-                // Leading 3D Pearl Orb (matches blueprint)
+                // Leading 3D Pearl Orb
                 PearlOrbView(
-                    size: 24,
+                    size: 28,
                     audioLevel: speechManager.audioLevel,
                     isListening: speechManager.state == .listening
                 )
+                .frame(width: 28, height: 28)
 
                 // Center Typography: Title & Live Status
                 VStack(alignment: .leading, spacing: 1) {
                     Text("Hey IRIS")
-                        .font(.system(size: 13, weight: .bold))
+                        .font(.system(size: 13, weight: .bold, design: .default))
                         .foregroundColor(.white)
 
                     Text(statusDescription)
-                        .font(.system(size: 10, weight: .medium))
-                        .foregroundColor(Color(white: 0.70))
+                        .font(.system(size: 10.5, weight: .regular, design: .default))
+                        .foregroundColor(Color(white: 0.65))
                         .lineLimit(1)
                 }
 
-                Spacer(minLength: 4)
+                Spacer(minLength: 6)
 
-                // Trailing Live Waveform & Microphone
-                HStack(spacing: 6) {
+                // Trailing Live Waveform & Microphone Button (Matching Blueprint)
+                HStack(spacing: 8) {
                     miniWaveform
-                    Image(systemName: "mic.fill")
-                        .font(.system(size: 11, weight: .bold))
-                        .foregroundColor(speechManager.state == .listening ? Color.green : Color.white)
+
+                    // Circular Microphone Icon Badge
+                    ZStack {
+                        Circle()
+                            .fill(Color(white: 0.20))
+                            .frame(width: 24, height: 24)
+
+                        Image(systemName: "mic.fill")
+                            .font(.system(size: 10, weight: .semibold))
+                            .foregroundColor(speechManager.state == .listening ? Color.green : Color.white)
+                    }
                 }
             }
-            .padding(.leading, 10)
-            .padding(.trailing, 14)
-            .padding(.vertical, 8)
-            .frame(width: 236, height: 42)
+            .padding(.leading, 8)
+            .padding(.trailing, 10)
+            .padding(.vertical, 7)
+            .frame(width: 252, height: 44)
             .background(
                 Capsule()
                     .fill(Color.black)
-                    .shadow(color: Color.black.opacity(0.35), radius: 10, y: 4)
+                    .shadow(color: Color.black.opacity(0.45), radius: 12, y: 5)
             )
             .overlay(
                 Capsule()
                     .stroke(
                         LinearGradient(
-                            colors: [Color.white.opacity(0.3), Color.white.opacity(0.05), Color.clear],
+                            colors: [Color.white.opacity(0.25), Color.white.opacity(0.08), Color.white.opacity(0.02)],
                             startPoint: .topLeading,
                             endPoint: .bottomTrailing
                         ),
@@ -103,20 +112,20 @@ public struct DynamicIslandPillView: View {
     }
 
     private var miniWaveform: some View {
-        HStack(spacing: 2.5) {
-            ForEach(0..<4, id: \.self) { i in
+        HStack(spacing: 2.2) {
+            ForEach(0..<7, id: \.self) { i in
                 let scale = waveformHeight(for: i)
-                RoundedRectangle(cornerRadius: 1.5)
+                Capsule()
                     .fill(Color.white)
-                    .frame(width: 2.5, height: max(4, 16 * CGFloat(scale)))
+                    .frame(width: 2.2, height: max(3.5, 17 * CGFloat(scale)))
             }
         }
     }
 
     private func waveformHeight(for index: Int) -> Float {
-        let base = [0.4, 0.9, 0.7, 0.5][index]
-        let reactive = speechManager.audioLevel * Float([0.6, 1.0, 0.8, 0.5][index])
-        return min(1.0, Float(base) * 0.3 + reactive * 0.7)
+        let baseEnvelope: [Float] = [0.35, 0.55, 0.85, 1.0, 0.85, 0.55, 0.35]
+        let base = baseEnvelope[index]
+        let reactive = speechManager.audioLevel * Float([0.5, 0.8, 1.0, 1.2, 1.0, 0.8, 0.5][index])
+        return min(1.0, base * 0.35 + reactive * 0.65)
     }
 }
-

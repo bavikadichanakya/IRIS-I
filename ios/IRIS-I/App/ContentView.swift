@@ -56,7 +56,8 @@ public struct ContentView: View {
 
             // Top Hardware Dynamic Island Floating Pill
             DynamicIslandPillView()
-                .padding(.top, 4)
+                .padding(.top, 11)
+                .ignoresSafeArea(edges: .top)
         }
         .ignoresSafeArea(.keyboard, edges: .bottom)
         .glassTheme(.standard)
