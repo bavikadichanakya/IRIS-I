@@ -29,6 +29,8 @@ public final class IRISDynamicIslandManager: ObservableObject {
 
     @Published public var isLiveActivityActive: Bool = false
     private var currentActivity: Activity<IRISLiveActivityAttributes>?
+    private var lastUpdateTime: Date = .distantPast
+    private var lastStatusText: String = ""
 
     private init() {
         // Part 3.8: Clean up any orphaned/abandoned activities from previous sessions
@@ -64,6 +66,21 @@ public final class IRISDynamicIslandManager: ObservableObject {
             )
             self.currentActivity = activity
             self.isLiveActivityActive = true
+            self.lastStatusText = "Listening..."
+            self.lastUpdateTime = Date()
+
+            // Trigger alert expansion to display the full Hey IRIS island capsule immediately
+            Task {
+                let alertConfig = AlertConfiguration(
+                    title: "Hey IRIS",
+                    body: "Listening...",
+                    sound: nil
+                )
+                await activity.update(
+                    ActivityContent(state: initialState, staleDate: nil),
+                    alertConfiguration: alertConfig
+                )
+            }
         } catch {
             print("Failed to start Live Activity: \(error)")
         }
@@ -71,6 +88,16 @@ public final class IRISDynamicIslandManager: ObservableObject {
 
     public func updateLiveActivity(statusText: String, isListening: Bool, audioLevel: Float) {
         guard let activity = currentActivity else { return }
+        let now = Date()
+        let isStatusChanged = (statusText != lastStatusText)
+        let isIntervalElapsed = now.timeIntervalSince(lastUpdateTime) >= 0.35
+
+        // Throttle audio waveform updates to prevent widgetd IPC rate-limiting kills
+        guard isStatusChanged || isIntervalElapsed else { return }
+
+        lastUpdateTime = now
+        lastStatusText = statusText
+
         let updatedState = IRISLiveActivityAttributes.ContentState(
             statusText: statusText,
             isListening: isListening,

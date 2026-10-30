@@ -16,44 +16,53 @@ import AppIntents
 @available(iOS 16.0, macOS 13.0, watchOS 9.0, tvOS 16.0, *)
 public struct AskIRISIntent: AppIntent {
     public static var title: LocalizedStringResource = "Ask IRIS"
-    public static var description = IntentDescription("Executes natural-language voice commands via Dynamic Island Live Activity.")
+    public static var description = IntentDescription("Wakes IRIS and immediately begins listening for voice commands in the Dynamic Island.")
 
     /// Runs directly in the Dynamic Island without opening the full app window
     public static var openAppWhenRun: Bool = false
     public static var isDiscoverable: Bool = true
 
-    @Parameter(title: "Command", default: nil)
-    public var command: String?
+    public init() {}
+
+    @MainActor
+    public func perform() async throws -> some IntentResult {
+        #if canImport(ActivityKit)
+        IRISDynamicIslandManager.shared.startLiveActivity()
+        #endif
+        Task {
+            await SpeechManager.shared.startListening()
+        }
+        return .result()
+    }
+}
+
+@available(iOS 16.0, macOS 13.0, watchOS 9.0, tvOS 16.0, *)
+public struct AskIRISWithTextIntent: AppIntent {
+    public static var title: LocalizedStringResource = "Ask IRIS with Text"
+    public static var description = IntentDescription("Sends a typed text instruction to IRIS.")
+
+    public static var openAppWhenRun: Bool = false
+    public static var isDiscoverable: Bool = true
+
+    @Parameter(title: "Command")
+    public var command: String
 
     public init() {}
 
-    public init(command: String?) {
+    public init(command: String) {
         self.command = command
     }
 
     public func perform() async throws -> some IntentResult {
-        if let query = command?.trimmingCharacters(in: .whitespacesAndNewlines), !query.isEmpty {
-            let orchestrator = ReActOrchestrator.shared
-            let response = await orchestrator.process(userPrompt: query)
-            await MainActor.run {
-                #if canImport(ActivityKit)
-                IRISDynamicIslandManager.shared.updateLiveActivity(statusText: "Responding...", isListening: false, audioLevel: 0.6)
-                #endif
-                SpeechManager.shared.speak(text: response.textResponse)
-            }
-            return .result()
-        } else {
-            // Instant 1-press trigger from Action Button: start real Dynamic Island Live Activity
-            await MainActor.run {
-                #if canImport(ActivityKit)
-                IRISDynamicIslandManager.shared.startLiveActivity()
-                #endif
-                Task {
-                    await SpeechManager.shared.startListening()
-                }
-            }
-            return .result()
+        let orchestrator = ReActOrchestrator.shared
+        let response = await orchestrator.process(userPrompt: command)
+        await MainActor.run {
+            #if canImport(ActivityKit)
+            IRISDynamicIslandManager.shared.updateLiveActivity(statusText: "Responding...", isListening: false, audioLevel: 0.6)
+            #endif
+            SpeechManager.shared.speak(text: response.textResponse)
         }
+        return .result()
     }
 }
 
@@ -143,7 +152,8 @@ public struct IRISAppShortcutsProvider: AppShortcutsProvider {
                 "Start \(.applicationName) Voice Agent",
                 "Ask \(.applicationName)",
                 "Hey \(.applicationName)",
-                "Start \(.applicationName)"
+                "Start \(.applicationName)",
+                "\(.applicationName)"
             ],
             shortTitle: "Ask IRIS",
             systemImageName: "mic.fill"
@@ -151,8 +161,16 @@ public struct IRISAppShortcutsProvider: AppShortcutsProvider {
         AppShortcut(
             intent: AskIRISIntent(),
             phrases: [
+                "Talk to \(.applicationName)",
+                "Wake \(.applicationName)"
+            ],
+            shortTitle: "Wake IRIS",
+            systemImageName: "waveform"
+        )
+        AppShortcut(
+            intent: AskIRISWithTextIntent(),
+            phrases: [
                 "Tell \(.applicationName) to \(\.$command)",
-                "\(.applicationName) \(\.$command)",
                 "Ask \(.applicationName) to \(\.$command)"
             ],
             shortTitle: "Ask IRIS Command",
