@@ -136,5 +136,4 @@ public final class IRISDynamicIslandManager: ObservableObject {
         }
     }
 }
-#endif
 
