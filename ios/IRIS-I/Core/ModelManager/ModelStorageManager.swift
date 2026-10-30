@@ -91,59 +91,21 @@ public final class ModelStorageManager: Sendable {
     }
 
     public func fileURL(for filename: String) -> URL {
-        let fm = FileManager.default
         let weightsPath = weightsDirectory.appendingPathComponent(filename)
-        if fm.fileExists(atPath: weightsPath.path) {
+        if FileManager.default.fileExists(atPath: weightsPath.path) {
             return weightsPath
         }
 
         // Check Documents root and Documents/Models
-        if let docs = fm.urls(for: .documentDirectory, in: .userDomainMask).first {
+        if let docs = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first {
             let docsDirect = docs.appendingPathComponent(filename)
-            if fm.fileExists(atPath: docsDirect.path) {
-                try? fm.createDirectory(at: weightsDirectory, withIntermediateDirectories: true)
-                try? fm.moveItem(at: docsDirect, to: weightsPath)
-                if fm.fileExists(atPath: weightsPath.path) {
-                    return weightsPath
-                }
+            if FileManager.default.fileExists(atPath: docsDirect.path) {
                 return docsDirect
             }
             let docsModels = docs.appendingPathComponent("Models").appendingPathComponent(filename)
-            if fm.fileExists(atPath: docsModels.path) {
-                try? fm.createDirectory(at: weightsDirectory, withIntermediateDirectories: true)
-                try? fm.moveItem(at: docsModels, to: weightsPath)
-                if fm.fileExists(atPath: weightsPath.path) {
-                    return weightsPath
-                }
+            if FileManager.default.fileExists(atPath: docsModels.path) {
                 return docsModels
             }
-        }
-
-        // Check downloads directory
-        let downloadsPath = downloadsDirectory.appendingPathComponent(filename)
-        if fm.fileExists(atPath: downloadsPath.path) {
-            try? fm.createDirectory(at: weightsDirectory, withIntermediateDirectories: true)
-            try? fm.moveItem(at: downloadsPath, to: weightsPath)
-            if fm.fileExists(atPath: weightsPath.path) {
-                return weightsPath
-            }
-            return downloadsPath
-        }
-
-        // Check staging directory
-        let stagingPath = stagingDirectory.appendingPathComponent(filename)
-        if fm.fileExists(atPath: stagingPath.path) {
-            try? fm.createDirectory(at: weightsDirectory, withIntermediateDirectories: true)
-            try? fm.moveItem(at: stagingPath, to: weightsPath)
-            if fm.fileExists(atPath: weightsPath.path) {
-                return weightsPath
-            }
-            return stagingPath
-        }
-
-        // Check main app bundle
-        if let bundleURL = Bundle.main.url(forResource: (filename as NSString).deletingPathExtension, withExtension: (filename as NSString).pathExtension) {
-            return bundleURL
         }
 
         return weightsPath

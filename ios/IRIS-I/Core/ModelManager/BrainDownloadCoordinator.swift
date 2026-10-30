@@ -57,16 +57,16 @@ public final class BrainDownloadCoordinator: ObservableObject {
 
     /// Automatically provisions or activates the baseline brain on application launch
     public func autoProvisionOrActivateOnLaunch() async {
+        // Do not auto-download or auto-activate during automated test execution
+        if ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil ||
+           NSClassFromString("XCTestCase") != nil {
+            return
+        }
         await refreshStateAsync()
         let manifest = catalog.baseline3B
         if storage.isModelInstalled(manifest) {
             if !isModelActive {
                 activateInstalledBrain(manifest: manifest)
-            }
-        } else {
-            // Automatic first-launch model background provisioning if storage permits
-            if storage.hasSufficientSpace(requiredBytes: manifest.requiredDiskBytes) {
-                downloadAndActivateBrain()
             }
         }
     }

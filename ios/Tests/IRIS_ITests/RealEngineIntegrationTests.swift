@@ -36,7 +36,7 @@ final class RealEngineIntegrationTests: XCTestCase {
     func testRealLlamaCppEngineLoadingAndInference() async throws {
         // Skip explicitly if real GGUF weights have not been imported onto the device yet
         try XCTSkipUnless(
-            FileManager.default.fileExists(atPath: realModelURL.path),
+            ModelStorageManager.shared.isModelInstalled(catalog.baseline3B),
             "Physical GGUF model weights not found at: \(realModelURL.path). Import a real GGUF model to execute physical inference validation."
         )
 
@@ -85,7 +85,7 @@ final class RealEngineIntegrationTests: XCTestCase {
 
     func testRealEngineCancellationAndSubsequentInference() async throws {
         try XCTSkipUnless(
-            FileManager.default.fileExists(atPath: realModelURL.path),
+            ModelStorageManager.shared.isModelInstalled(catalog.baseline3B),
             "Physical GGUF model weights not found at: \(realModelURL.path). Skipping real cancellation test."
         )
 

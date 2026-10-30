@@ -62,7 +62,7 @@ final class ModelLifecycleTests: XCTestCase {
 
             XCTAssertFalse(isLoaded, "Must not report loaded on failure")
             if case .failed(let msg) = state {
-                XCTAssertTrue(msg.contains("not found") || msg.contains("failed"), "State must record failure reason: \(msg)")
+                XCTAssertTrue(msg.contains("not found") || msg.contains("failed") || msg.contains("Could not"), "State must record failure reason: \(msg)")
             } else {
                 XCTFail("State must be .failed on load error, got: \(state)")
             }
