@@ -78,3 +78,4 @@ final class ExecutionRecordTests: XCTestCase {
         XCTAssertNotNil(record.errorDetails)
     }
 }
+

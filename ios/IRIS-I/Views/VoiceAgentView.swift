@@ -585,10 +585,10 @@ public struct VoiceAgentView: View {
 
             switch record.executionState {
             case .completedVerified:
-                executionSteps[2] = ExecutionStepItem(title: "Verified: \(record.resultPayload ?? "Success")", status: .completedVerified)
+                executionSteps[2] = ExecutionStepItem(title: "Verified: \(record.payloadDescription)", status: .completedVerified)
                 activeResultTitle = response.textResponse
             case .completedUnverified:
-                executionSteps[2] = ExecutionStepItem(title: "Dispatched: \(record.resultPayload ?? "Sent")", status: .completedUnverified)
+                executionSteps[2] = ExecutionStepItem(title: "Dispatched: \(record.payloadDescription)", status: .completedUnverified)
                 activeResultTitle = response.textResponse
             case .unsupported:
                 executionSteps[2] = ExecutionStepItem(title: "Unsupported: \(record.errorDetails ?? "Not available")", status: .unsupported)

@@ -62,6 +62,18 @@ public struct ExecutionRecord: Identifiable, Sendable {
     public let requiredUserAction: String?
     public let timestamp: Date
 
+    public var toolName: String {
+        selectedTool ?? "none"
+    }
+
+    public var payloadDescription: String {
+        if let text = resultPayload["output"], !text.isEmpty { return text }
+        if let text = resultPayload["text"], !text.isEmpty { return text }
+        if let msg = resultPayload["message"], !msg.isEmpty { return msg }
+        if let status = resultPayload["status"], !status.isEmpty { return status }
+        return resultPayload.isEmpty ? "Success" : resultPayload.values.joined(separator: ", ")
+    }
+
     public init(
         id: UUID = UUID(),
         userRequest: String,
@@ -87,6 +99,44 @@ public struct ExecutionRecord: Identifiable, Sendable {
         self.executionState = executionState
         self.toolOutcome = toolOutcome
         self.resultPayload = resultPayload
+        self.errorDetails = errorDetails
+        self.isVerified = isVerified
+        self.durationMs = durationMs
+        self.requiredUserAction = requiredUserAction
+        self.timestamp = timestamp
+    }
+
+    /// Convenience initializer supporting toolName, operationType, and optional string payload
+    public init(
+        id: UUID = UUID(),
+        toolName: String,
+        operationType: String = "execute",
+        userRequest: String = "",
+        interpretedIntent: String = "",
+        validatedArguments: [String: String] = [:],
+        permissionResult: String = "authorized",
+        executionState: StructuredExecutionState,
+        toolOutcome: ToolExecutionOutcome,
+        resultPayload: String? = nil,
+        errorDetails: String? = nil,
+        isVerified: Bool = false,
+        durationMs: Double = 0.0,
+        requiredUserAction: String? = nil,
+        timestamp: Date = Date()
+    ) {
+        self.id = id
+        self.userRequest = userRequest.isEmpty ? toolName : userRequest
+        self.interpretedIntent = interpretedIntent.isEmpty ? "\(operationType) \(toolName)" : interpretedIntent
+        self.selectedTool = toolName
+        self.validatedArguments = validatedArguments
+        self.permissionResult = permissionResult
+        self.executionState = executionState
+        self.toolOutcome = toolOutcome
+        if let payload = resultPayload {
+            self.resultPayload = ["output": payload]
+        } else {
+            self.resultPayload = [:]
+        }
         self.errorDetails = errorDetails
         self.isVerified = isVerified
         self.durationMs = durationMs

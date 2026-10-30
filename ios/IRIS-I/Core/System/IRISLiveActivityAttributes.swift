@@ -42,3 +42,4 @@ public struct IRISLiveActivityAttributes: ActivityAttributes {
 
 public typealias IrisWidgetAttributes = IRISLiveActivityAttributes
 #endif
+
