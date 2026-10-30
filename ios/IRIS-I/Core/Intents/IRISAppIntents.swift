@@ -33,7 +33,9 @@ public struct AskIRISIntent: AppIntent {
         if let query = command?.trimmingCharacters(in: .whitespacesAndNewlines), !query.isEmpty {
             let orchestrator = ReActOrchestrator.shared
             let response = await orchestrator.process(userPrompt: query)
-            await TTSManager.shared.speak(text: response.textResponse)
+            await MainActor.run {
+                SpeechManager.shared.speak(text: response.textResponse)
+            }
             return .result()
         } else {
             // Instant wake from Action Button: start listening immediately with the Dynamic Island UI
