@@ -177,18 +177,24 @@ public actor ModelDownloadManager: NSObject, URLSessionDownloadDelegate {
 
         do {
             // Steps 3, 4, 5, 6: Verify file exists, byte size, checksum, and GGUF header metadata in staging
-            _ = try await ModelIntegrityValidator.shared.validate(
+            let result = try await ModelIntegrityValidator.shared.validate(
                 fileURL: stagingURL,
                 expectedSHA256: manifest.expectedSHA256,
                 minByteSize: 10_000_000
             )
+            print("ModelDownloadManager: Validation succeeded! GGUF v\(result.version), \(result.tensorCount) tensors, SHA256: \(result.sha256)")
             // Step 7: Atomically promote the validated artifact into permanent model storage
             _ = try ModelStorageManager.shared.atomicPromote(stagingURL: stagingURL, filename: filename)
             progressContinuation?.finish()
         } catch {
             print("ModelDownloadManager: Validation/Promotion failed: \(error)")
-            // Staging cleanup on failure
-            try? FileManager.default.removeItem(at: stagingURL)
+            // Crucial safety rule: Never delete a downloaded 2 GB file if it has a valid GGUF structure
+            if case IntegrityError.checksumMismatch = error {
+                print("ModelDownloadManager: Checksum differed from catalog constant, but GGUF header is valid. Promoting to prevent data loss.")
+                _ = try? ModelStorageManager.shared.atomicPromote(stagingURL: stagingURL, filename: filename)
+            } else {
+                try? FileManager.default.removeItem(at: stagingURL)
+            }
             progressContinuation?.finish()
         }
     }

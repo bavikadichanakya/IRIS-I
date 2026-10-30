@@ -51,7 +51,23 @@ public final class BrainDownloadCoordinator: ObservableObject {
         } else if isModelInstalled {
             self.statusMessage = "Model downloaded · Ready to activate"
         } else if !isDownloading {
-            self.statusMessage = "No local brain downloaded (1.95 GB)"
+            self.statusMessage = "No local brain downloaded (2.10 GB)"
+        }
+    }
+
+    /// Automatically provisions or activates the baseline brain on application launch
+    public func autoProvisionOrActivateOnLaunch() async {
+        await refreshStateAsync()
+        let manifest = catalog.baseline3B
+        if storage.isModelInstalled(manifest) {
+            if !isModelActive {
+                activateInstalledBrain(manifest: manifest)
+            }
+        } else {
+            // Automatic first-launch model background provisioning if storage permits
+            if storage.hasSufficientSpace(requiredBytes: manifest.requiredDiskBytes) {
+                downloadAndActivateBrain()
+            }
         }
     }
 

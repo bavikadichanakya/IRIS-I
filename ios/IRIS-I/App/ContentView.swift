@@ -58,6 +58,9 @@ public struct ContentView: View {
         .ignoresSafeArea(.keyboard, edges: .bottom)
         .glassTheme(.standard)
         .preferredColorScheme(.light)
+        .task {
+            await BrainDownloadCoordinator.shared.autoProvisionOrActivateOnLaunch()
+        }
     }
 }
 

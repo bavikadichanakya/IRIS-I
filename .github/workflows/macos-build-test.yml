@@ -90,13 +90,14 @@ jobs:
             -destination "generic/platform=iOS" \
             CODE_SIGNING_ALLOWED=NO \
             CODE_SIGNING_REQUIRED=NO \
-            CONFIGURATION_BUILD_DIR=build/Device || true
+            CONFIGURATION_BUILD_DIR=build/Device
+          test -d "build/Device/IRISWidgets.appex" || { echo "ERROR: IRISWidgets.appex bundle does not exist"; exit 1; }
+          test -f "build/Device/IRISWidgets.appex/IRISWidgets" || { echo "ERROR: IRISWidgets executable missing"; exit 1; }
           mkdir -p build/Device/IRIS-I.app/Frameworks
           cp -R Frameworks/llama.xcframework/ios-arm64/llama.framework build/Device/IRIS-I.app/Frameworks/
           mkdir -p build/Device/IRIS-I.app/PlugIns
-          if [ -d "build/Device/IRISWidgets.appex" ]; then
-            cp -R build/Device/IRISWidgets.appex build/Device/IRIS-I.app/PlugIns/
-          fi
+          cp -R build/Device/IRISWidgets.appex build/Device/IRIS-I.app/PlugIns/
+          test -f "build/Device/IRIS-I.app/PlugIns/IRISWidgets.appex/IRISWidgets" || { echo "ERROR: IRISWidgets.appex not embedded in IRIS-I.app"; exit 1; }
 
       - name: Upload IRIS-I iOS Device App
         uses: actions/upload-artifact@v4
