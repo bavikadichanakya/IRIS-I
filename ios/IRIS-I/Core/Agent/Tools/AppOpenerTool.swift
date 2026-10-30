@@ -55,7 +55,8 @@ public struct AppOpenerTool: IRISAgentTool {
 
             // External handoff: SpringBoard dispatched URL scheme, but target app internal state is unobservable
             return AgentExecutionResult(
-                tool: name,
+                success: true,
+                toolName: name,
                 outcome: .completedUnverified,
                 outputPayload: [
                     "app_name": appName,
@@ -63,8 +64,8 @@ public struct AppOpenerTool: IRISAgentTool {
                     "message": "Dispatched launch request for \(appName) to system URL scheme."
                 ],
                 error: nil,
-                verified: false,
-                durationMs: duration
+                confirmationToken: nil,
+                executionDurationMs: duration
             )
         } catch let err as AppLaunchError {
             let duration = (CFAbsoluteTimeGetCurrent() - startTime) * 1000.0
