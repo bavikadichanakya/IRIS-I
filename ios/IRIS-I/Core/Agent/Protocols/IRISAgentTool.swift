@@ -25,8 +25,74 @@ public enum ToolExecutionOutcome: String, Codable, Sendable {
     case cancelled
     /// Execution exceeded its deadline.
     case timedOut
+    /// Execution requested an unsupported platform feature or unverified target.
+    case unsupported
     /// Execution encountered an explicit failure.
     case failed
+}
+
+/// Structured execution states strictly adhering to Rule 3 (never report false success).
+public enum StructuredExecutionState: String, Codable, Sendable {
+    case notStarted
+    case resolving
+    case permissionRequired
+    case inProgress
+    case completedVerified
+    case completedUnverified
+    case failed
+    case unsupported
+    case cancelled
+    case timedOut
+}
+
+/// Single authoritative execution record shared across UI, Chat, Voice, Dynamic Island, and TTS.
+public struct ExecutionRecord: Identifiable, Sendable {
+    public let id: UUID
+    public let userRequest: String
+    public let interpretedIntent: String
+    public let selectedTool: String?
+    public let validatedArguments: [String: String]
+    public let permissionResult: String
+    public let executionState: StructuredExecutionState
+    public let toolOutcome: ToolExecutionOutcome
+    public let resultPayload: [String: String]
+    public let errorDetails: String?
+    public let isVerified: Bool
+    public let durationMs: Double
+    public let requiredUserAction: String?
+    public let timestamp: Date
+
+    public init(
+        id: UUID = UUID(),
+        userRequest: String,
+        interpretedIntent: String,
+        selectedTool: String? = nil,
+        validatedArguments: [String: String] = [:],
+        permissionResult: String = "authorized",
+        executionState: StructuredExecutionState,
+        toolOutcome: ToolExecutionOutcome,
+        resultPayload: [String: String] = [:],
+        errorDetails: String? = nil,
+        isVerified: Bool = false,
+        durationMs: Double = 0.0,
+        requiredUserAction: String? = nil,
+        timestamp: Date = Date()
+    ) {
+        self.id = id
+        self.userRequest = userRequest
+        self.interpretedIntent = interpretedIntent
+        self.selectedTool = selectedTool
+        self.validatedArguments = validatedArguments
+        self.permissionResult = permissionResult
+        self.executionState = executionState
+        self.toolOutcome = toolOutcome
+        self.resultPayload = resultPayload
+        self.errorDetails = errorDetails
+        self.isVerified = isVerified
+        self.durationMs = durationMs
+        self.requiredUserAction = requiredUserAction
+        self.timestamp = timestamp
+    }
 }
 
 /// Action-specific operation classifications separating read, draft, send, destructive, and remote commands.

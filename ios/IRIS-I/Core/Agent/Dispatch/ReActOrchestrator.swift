@@ -17,6 +17,27 @@ public struct OrchestratorResponse: Sendable {
     public let routingDurationMs: Double
     public let totalDurationMs: Double
     public let stepCount: Int
+    public let executionRecord: ExecutionRecord?
+
+    public init(
+        textResponse: String,
+        executedTools: [String] = [],
+        requiresConfirmation: Bool = false,
+        pendingConfirmationTicket: ConfirmationTicket? = nil,
+        routingDurationMs: Double = 0.0,
+        totalDurationMs: Double = 0.0,
+        stepCount: Int = 1,
+        executionRecord: ExecutionRecord? = nil
+    ) {
+        self.textResponse = textResponse
+        self.executedTools = executedTools
+        self.requiresConfirmation = requiresConfirmation
+        self.pendingConfirmationTicket = pendingConfirmationTicket
+        self.routingDurationMs = routingDurationMs
+        self.totalDurationMs = totalDurationMs
+        self.stepCount = stepCount
+        self.executionRecord = executionRecord
+    }
 }
 
 public actor ReActOrchestrator {
@@ -97,8 +118,62 @@ public actor ReActOrchestrator {
                     responseText = "Action was cancelled."
                 case .timedOut:
                     responseText = "Action timed out."
+                case .unsupported:
+                    responseText = toolResult.error ?? "Action is not supported on this platform."
                 case .accepted, .inProgress, .confirmationRequired:
                     responseText = (toolResult.outputPayload["message"] as? String) ?? "Action status: \(toolResult.outcome.rawValue)"
+                }
+
+                let execState: StructuredExecutionState
+                switch toolResult.outcome {
+                case .completedVerified: execState = .completedVerified
+                case .completedUnverified: execState = .completedUnverified
+                case .failed: execState = .failed
+                case .deniedPolicy: execState = .failed
+                case .unsupported: execState = .unsupported
+                case .cancelled: execState = .cancelled
+                case .timedOut: execState = .timedOut
+                case .confirmationRequired: execState = .permissionRequired
+                case .inProgress, .accepted: execState = .inProgress
+                }
+
+                var strArgs: [String: String] = [:]
+                for (k, v) in args { strArgs[k] = "\(v)" }
+
+                var strPayload: [String: String] = [:]
+                for (k, v) in toolResult.outputPayload { strPayload[k] = "\(v)" }
+
+                let record = ExecutionRecord(
+                    userRequest: userPrompt,
+                    interpretedIntent: "Direct invocation of \(toolName)",
+                    selectedTool: toolName,
+                    validatedArguments: strArgs,
+                    permissionResult: "authorized",
+                    executionState: execState,
+                    toolOutcome: toolResult.outcome,
+                    resultPayload: strPayload,
+                    errorDetails: toolResult.error,
+                    isVerified: toolResult.verified,
+                    durationMs: totalDuration,
+                    requiredUserAction: nil,
+                    timestamp: Date()
+                )
+
+                await MainActor.run {
+                    #if canImport(ActivityKit)
+                    switch execState {
+                    case .completedVerified:
+                        IRISDynamicIslandManager.shared.updateSessionState(.completedVerified, details: responseText)
+                    case .completedUnverified:
+                        IRISDynamicIslandManager.shared.updateSessionState(.completedUnverified, details: responseText)
+                    case .failed, .unsupported:
+                        IRISDynamicIslandManager.shared.updateSessionState(.failed, details: responseText)
+                    case .cancelled:
+                        IRISDynamicIslandManager.shared.updateSessionState(.cancelled)
+                    default:
+                        break
+                    }
+                    #endif
                 }
 
                 progressStream?(responseText)
@@ -110,7 +185,8 @@ public actor ReActOrchestrator {
                     pendingConfirmationTicket: nil,
                     routingDurationMs: routingMs,
                     totalDurationMs: totalDuration,
-                    stepCount: 1
+                    stepCount: 1,
+                    executionRecord: record
                 )
             }
 

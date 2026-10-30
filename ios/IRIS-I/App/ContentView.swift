@@ -58,11 +58,6 @@ public struct ContentView: View {
         .ignoresSafeArea(.keyboard, edges: .bottom)
         .glassTheme(.standard)
         .preferredColorScheme(.light)
-        .onAppear {
-            Task {
-                await speechManager.startListening()
-            }
-        }
     }
 }
 

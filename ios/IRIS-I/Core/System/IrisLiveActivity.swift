@@ -2,7 +2,13 @@
 //  IrisLiveActivity.swift
 //  IRIS-I
 //
-//  Live Activity & Dynamic Island Widget for IRIS Voice Assistant.
+//  Genuine Dynamic Island & Live Activity Widget for IRIS Voice Assistant.
+//  Matches exact hardware specifications and visual design:
+//  - Black horizontal capsule
+//  - Left: Glossy 3D Pearlescent Orb
+//  - Center-Left: Bold white "Hey IRIS" with muted status description
+//  - Center-Right: Audio-reactive multi-bar waveform
+//  - Far Right: Circular mic button with vivid green icon
 //
 
 import WidgetKit
@@ -12,107 +18,187 @@ import ActivityKit
 #endif
 
 #if canImport(ActivityKit) && canImport(WidgetKit)
+
+public struct PearlOrbCompactView: View {
+    public var size: CGFloat = 24
+
+    public init(size: CGFloat = 24) {
+        self.size = size
+    }
+
+    public var body: some View {
+        Circle()
+            .fill(
+                RadialGradient(
+                    colors: [
+                        Color.white,
+                        Color(white: 0.90),
+                        Color(red: 0.74, green: 0.79, blue: 0.86),
+                        Color(red: 0.42, green: 0.47, blue: 0.54)
+                    ],
+                    center: .init(x: 0.35, y: 0.28),
+                    startRadius: 1,
+                    endRadius: size * 0.75
+                )
+            )
+            .frame(width: size, height: size)
+            .overlay(
+                Circle()
+                    .stroke(
+                        LinearGradient(
+                            colors: [Color.white.opacity(0.85), Color.white.opacity(0.15)],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        ),
+                        lineWidth: 0.75
+                    )
+            )
+            .shadow(color: Color.white.opacity(0.25), radius: 2, x: 0, y: 0)
+    }
+}
+
+public struct DynamicIslandWaveform: View {
+    public var audioLevel: Float
+    public var barCount: Int = 7
+    public var maxHeight: CGFloat = 16
+
+    private let baseRatios: [CGFloat] = [0.25, 0.45, 0.75, 1.0, 0.80, 0.50, 0.30]
+
+    public init(audioLevel: Float, barCount: Int = 7, maxHeight: CGFloat = 16) {
+        self.audioLevel = audioLevel
+        self.barCount = barCount
+        self.maxHeight = maxHeight
+    }
+
+    public var body: some View {
+        HStack(spacing: 2) {
+            ForEach(0..<min(barCount, baseRatios.count), id: \.self) { i in
+                let normalized = max(0.15, CGFloat(audioLevel))
+                let ratio = baseRatios[i]
+                let barHeight = max(3.0, maxHeight * ratio * (0.35 + 0.65 * normalized))
+
+                RoundedRectangle(cornerRadius: 1)
+                    .fill(Color.white)
+                    .frame(width: 2, height: barHeight)
+            }
+        }
+    }
+}
+
+public struct GreenMicButton: View {
+    public var size: CGFloat = 22
+
+    public init(size: CGFloat = 22) {
+        self.size = size
+    }
+
+    public var body: some View {
+        ZStack {
+            Circle()
+                .fill(Color(white: 0.16))
+                .frame(width: size, height: size)
+                .overlay(Circle().stroke(Color.white.opacity(0.12), lineWidth: 0.75))
+            Image(systemName: "mic.fill")
+                .font(.system(size: size * 0.46, weight: .bold))
+                .foregroundColor(Color(red: 0.22, green: 0.86, blue: 0.42))
+        }
+    }
+}
+
 public struct IrisLiveActivity: Widget {
     public init() {}
 
     public var body: some WidgetConfiguration {
         ActivityConfiguration(for: IrisWidgetAttributes.self) { context in
-            // Lock Screen UI
-            HStack(spacing: 12) {
-                Image(systemName: "mic.fill")
-                    .foregroundColor(.green)
-                    .font(.system(size: 20))
+            // Lock Screen Live Activity Banner
+            HStack(spacing: 14) {
+                PearlOrbCompactView(size: 40)
 
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("IRIS Voice Assistant")
-                        .font(.headline)
+                    Text("Hey IRIS")
+                        .font(.system(size: 15, weight: .bold))
                         .foregroundColor(.white)
-                    Text(context.state.status)
-                        .font(.subheadline)
-                        .foregroundColor(Color(white: 0.7))
+                    Text(context.state.statusText)
+                        .font(.system(size: 12, weight: .medium))
+                        .foregroundColor(Color(white: 0.70))
                 }
 
                 Spacer()
 
-                // Waveform indicator
-                HStack(spacing: 2) {
-                    ForEach(0..<4, id: \.self) { i in
-                        RoundedRectangle(cornerRadius: 1)
-                            .fill(Color.green)
-                            .frame(width: 2.5, height: [8.0, 16.0, 12.0, 7.0][i])
-                    }
-                }
+                DynamicIslandWaveform(audioLevel: context.state.audioLevel, barCount: 7, maxHeight: 22)
+                    .padding(.trailing, 4)
+
+                GreenMicButton(size: 32)
             }
-            .padding()
+            .padding(.horizontal, 18)
+            .padding(.vertical, 14)
             .background(Color.black)
         } dynamicIsland: { context in
             DynamicIsland {
-                // Expanded UI (When long-pressing / touching the Island)
+                // Expanded UI (When touching / long-pressing the Island)
                 DynamicIslandExpandedRegion(.leading) {
-                    HStack(spacing: 6) {
-                        Circle()
-                            .fill(
-                                RadialGradient(
-                                    colors: [Color.white, Color(white: 0.85), Color(red: 0.75, green: 0.80, blue: 0.88)],
-                                    center: .topLeading,
-                                    startRadius: 2,
-                                    endRadius: 16
-                                )
-                            )
-                            .frame(width: 28, height: 28)
-                            .overlay(Circle().stroke(Color.white.opacity(0.4), lineWidth: 1))
-                    }
-                }
-                DynamicIslandExpandedRegion(.center) {
-                    VStack(alignment: .leading, spacing: 1) {
-                        Text("Hey IRIS")
-                            .font(.system(size: 14, weight: .bold))
-                            .foregroundColor(.white)
-                        Text(context.state.status)
-                            .font(.system(size: 11, weight: .regular))
-                            .foregroundColor(Color(white: 0.65))
-                    }
-                }
-                DynamicIslandExpandedRegion(.trailing) {
-                    HStack(spacing: 6) {
-                        // Live waveform simulation bars
-                        HStack(spacing: 2) {
-                            ForEach(0..<4, id: \.self) { i in
-                                RoundedRectangle(cornerRadius: 1)
-                                    .fill(Color.white)
-                                    .frame(width: 2, height: [8.0, 15.0, 11.0, 6.0][i])
-                            }
+                    HStack(spacing: 8) {
+                        PearlOrbCompactView(size: 32)
+                        VStack(alignment: .leading, spacing: 1) {
+                            Text("Hey IRIS")
+                                .font(.system(size: 14, weight: .bold))
+                                .foregroundColor(.white)
+                            Text(context.state.statusText)
+                                .font(.system(size: 11, weight: .medium))
+                                .foregroundColor(Color(white: 0.65))
                         }
-                        Image(systemName: "mic.fill")
-                            .font(.system(size: 12, weight: .semibold))
-                            .foregroundColor(.green)
                     }
+                    .padding(.leading, 4)
                 }
+
+                DynamicIslandExpandedRegion(.trailing) {
+                    HStack(spacing: 8) {
+                        DynamicIslandWaveform(
+                            audioLevel: context.state.audioLevel,
+                            barCount: 7,
+                            maxHeight: 20
+                        )
+
+                        GreenMicButton(size: 28)
+                    }
+                    .padding(.trailing, 4)
+                }
+
                 DynamicIslandExpandedRegion(.bottom) {
                     EmptyView()
                 }
             } compactLeading: {
-                // Compact UI (Left side of the bubble)
-                Circle()
-                    .fill(Color.white)
-                    .frame(width: 14, height: 14)
+                // Compact UI: Left side of the Dynamic Island cutout
+                HStack(spacing: 6) {
+                    PearlOrbCompactView(size: 20)
+
+                    VStack(alignment: .leading, spacing: 0) {
+                        Text("Hey IRIS")
+                            .font(.system(size: 12, weight: .bold))
+                            .foregroundColor(.white)
+                            .lineLimit(1)
+                        Text(context.state.statusText)
+                            .font(.system(size: 9, weight: .medium))
+                            .foregroundColor(Color(white: 0.65))
+                            .lineLimit(1)
+                    }
+                }
             } compactTrailing: {
-                // Compact UI (Right side of the bubble)
-                HStack(spacing: 3) {
-                    Text("IRIS")
-                        .font(.system(size: 11, weight: .bold))
-                        .foregroundColor(.white)
-                    Image(systemName: "mic.fill")
-                        .font(.system(size: 10, weight: .bold))
-                        .foregroundColor(.green)
+                // Compact UI: Right side of the Dynamic Island cutout
+                HStack(spacing: 5) {
+                    DynamicIslandWaveform(audioLevel: context.state.audioLevel, barCount: 5, maxHeight: 13)
+
+                    GreenMicButton(size: 20)
                 }
             } minimal: {
-                // Minimal UI (If another app is sharing the island)
-                Image(systemName: "mic.fill")
-                    .font(.system(size: 11, weight: .bold))
-                    .foregroundColor(.green)
+                // Minimal UI: Sharing island with another activity
+                HStack(spacing: 2) {
+                    PearlOrbCompactView(size: 13)
+                }
             }
+            .keylineTint(Color.white.opacity(0.3))
         }
     }
 }
+
 #endif

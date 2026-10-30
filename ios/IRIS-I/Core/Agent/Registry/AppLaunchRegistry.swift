@@ -38,6 +38,7 @@ public struct AppLaunchDescriptor: Sendable {
 
 public enum AppLaunchError: LocalizedError, Sendable {
     case unregisteredScheme(String)
+    case unsupportedApp(appName: String)
     case appNotInstalled(appName: String, appStoreURL: URL?)
     case unsupportedInAppAction(String)
     case systemLaunchFailed(String)
@@ -46,6 +47,8 @@ public enum AppLaunchError: LocalizedError, Sendable {
         switch self {
         case .unregisteredScheme(let s):
             return "The scheme '\(s)' is not registered or is prohibited on iOS."
+        case .unsupportedApp(let name):
+            return "Cannot open '\(name)': this application is not registered in the verified iOS capability registry."
         case .appNotInstalled(let name, _):
             return "\(name) does not appear to be installed on this device."
         case .unsupportedInAppAction(let act):
@@ -265,25 +268,6 @@ public actor AppLaunchRegistry {
         return nil
     }
 
-    /// Resolves an app descriptor dynamically, synthesizing candidate schemes and universal links
-    /// if the app is not in the built-in catalog.
-    public func resolveDescriptor(for appName: String) -> AppLaunchDescriptor {
-        if let d = descriptor(for: appName) {
-            return d
-        }
-        let clean = appName.trimmingCharacters(in: .whitespacesAndNewlines)
-        let slug = clean.lowercased().replacingOccurrences(of: " ", with: "")
-        let scheme = "\(slug):"
-        let universal = URL(string: "https://www.\(slug).com/")
-        return AppLaunchDescriptor(
-            appName: clean,
-            urlScheme: scheme,
-            queryScheme: slug,
-            universalLinkURL: universal,
-            appStoreURL: nil,
-            description: "\(clean) application"
-        )
-    }
 
     /// Preflights and launches an app via capability-driven dispatch (Native URL Scheme or Universal Link).
     /// Runs on the MainActor for UIKit interaction.
@@ -313,8 +297,10 @@ public actor AppLaunchRegistry {
             throw AppLaunchError.unregisteredScheme("App-Prefs is a private API and cannot be used.")
         }
 
-        // 3. Resolve descriptor (either registered or dynamically synthesized)
-        let descriptor = await resolveDescriptor(for: lowName)
+        // 3. Resolve verified descriptor strictly without guessing fake schemes
+        guard let descriptor = descriptor(for: lowName) else {
+            throw AppLaunchError.unsupportedApp(appName: name)
+        }
 
         // 4. Construct candidate URL Scheme
         var targetString = descriptor.urlScheme

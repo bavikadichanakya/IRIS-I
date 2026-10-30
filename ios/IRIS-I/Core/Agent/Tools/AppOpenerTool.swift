@@ -69,6 +69,8 @@ public struct AppOpenerTool: IRISAgentTool {
             switch err {
             case .unregisteredScheme, .unsupportedInAppAction:
                 outcome = .deniedPolicy
+            case .unsupportedApp:
+                outcome = .unsupported
             case .appNotInstalled, .systemLaunchFailed:
                 outcome = .failed
             }

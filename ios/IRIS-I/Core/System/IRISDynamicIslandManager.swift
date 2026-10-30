@@ -11,39 +11,17 @@ import SwiftUI
 import ActivityKit
 #endif
 
-#if canImport(ActivityKit)
-public struct IRISLiveActivityAttributes: ActivityAttributes {
-    public struct ContentState: Codable, Hashable {
-        public var statusText: String
-        public var isListening: Bool
-        public var audioLevel: Float
-
-        public var status: String {
-            get { statusText }
-            set { statusText = newValue }
-        }
-
-        public init(statusText: String = "Listening...", isListening: Bool = true, audioLevel: Float = 0.0) {
-            self.statusText = statusText
-            self.isListening = isListening
-            self.audioLevel = audioLevel
-        }
-
-        public init(status: String) {
-            self.statusText = status
-            self.isListening = true
-            self.audioLevel = 0.2
-        }
-    }
-
-    public var title: String
-
-    public init(title: String = "Hey IRIS") {
-        self.title = title
-    }
+public enum IRISSessionState: String, Codable, Sendable {
+    case idle = "Ready"
+    case listening = "Listening..."
+    case thinking = "Thinking..."
+    case executing = "Executing..."
+    case responding = "Responding..."
+    case completedVerified = "Completed"
+    case completedUnverified = "Completed (Unverified)"
+    case failed = "Could not complete"
+    case cancelled = "Cancelled"
 }
-
-public typealias IrisWidgetAttributes = IRISLiveActivityAttributes
 
 @MainActor
 public final class IRISDynamicIslandManager: ObservableObject {
@@ -52,11 +30,25 @@ public final class IRISDynamicIslandManager: ObservableObject {
     @Published public var isLiveActivityActive: Bool = false
     private var currentActivity: Activity<IRISLiveActivityAttributes>?
 
-    private init() {}
+    private init() {
+        // Part 3.8: Clean up any orphaned/abandoned activities from previous sessions
+        Task {
+            for activity in Activity<IRISLiveActivityAttributes>.activities {
+                await activity.end(nil, dismissalPolicy: .immediate)
+            }
+        }
+    }
 
     public func startLiveActivity() {
         guard ActivityAuthorizationInfo().areActivitiesEnabled else { return }
-        guard currentActivity == nil else { return }
+
+        // Reuse existing active activity if one is already present
+        if let existing = currentActivity ?? Activity<IRISLiveActivityAttributes>.activities.first {
+            self.currentActivity = existing
+            self.isLiveActivityActive = true
+            updateLiveActivity(statusText: "Listening...", isListening: true, audioLevel: 0.2)
+            return
+        }
 
         let attributes = IRISLiveActivityAttributes(title: "Hey IRIS")
         let initialState = IRISLiveActivityAttributes.ContentState(
@@ -86,6 +78,52 @@ public final class IRISDynamicIslandManager: ObservableObject {
         )
         Task {
             await activity.update(.init(state: updatedState, staleDate: nil))
+        }
+    }
+
+    public func updateSessionState(_ state: IRISSessionState, audioLevel: Float = 0.0, details: String? = nil) {
+        let text: String
+        let isListening: Bool
+        switch state {
+        case .idle:
+            text = "Ready"
+            isListening = false
+        case .listening:
+            text = "Listening..."
+            isListening = true
+        case .thinking:
+            text = "Thinking..."
+            isListening = false
+        case .executing:
+            text = details.map { "Executing \($0)..." } ?? "Executing..."
+            isListening = false
+        case .responding:
+            text = "Responding..."
+            isListening = false
+        case .completedVerified:
+            text = details ?? "Completed"
+            isListening = false
+        case .completedUnverified:
+            text = details ?? "Completed"
+            isListening = false
+        case .failed:
+            text = details ?? "Could not complete"
+            isListening = false
+        case .cancelled:
+            text = "Cancelled"
+            isListening = false
+        }
+
+        updateLiveActivity(statusText: text, isListening: isListening, audioLevel: audioLevel)
+
+        // Automatically end terminal activities after brief visual feedback
+        if state == .completedVerified || state == .completedUnverified || state == .failed || state == .cancelled {
+            Task {
+                try? await Task.sleep(nanoseconds: 3_500_000_000)
+                if self.currentActivity != nil && !isListening {
+                    self.endLiveActivity()
+                }
+            }
         }
     }
 

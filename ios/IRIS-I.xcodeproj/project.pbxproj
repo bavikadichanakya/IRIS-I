@@ -7,10 +7,15 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		AW0000012C00000100000001 /* IRISWidgets.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = RW0000012C00000100000001 /* IRISWidgets.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		AW0000022C00000100000001 /* IrisWidgetsBundle.swift in Sources */ = {isa = PBXBuildFile; fileRef = BW0000022C00000100000001 /* IrisWidgetsBundle.swift */; };
+		AW0000032C00000100000001 /* IrisLiveActivity.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100009D2C00000100000001 /* IrisLiveActivity.swift */; };
+		AW0000042C00000100000001 /* IRISLiveActivityAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100009E2C00000100000001 /* IRISLiveActivityAttributes.swift */; };
 		A100009C2C00000100000001 /* IRISShortcutSnippetView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100009C2C00000100000001 /* IRISShortcutSnippetView.swift */; };
 		A100009B2C00000100000001 /* DynamicIslandPillView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100009B2C00000100000001 /* DynamicIslandPillView.swift */; };
 		A100009D2C00000100000001 /* IrisLiveActivity.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100009D2C00000100000001 /* IrisLiveActivity.swift */; };
 		A100009A2C00000100000001 /* IRISDynamicIslandManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100009A2C00000100000001 /* IRISDynamicIslandManager.swift */; };
+		A100009E2C00000100000001 /* IRISLiveActivityAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100009E2C00000100000001 /* IRISLiveActivityAttributes.swift */; };
 		A10000992C00000100000001 /* MemoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000992C00000100000001 /* MemoryView.swift */; };
 		A10000982C00000100000001 /* ActionsCatalogView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000982C00000100000001 /* ActionsCatalogView.swift */; };
 		A10000972C00000100000001 /* LiveWaveformView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000972C00000100000001 /* LiveWaveformView.swift */; };
@@ -92,6 +97,7 @@
 		A10000472C00000100000001 /* GmailConnectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000472C00000100000001 /* GmailConnectionView.swift */; };
 		A10000482C00000100000001 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000482C00000100000001 /* SettingsView.swift */; };
 		A20000302C00000100000001 /* AppLaunchRegistryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B20000302C00000100000001 /* AppLaunchRegistryTests.swift */; };
+		A200004A2C00000100000001 /* ExecutionRecordTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B200004A2C00000100000001 /* ExecutionRecordTests.swift */; };
 		A20000312C00000100000001 /* EventKitToolTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B20000312C00000100000001 /* EventKitToolTests.swift */; };
 		A20000322C00000100000001 /* FastIntentRouterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B20000322C00000100000001 /* FastIntentRouterTests.swift */; };
 		A20000332C00000100000001 /* GmailConnectorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B20000332C00000100000001 /* GmailConnectorTests.swift */; };
@@ -104,6 +110,13 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
+		CW0000012C00000100000001 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = D10000012C00000100000001 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = W10000012C00000100000001;
+			remoteInfo = IRISWidgets;
+		};
 		X10000012C00000100000001 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = D10000012C00000100000001 /* Project object */;
@@ -114,10 +127,14 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		RW0000012C00000100000001 /* IRISWidgets.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = IRISWidgets.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		BW0000022C00000100000001 /* IrisWidgetsBundle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IrisWidgetsBundle.swift; sourceTree = "<group>"; };
+		BW0000032C00000100000001 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		B100009C2C00000100000001 /* IRISShortcutSnippetView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IRISShortcutSnippetView.swift; sourceTree = "<group>"; };
 		B100009B2C00000100000001 /* DynamicIslandPillView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DynamicIslandPillView.swift; sourceTree = "<group>"; };
 		B100009D2C00000100000001 /* IrisLiveActivity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IrisLiveActivity.swift; sourceTree = "<group>"; };
 		B100009A2C00000100000001 /* IRISDynamicIslandManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IRISDynamicIslandManager.swift; sourceTree = "<group>"; };
+		B100009E2C00000100000001 /* IRISLiveActivityAttributes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IRISLiveActivityAttributes.swift; sourceTree = "<group>"; };
 		B10000992C00000100000001 /* MemoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemoryView.swift; sourceTree = "<group>"; };
 		B10000982C00000100000001 /* ActionsCatalogView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActionsCatalogView.swift; sourceTree = "<group>"; };
 		B10000972C00000100000001 /* LiveWaveformView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveWaveformView.swift; sourceTree = "<group>"; };
@@ -210,6 +227,7 @@
 		B10000472C00000100000001 /* GmailConnectionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GmailConnectionView.swift; sourceTree = "<group>"; };
 		B10000482C00000100000001 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		B20000302C00000100000001 /* AppLaunchRegistryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppLaunchRegistryTests.swift; sourceTree = "<group>"; };
+		B200004A2C00000100000001 /* ExecutionRecordTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExecutionRecordTests.swift; sourceTree = "<group>"; };
 		B20000312C00000100000001 /* EventKitToolTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EventKitToolTests.swift; sourceTree = "<group>"; };
 		B20000322C00000100000001 /* FastIntentRouterTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FastIntentRouterTests.swift; sourceTree = "<group>"; };
 		B20000332C00000100000001 /* GmailConnectorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GmailConnectorTests.swift; sourceTree = "<group>"; };
@@ -221,7 +239,28 @@
 		B20000392C00000100000001 /* WebSearchToolTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebSearchToolTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
+/* Begin PBXCopyFilesBuildPhase section */
+		CP0000012C00000100000001 /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				AW0000012C00000100000001 /* IRISWidgets.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
 /* Begin PBXFrameworksBuildPhase section */
+		FW0000012C00000100000001 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		F10000012C00000100000001 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -241,9 +280,19 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		GW0000012C00000100000001 /* IRISWidgets */ = {
+			isa = PBXGroup;
+			children = (
+				BW0000022C00000100000001 /* IrisWidgetsBundle.swift */,
+				BW0000032C00000100000001 /* Info.plist */,
+			);
+			path = IRISWidgets;
+			sourceTree = "<group>";
+		};
 		G10000012C00000100000001 = {
 			isa = PBXGroup;
 			children = (
+				GW0000012C00000100000001 /* IRISWidgets */,
 				G10000022C00000100000001 /* IRIS-I */,
 				G20000012C00000100000001 /* Tests */,
 				G40000012C00000100000001 /* Frameworks */,
@@ -307,6 +356,7 @@
 				B10000092C00000100000001 /* HardwareTelemetry.swift */,
 				B100009D2C00000100000001 /* IrisLiveActivity.swift */,
 				B100009A2C00000100000001 /* IRISDynamicIslandManager.swift */,
+				B100009E2C00000100000001 /* IRISLiveActivityAttributes.swift */,
 				B100000A2C00000100000001 /* MemoryPressureMonitor.swift */,
 				B100000B2C00000100000001 /* ThermalStateMonitor.swift */,
 			);
@@ -383,6 +433,7 @@
 			isa = PBXGroup;
 			children = (
 				B20000302C00000100000001 /* AppLaunchRegistryTests.swift */,
+				B200004A2C00000100000001 /* ExecutionRecordTests.swift */,
 				B20000312C00000100000001 /* EventKitToolTests.swift */,
 				B20000322C00000100000001 /* FastIntentRouterTests.swift */,
 				B20000332C00000100000001 /* GmailConnectorTests.swift */,
@@ -411,6 +462,7 @@
 		G30000012C00000100000001 /* Products */ = {
 			isa = PBXGroup;
 			children = (
+				RW0000012C00000100000001 /* IRISWidgets.appex */,
 				R10000012C00000100000001 /* IRIS-I.app */,
 				R20000012C00000100000001 /* IRIS-ITests.xctest */,
 			);
@@ -588,16 +640,34 @@ G100003C2C00000100000001 /* Intents */ = {
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
+		W10000012C00000100000001 /* IRISWidgets */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = SW0000012C00000100000001 /* Build configuration list for PBXNativeTarget "IRISWidgets" */;
+			buildPhases = (
+				PW0000012C00000100000001 /* Sources */,
+				FW0000012C00000100000001 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = "IRISWidgets";
+			productName = "IRISWidgets";
+			productReference = RW0000012C00000100000001 /* IRISWidgets.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
 		E10000012C00000100000001 /* IRIS-I */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = S10000012C00000100000001 /* Build configuration list for PBXNativeTarget "IRIS-I" */;
 			buildPhases = (
 				P10000012C00000100000001 /* Sources */,
 				F10000012C00000100000001 /* Frameworks */,
+				CP0000012C00000100000001 /* Embed Foundation Extensions */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				DW0000012C00000100000001 /* PBXTargetDependency */,
 			);
 			name = "IRIS-I";
 			productName = "IRIS-I";
@@ -631,6 +701,9 @@ G100003C2C00000100000001 /* Intents */ = {
 				LastSwiftUpdateCheck = 1500;
 				LastUpgradeCheck = 1500;
 				TargetAttributes = {
+					W10000012C00000100000001 = {
+						CreatedOnToolsVersion = 15.0;
+					};
 					E10000012C00000100000001 = {
 						CreatedOnToolsVersion = 15.0;
 					};
@@ -653,6 +726,7 @@ G100003C2C00000100000001 /* Intents */ = {
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
+				W10000012C00000100000001 /* IRISWidgets */,
 				E10000012C00000100000001 /* IRIS-I */,
 				E20000012C00000100000001 /* IRIS-ITests */,
 			);
@@ -660,6 +734,16 @@ G100003C2C00000100000001 /* Intents */ = {
 /* End PBXProject section */
 
 /* Begin PBXSourcesBuildPhase section */
+		PW0000012C00000100000001 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				AW0000022C00000100000001 /* IrisWidgetsBundle.swift in Sources */,
+				AW0000032C00000100000001 /* IrisLiveActivity.swift in Sources */,
+				AW0000042C00000100000001 /* IRISLiveActivityAttributes.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		P10000012C00000100000001 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -728,6 +812,7 @@ G100003C2C00000100000001 /* Intents */ = {
 				A10000092C00000100000001 /* HardwareTelemetry.swift in Sources */,
 				A100009D2C00000100000001 /* IrisLiveActivity.swift in Sources */,
 				A100009A2C00000100000001 /* IRISDynamicIslandManager.swift in Sources */,
+				A100009E2C00000100000001 /* IRISLiveActivityAttributes.swift in Sources */,
 				A100009B2C00000100000001 /* DynamicIslandPillView.swift in Sources */,
 				A100009C2C00000100000001 /* IRISShortcutSnippetView.swift in Sources */,
 				A100000A2C00000100000001 /* MemoryPressureMonitor.swift in Sources */,
@@ -750,6 +835,7 @@ G100003C2C00000100000001 /* Intents */ = {
 			buildActionMask = 2147483647;
 			files = (
 				A20000302C00000100000001 /* AppLaunchRegistryTests.swift in Sources */,
+				A200004A2C00000100000001 /* ExecutionRecordTests.swift in Sources */,
 				A20000312C00000100000001 /* EventKitToolTests.swift in Sources */,
 				A20000322C00000100000001 /* FastIntentRouterTests.swift in Sources */,
 				A20000332C00000100000001 /* GmailConnectorTests.swift in Sources */,
@@ -769,6 +855,11 @@ G100003C2C00000100000001 /* Intents */ = {
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
+		DW0000012C00000100000001 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = W10000012C00000100000001 /* IRISWidgets */;
+			targetProxy = CW0000012C00000100000001 /* PBXContainerItemProxy */;
+		};
 		D20000012C00000100000001 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = E10000012C00000100000001 /* IRIS-I */;
@@ -777,6 +868,42 @@ G100003C2C00000100000001 /* Intents */ = {
 /* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
+		CW0000012C00000100000002 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_KEY_CFBundlePackageType = "XPC!";
+				INFOPLIST_FILE = "IRISWidgets/Info.plist";
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MARKETING_VERSION = 0.2.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.iris.ios.assistant.IRISWidgets";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		CW0000012C00000100000003 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_KEY_CFBundlePackageType = "XPC!";
+				INFOPLIST_FILE = "IRISWidgets/Info.plist";
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MARKETING_VERSION = 0.2.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.iris.ios.assistant.IRISWidgets";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
 		C00000012C00000100000001 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -979,6 +1106,15 @@ G100003C2C00000100000001 /* Intents */ = {
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
+		SW0000012C00000100000001 /* Build configuration list for PBXNativeTarget "IRISWidgets" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				CW0000012C00000100000002 /* Debug */,
+				CW0000012C00000100000003 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 		S00000012C00000100000001 /* Build configuration list for PBXProject "IRIS-I" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (

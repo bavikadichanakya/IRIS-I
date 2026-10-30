@@ -2,7 +2,8 @@
 //  AppLaunchRegistryTests.swift
 //  IRIS_ITests
 //
-//  Verifies rejection of private schemes (App-Prefs:) and verified scheme lookup.
+//  Verifies rejection of private schemes (App-Prefs:), verified scheme lookup,
+//  and strict error handling for unsupported apps without fake scheme guessing.
 //
 
 import XCTest
@@ -24,18 +25,28 @@ final class AppLaunchRegistryTests: XCTestCase {
         let spotify = await registry.descriptor(for: "spotify")
         XCTAssertNotNil(spotify)
         XCTAssertEqual(spotify?.urlScheme, "spotify:")
+
+        let youtube = await registry.descriptor(for: "youtube")
+        XCTAssertNotNil(youtube)
+        XCTAssertEqual(youtube?.urlScheme, "youtube://")
+
+        let instagram = await registry.descriptor(for: "instagram")
+        XCTAssertNotNil(instagram)
+        XCTAssertEqual(instagram?.urlScheme, "instagram://app")
     }
 
-    func testUnregisteredAppThrows() async {
+    func testUnregisteredAppThrowsUnsupportedWithoutSynthesizingScheme() async {
         do {
-            _ = try await registry.launchApp(name: "NonExistentApp12345")
+            _ = try await registry.launchApp(name: "TotallyUnknownApp12345")
             XCTFail("Should throw error for non-existent app")
         } catch let err as AppLaunchError {
             switch err {
+            case .unsupportedApp(let name):
+                XCTAssertEqual(name, "TotallyUnknownApp12345")
             case .appNotInstalled, .unregisteredScheme:
-                break // Expected
+                break // Also acceptable error modes
             default:
-                XCTFail("Expected appNotInstalled or unregisteredScheme error, got \(err)")
+                XCTFail("Expected unsupportedApp, appNotInstalled or unregisteredScheme, got \(err)")
             }
         } catch {
             XCTFail("Unexpected error type: \(error)")
@@ -48,14 +59,13 @@ final class AppLaunchRegistryTests: XCTestCase {
             XCTFail("Private App-Prefs scheme must be rejected")
         } catch let err as AppLaunchError {
             switch err {
-            case .unregisteredScheme:
+            case .unregisteredScheme, .unsupportedApp:
                 break // Expected
             default:
-                XCTFail("Expected unregisteredScheme error, got \(err)")
+                XCTFail("Expected unregisteredScheme or unsupportedApp error, got \(err)")
             }
         } catch {
             XCTFail("Unexpected error type: \(error)")
         }
     }
 }
-

@@ -86,6 +86,10 @@ jobs:
             CONFIGURATION_BUILD_DIR=build/Device
           mkdir -p build/Device/IRIS-I.app/Frameworks
           cp -R Frameworks/llama.xcframework/ios-arm64/llama.framework build/Device/IRIS-I.app/Frameworks/
+          mkdir -p build/Device/IRIS-I.app/PlugIns
+          if [ -d "build/Device/IRISWidgets.appex" ]; then
+            cp -R build/Device/IRISWidgets.appex build/Device/IRIS-I.app/PlugIns/
+          fi
 
       - name: Upload IRIS-I iOS Device App
         uses: actions/upload-artifact@v4

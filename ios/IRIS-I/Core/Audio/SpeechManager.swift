@@ -187,15 +187,12 @@ public final class SpeechManager: NSObject, ObservableObject, @unchecked Sendabl
                     let cleanLower = transcribed.lowercased()
                         .trimmingCharacters(in: .punctuationCharacters.union(.whitespacesAndNewlines))
 
-                    if cleanLower.contains("hey iris") || cleanLower.contains("iris") {
-                        self.wakeWordDetected = true
-                        // If user specifically said "Hey IRIS" (or "IRIS") alone, trigger greeting immediately without waiting
-                        if cleanLower == "hey iris" || cleanLower == "iris" {
-                            self.silenceTask?.cancel()
-                            self.silenceTask = nil
-                            self.processVoiceQuery()
-                            return
-                        }
+                    // If user specifically said "Hey IRIS" (or "IRIS") alone, trigger greeting immediately without waiting
+                    if cleanLower == "hey iris" || cleanLower == "iris" {
+                        self.silenceTask?.cancel()
+                        self.silenceTask = nil
+                        self.processVoiceQuery()
+                        return
                     }
 
                     // Reset auto-send silence timer for voice commands
@@ -207,21 +204,14 @@ public final class SpeechManager: NSObject, ObservableObject, @unchecked Sendabl
                         self.processVoiceQuery()
                     } else if self.state == .listening {
                         self.stopListeningInternal()
-                        // Automatically restart listener so wake word is continuously ready
-                        Task {
-                            try? await Task.sleep(nanoseconds: 300_000_000)
-                            if self.state == .idle {
-                                await self.startListening()
-                            }
-                        }
                     }
                 }
             }
         }
         #else
         self.state = .listening
-        self.recognizedText = "Hey IRIS, what time is it?"
-        self.wakeWordDetected = true
+        self.recognizedText = "What time is it?"
+        self.wakeWordDetected = false
         #endif
     }
 

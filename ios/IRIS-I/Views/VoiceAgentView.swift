@@ -10,10 +10,28 @@
 
 import SwiftUI
 
+public enum StepStatus: String, Sendable {
+    case pending
+    case inProgress
+    case completedVerified
+    case completedUnverified
+    case failed
+    case unsupported
+}
+
 public struct ExecutionStepItem: Identifiable, Sendable {
     public let id = UUID()
-    public let title: String
-    public var isCompleted: Bool
+    public var title: String
+    public var status: StepStatus
+
+    public var isCompleted: Bool {
+        status == .completedVerified || status == .completedUnverified
+    }
+
+    public init(title: String, status: StepStatus) {
+        self.title = title
+        self.status = status
+    }
 }
 
 public struct VoiceAgentView: View {
@@ -261,12 +279,27 @@ public struct VoiceAgentView: View {
                 VStack(alignment: .leading, spacing: 8) {
                     ForEach(executionSteps) { step in
                         HStack(spacing: 8) {
-                            Image(systemName: step.isCompleted ? "checkmark.circle.fill" : "circle")
-                                .font(.system(size: 14))
-                                .foregroundColor(step.isCompleted ? .black : Color(white: 0.50))
+                            switch step.status {
+                            case .completedVerified, .completedUnverified:
+                                Image(systemName: "checkmark.circle.fill")
+                                    .font(.system(size: 14))
+                                    .foregroundColor(.black)
+                            case .failed, .unsupported:
+                                Image(systemName: "xmark.circle.fill")
+                                    .font(.system(size: 14))
+                                    .foregroundColor(.red)
+                            case .inProgress:
+                                ProgressView()
+                                    .scaleEffect(0.6)
+                                    .frame(width: 14, height: 14)
+                            case .pending:
+                                Image(systemName: "circle")
+                                    .font(.system(size: 14))
+                                    .foregroundColor(Color(white: 0.50))
+                            }
                             Text(step.title)
                                 .font(.system(size: 13, weight: step.isCompleted ? .medium : .regular))
-                                .foregroundColor(step.isCompleted ? .black : Color(white: 0.40))
+                                .foregroundColor(step.isCompleted ? .black : (step.status == .failed || step.status == .unsupported ? .red : Color(white: 0.40)))
                         }
                     }
                 }
@@ -530,34 +563,14 @@ public struct VoiceAgentView: View {
         self.speechManager.state = .processing
         self.executedTools = []
 
-        // Extract app target name if launch query
-        let low = query.lowercased()
-        if low.contains("instagram") {
-            activeAppName = "Instagram"
-            activeAppIcon = "camera.circle.fill"
-        } else if low.contains("music") {
-            activeAppName = "Apple Music"
-            activeAppIcon = "music.note"
-        } else if low.contains("spotify") {
-            activeAppName = "Spotify"
-            activeAppIcon = "waveform"
-        } else if low.contains("youtube") {
-            activeAppName = "YouTube"
-            activeAppIcon = "play.circle.fill"
-        } else if low.contains("camera") || low.contains("photo") {
-            activeAppName = "Camera"
-            activeAppIcon = "camera.fill"
-        } else {
-            activeAppName = "Action"
-            activeAppIcon = "sparkles"
-        }
+        activeAppName = "IRIS"
+        activeAppIcon = "sparkles"
 
-        // Initialize progressive checklist
+        // Initialize progressive checklist truthfully
         executionSteps = [
-            ExecutionStepItem(title: "Understanding request", isCompleted: true),
-            ExecutionStepItem(title: "Resolving capability & device policy", isCompleted: true),
-            ExecutionStepItem(title: "Executing \(activeAppName)", isCompleted: false),
-            ExecutionStepItem(title: "Done!", isCompleted: false)
+            ExecutionStepItem(title: "Analyzing request: \"\(query)\"", status: .inProgress),
+            ExecutionStepItem(title: "Resolving capability & device policy", status: .pending),
+            ExecutionStepItem(title: "Executing action", status: .pending)
         ]
 
         let response = await orchestrator.process(userPrompt: query)
@@ -565,13 +578,70 @@ public struct VoiceAgentView: View {
         self.executedTools = response.executedTools
         self.speechManager.spokenResponse = response.textResponse
 
-        // Mark execution complete
-        if executionSteps.count >= 4 {
-            executionSteps[2].isCompleted = true
-            executionSteps[3].isCompleted = true
+        // Process genuine authoritative execution record
+        if let record = response.executionRecord {
+            executionSteps[0].status = .completedVerified
+            executionSteps[1] = ExecutionStepItem(title: "Capability: \(record.toolName)", status: .completedVerified)
+
+            switch record.executionState {
+            case .completedVerified:
+                executionSteps[2] = ExecutionStepItem(title: "Verified: \(record.resultPayload ?? "Success")", status: .completedVerified)
+                activeResultTitle = response.textResponse
+            case .completedUnverified:
+                executionSteps[2] = ExecutionStepItem(title: "Dispatched: \(record.resultPayload ?? "Sent")", status: .completedUnverified)
+                activeResultTitle = response.textResponse
+            case .unsupported:
+                executionSteps[2] = ExecutionStepItem(title: "Unsupported: \(record.errorDetails ?? "Not available")", status: .unsupported)
+                activeResultTitle = record.errorDetails ?? "Action unsupported"
+            case .failed:
+                executionSteps[2] = ExecutionStepItem(title: "Failed: \(record.errorDetails ?? "Execution error")", status: .failed)
+                activeResultTitle = record.errorDetails ?? "Action failed"
+            case .permissionRequired:
+                executionSteps[2] = ExecutionStepItem(title: "Authorization required", status: .pending)
+                activeResultTitle = "Permission needed"
+            case .cancelled:
+                executionSteps[2] = ExecutionStepItem(title: "Cancelled by user", status: .failed)
+                activeResultTitle = "Cancelled"
+            default:
+                executionSteps[2] = ExecutionStepItem(title: "Status: \(record.executionState.rawValue)", status: .completedUnverified)
+                activeResultTitle = response.textResponse
+            }
+
+            // Determine app descriptor and icon truthfully
+            if record.toolName == "app_opener" {
+                let target = record.validatedArguments["appName"] ?? record.validatedArguments["query"] ?? "App"
+                if let desc = AppLaunchRegistry.shared.descriptor(for: target) {
+                    activeAppName = desc.displayName
+                    activeAppIcon = "app.badge.fill"
+                } else {
+                    activeAppName = target.capitalized
+                    activeAppIcon = "questionmark.app.dashed"
+                }
+            } else if record.toolName.contains("mail") {
+                activeAppName = "Mail"
+                activeAppIcon = "envelope.fill"
+            } else if record.toolName.contains("calendar") || record.toolName.contains("event") {
+                activeAppName = "Calendar"
+                activeAppIcon = "calendar"
+            } else if record.toolName.contains("search") {
+                activeAppName = "Web Search"
+                activeAppIcon = "globe"
+            } else if record.toolName.contains("system") {
+                activeAppName = "System Telemetry"
+                activeAppIcon = "gearshape.fill"
+            } else {
+                activeAppName = record.toolName.capitalized
+                activeAppIcon = "sparkles"
+            }
+        } else {
+            executionSteps[0].status = .completedVerified
+            executionSteps[1] = ExecutionStepItem(title: "Conversational Intelligence", status: .completedVerified)
+            executionSteps[2] = ExecutionStepItem(title: "Response generated", status: .completedVerified)
+            activeAppName = "IRIS"
+            activeAppIcon = "sparkles"
+            activeResultTitle = response.textResponse
         }
 
-        activeResultTitle = response.textResponse
         withAnimation {
             isShowingResult = true
         }
