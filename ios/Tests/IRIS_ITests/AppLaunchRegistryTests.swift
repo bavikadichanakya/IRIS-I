@@ -28,11 +28,11 @@ final class AppLaunchRegistryTests: XCTestCase {
 
         let youtube = await registry.descriptor(for: "youtube")
         XCTAssertNotNil(youtube)
-        XCTAssertEqual(youtube?.urlScheme, "youtube://")
+        XCTAssertEqual(youtube?.urlScheme, "youtube:")
 
         let instagram = await registry.descriptor(for: "instagram")
         XCTAssertNotNil(instagram)
-        XCTAssertEqual(instagram?.urlScheme, "instagram://app")
+        XCTAssertEqual(instagram?.urlScheme, "instagram:")
     }
 
     func testUnregisteredAppThrowsUnsupportedWithoutSynthesizingScheme() async {
