@@ -252,7 +252,7 @@ public final class VoiceSessionCoordinator: ObservableObject {
         speechManager.stopRecognition()
     }
 
-    public static func stripWakeWords(_ text: String) -> String {
+    nonisolated public static func stripWakeWords(_ text: String) -> String {
         let lower = text.lowercased().trimmingCharacters(in: .punctuationCharacters.union(.whitespacesAndNewlines))
         var clean = lower
         for variant in ["hey iris", "hey, iris", "iris"] {
@@ -272,19 +272,23 @@ public final class VoiceSessionCoordinator: ObservableObject {
 // MARK: - AudioSessionManagerDelegate
 
 extension VoiceSessionCoordinator: AudioSessionManagerDelegate {
-    public func audioSessionManager(_ manager: AudioSessionManager, didUpdateAudioLevel level: Float) {
-        self.currentAudioLevel = level
-        if case .listening(let transcript, _) = state {
-            self.state = .listening(transcript: transcript, audioLevel: level)
-            self.dynamicIsland.updateLiveActivity(statusText: "Listening...", isListening: true, audioLevel: level)
+    nonisolated public func audioSessionManager(_ manager: AudioSessionManager, didUpdateAudioLevel level: Float) {
+        Task { @MainActor in
+            self.currentAudioLevel = level
+            if case .listening(let transcript, _) = self.state {
+                self.state = .listening(transcript: transcript, audioLevel: level)
+                self.dynamicIsland.updateLiveActivity(statusText: "Listening...", isListening: true, audioLevel: level)
+            }
         }
     }
 
-    public func audioSessionManagerDidReceiveInterruption(_ manager: AudioSessionManager) {
-        cancelVoiceSession()
+    nonisolated public func audioSessionManagerDidReceiveInterruption(_ manager: AudioSessionManager) {
+        Task { @MainActor in
+            self.cancelVoiceSession()
+        }
     }
 
-    public func audioSessionManagerDidChangeRoute(_ manager: AudioSessionManager, toBluetooth: Bool) {
+    nonisolated public func audioSessionManagerDidChangeRoute(_ manager: AudioSessionManager, toBluetooth: Bool) {
         // Route changed (e.g. AirPods connected/disconnected)
     }
 }
@@ -292,48 +296,60 @@ extension VoiceSessionCoordinator: AudioSessionManagerDelegate {
 // MARK: - SpeechRecognitionManagerDelegate
 
 extension VoiceSessionCoordinator: SpeechRecognitionManagerDelegate {
-    public func speechRecognitionManager(_ manager: SpeechRecognitionManager, didUpdatePartialTranscript transcript: String) {
-        self.activeTranscript = transcript
-        if case .listening(_, let level) = state {
-            self.state = .listening(transcript: transcript, audioLevel: level)
+    nonisolated public func speechRecognitionManager(_ manager: SpeechRecognitionManager, didUpdatePartialTranscript transcript: String) {
+        Task { @MainActor in
+            self.activeTranscript = transcript
+            if case .listening(_, let level) = self.state {
+                self.state = .listening(transcript: transcript, audioLevel: level)
+            }
         }
     }
 
-    public func speechRecognitionManager(_ manager: SpeechRecognitionManager, didFinishWithFinalTranscript transcript: String) {
-        self.activeTranscript = transcript
-        stopVoiceSession()
+    nonisolated public func speechRecognitionManager(_ manager: SpeechRecognitionManager, didFinishWithFinalTranscript transcript: String) {
+        Task { @MainActor in
+            self.activeTranscript = transcript
+            self.stopVoiceSession()
+        }
     }
 
-    public func speechRecognitionManager(_ manager: SpeechRecognitionManager, didFailWithError error: Error) {
+    nonisolated public func speechRecognitionManager(_ manager: SpeechRecognitionManager, didFailWithError error: Error) {
         // Ignore cancelled errors
         if (error as NSError).code == 203 || (error as NSError).domain == "kAFAssistantErrorDomain" {
             return
         }
-        handleSessionError(error.localizedDescription)
+        Task { @MainActor in
+            self.handleSessionError(error.localizedDescription)
+        }
     }
 }
 
 // MARK: - VoiceResponseManagerDelegate
 
 extension VoiceSessionCoordinator: VoiceResponseManagerDelegate {
-    public func voiceResponseManagerDidStartSpeaking(_ manager: VoiceResponseManager) {
-        self.dynamicIsland.updateSessionState(.responding, audioLevel: 0.6)
+    nonisolated public func voiceResponseManagerDidStartSpeaking(_ manager: VoiceResponseManager) {
+        Task { @MainActor in
+            self.dynamicIsland.updateSessionState(.responding, audioLevel: 0.6)
+        }
     }
 
-    public func voiceResponseManagerDidFinishSpeaking(_ manager: VoiceResponseManager) {
-        self.state = .completed(summary: latestResponse)
-        self.dynamicIsland.updateSessionState(.completedVerified)
-        Task {
-            try? await Task.sleep(nanoseconds: 1_200_000_000)
-            if case .completed = self.state {
-                self.state = .idle
-                self.dynamicIsland.endLiveActivity()
+    nonisolated public func voiceResponseManagerDidFinishSpeaking(_ manager: VoiceResponseManager) {
+        Task { @MainActor in
+            self.state = .completed(summary: self.latestResponse)
+            self.dynamicIsland.updateSessionState(.completedVerified)
+            Task {
+                try? await Task.sleep(nanoseconds: 1_200_000_000)
+                if case .completed = self.state {
+                    self.state = .idle
+                    self.dynamicIsland.endLiveActivity()
+                }
             }
         }
     }
 
-    public func voiceResponseManagerDidCancelSpeaking(_ manager: VoiceResponseManager) {
-        self.state = .idle
-        self.dynamicIsland.endLiveActivity()
+    nonisolated public func voiceResponseManagerDidCancelSpeaking(_ manager: VoiceResponseManager) {
+        Task { @MainActor in
+            self.state = .idle
+            self.dynamicIsland.endLiveActivity()
+        }
     }
 }

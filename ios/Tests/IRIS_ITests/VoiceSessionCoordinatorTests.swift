@@ -77,6 +77,7 @@ final class VoiceSessionCoordinatorTests: XCTestCase {
         XCTAssertEqual(manager.latestLevel, 0.0)
     }
 
+    @MainActor
     func testWakeWordStripping() {
         XCTAssertEqual(VoiceSessionCoordinator.stripWakeWords("Hey IRIS, what time is it?"), "what time is it?")
         XCTAssertEqual(VoiceSessionCoordinator.stripWakeWords("iris tell me the weather"), "tell me the weather")
