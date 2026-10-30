@@ -16,6 +16,7 @@ public enum EngineError: LocalizedError, Sendable {
     case generationCancelled
     case memoryPressureTermination
     case tokenizationFailed
+    case generationFailed(String)
 
     public var errorDescription: String? {
         switch self {
@@ -35,6 +36,8 @@ public enum EngineError: LocalizedError, Sendable {
             return "Inference halted due to critical OS memory pressure (Jetsam protection)."
         case .tokenizationFailed:
             return "Failed to tokenize input prompt."
+        case .generationFailed(let reason):
+            return "Model generation failed: \(reason)"
         }
     }
 }

@@ -49,6 +49,10 @@ public struct ModelManifest: Identifiable, Codable, Sendable, Hashable {
         profileTier == .experimental
     }
 
+    public var requiredDiskBytes: Int64 {
+        estimatedSizeBytes
+    }
+
     public init(
         id: String,
         displayName: String,
