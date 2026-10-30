@@ -62,7 +62,7 @@ public struct IRISShortcutSnippetView: View {
 
                     Spacer(minLength: 4)
 
-                    // Sound Dots & Green Microphone
+                    // Sound Dots & White Microphone on translucent circular button
                     HStack(spacing: 6) {
                         HStack(spacing: 2.5) {
                             ForEach(0..<4, id: \.self) { _ in
@@ -72,9 +72,19 @@ public struct IRISShortcutSnippetView: View {
                             }
                         }
 
-                        Image(systemName: "mic.fill")
-                            .font(.system(size: 12, weight: .semibold))
-                            .foregroundColor(.green)
+                        ZStack {
+                            Circle()
+                                .fill(Color(white: 0.20))
+                                .frame(width: 26, height: 26)
+                                .overlay(
+                                    Circle()
+                                        .stroke(isListening ? Color.white.opacity(0.85) : Color.white.opacity(0.18), lineWidth: 1.2)
+                                )
+
+                            Image(systemName: "mic.fill")
+                                .font(.system(size: 11, weight: .bold))
+                                .foregroundColor(.white)
+                        }
                     }
                 }
                 .padding(.horizontal, 12)

@@ -67,10 +67,14 @@ public struct DynamicIslandPillView: View {
                         Circle()
                             .fill(Color(white: 0.20))
                             .frame(width: 24, height: 24)
+                            .overlay(
+                                Circle()
+                                    .stroke(speechManager.state == .listening ? Color.white.opacity(0.85) : Color.white.opacity(0.18), lineWidth: 1.2)
+                            )
 
                         Image(systemName: "mic.fill")
-                            .font(.system(size: 10, weight: .semibold))
-                            .foregroundColor(speechManager.state == .listening ? Color.green : Color.white)
+                            .font(.system(size: 10, weight: .bold))
+                            .foregroundColor(.white)
                     }
                 }
             }

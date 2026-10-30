@@ -113,7 +113,7 @@ public final class IRISDynamicIslandManager: ObservableObject {
         let isListening: Bool
         switch state {
         case .idle:
-            text = "Ready"
+            text = "Ready..."
             isListening = false
         case .listening:
             text = "Listening..."
@@ -122,7 +122,7 @@ public final class IRISDynamicIslandManager: ObservableObject {
             text = "Thinking..."
             isListening = false
         case .executing:
-            text = details.map { "Executing \($0)..." } ?? "Executing..."
+            text = details.map { "Opening \($0)..." } ?? "Processing..."
             isListening = false
         case .responding:
             text = "Responding..."
@@ -134,7 +134,7 @@ public final class IRISDynamicIslandManager: ObservableObject {
             text = details ?? "Completed"
             isListening = false
         case .failed:
-            text = details ?? "Could not complete"
+            text = details ?? "Action failed"
             isListening = false
         case .cancelled:
             text = "Cancelled"
