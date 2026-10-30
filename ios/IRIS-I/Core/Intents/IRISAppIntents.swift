@@ -37,12 +37,13 @@ public struct AskIRISIntent: AppIntent {
 @available(iOS 16.0, macOS 13.0, watchOS 9.0, tvOS 16.0, *)
 public struct AskIRISWithTextIntent: AppIntent {
     public static var title: LocalizedStringResource = "Ask IRIS with Text"
-    public static var description = IntentDescription("Sends a typed text instruction to IRIS.")
+    public static var description = IntentDescription("Sends a typed text instruction to IRIS, or begins voice listening if empty.")
 
     public static var openAppWhenRun: Bool = false
     public static var isDiscoverable: Bool = true
 
-    @Parameter(title: "Command")
+    /// Default to empty string so iOS NEVER prompts with a modal 'Command' keyboard sheet
+    @Parameter(title: "Command", default: "")
     public var command: String
 
     public init() {}
@@ -52,8 +53,20 @@ public struct AskIRISWithTextIntent: AppIntent {
     }
 
     public func perform() async throws -> some IntentResult {
+        let trimmed = command.trimmingCharacters(in: .whitespacesAndNewlines)
+        if trimmed.isEmpty {
+            // Seamless zero-prompt fallback: start voice listening
+            await MainActor.run {
+                #if canImport(ActivityKit)
+                IRISDynamicIslandManager.shared.startLiveActivity()
+                #endif
+            }
+            await SpeechManager.shared.startListening()
+            return .result()
+        }
+
         let orchestrator = ReActOrchestrator.shared
-        let response = await orchestrator.process(userPrompt: command)
+        let response = await orchestrator.process(userPrompt: trimmed)
         await MainActor.run {
             #if canImport(ActivityKit)
             IRISDynamicIslandManager.shared.updateLiveActivity(statusText: "Responding...", isListening: false, audioLevel: 0.6)

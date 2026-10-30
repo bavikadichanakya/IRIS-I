@@ -163,3 +163,4 @@ public struct ExecutionRecord: Identifiable, Sendable {
 - **`.completedUnverified`**: The action was successfully handed off to the OS (e.g. `UIApplication.shared.open(url)` to open YouTube, Spotify, or Maps), but iOS app sandboxing prevents inspecting internal third-party state. IRIS reports: *"Dispatched launch request for YouTube to system URL scheme."* instead of falsely claiming *"YouTube is open and playing."*
 - **`.failed`**: System error occurred (e.g., app not installed, URL scheme unavailable, GGUF model corrupted).
 - **`.unsupported`**: Target feature or requested capability is not permitted by Apple security policies.
+

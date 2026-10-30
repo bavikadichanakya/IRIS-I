@@ -132,3 +132,4 @@ To transition the remaining `BLOCKED BY PLATFORM` and `NOT IMPLEMENTED` items in
    - Replace the fire-and-forget `Task` in `perform()` with an `await SpeechManager.shared.startListening()`, returning meaningful diagnostic dialog if permissions or audio hardware fail.
 3. **On-Device Model Download**:
    - The user must launch the installed IRIS-I app on their iPhone and tap **Download** in Settings to stream the real GGUF weights onto the device storage to enable offline neural inference.
+

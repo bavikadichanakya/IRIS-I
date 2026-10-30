@@ -84,6 +84,13 @@ jobs:
             CODE_SIGNING_ALLOWED=NO \
             CODE_SIGNING_REQUIRED=NO \
             CONFIGURATION_BUILD_DIR=build/Device
+          xcodebuild build \
+            -project IRIS-I.xcodeproj \
+            -target IRISWidgets \
+            -destination "generic/platform=iOS" \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CONFIGURATION_BUILD_DIR=build/Device || true
           mkdir -p build/Device/IRIS-I.app/Frameworks
           cp -R Frameworks/llama.xcframework/ios-arm64/llama.framework build/Device/IRIS-I.app/Frameworks/
           mkdir -p build/Device/IRIS-I.app/PlugIns

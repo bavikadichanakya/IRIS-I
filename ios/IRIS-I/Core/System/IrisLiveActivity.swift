@@ -20,9 +20,9 @@ import ActivityKit
 #if canImport(ActivityKit) && canImport(WidgetKit)
 
 public struct PearlOrbCompactView: View {
-    public var size: CGFloat = 24
+    public var size: CGFloat = 20
 
-    public init(size: CGFloat = 24) {
+    public init(size: CGFloat = 20) {
         self.size = size
     }
 
@@ -32,7 +32,7 @@ public struct PearlOrbCompactView: View {
                 RadialGradient(
                     colors: [
                         Color.white,
-                        Color(white: 0.90),
+                        Color(white: 0.92),
                         Color(red: 0.74, green: 0.79, blue: 0.86),
                         Color(red: 0.42, green: 0.47, blue: 0.54)
                     ],
@@ -46,14 +46,13 @@ public struct PearlOrbCompactView: View {
                 Circle()
                     .stroke(
                         LinearGradient(
-                            colors: [Color.white.opacity(0.85), Color.white.opacity(0.15)],
+                            colors: [Color.white.opacity(0.85), Color.white.opacity(0.20)],
                             startPoint: .topLeading,
                             endPoint: .bottomTrailing
                         ),
                         lineWidth: 0.75
                     )
             )
-            .shadow(color: Color.white.opacity(0.25), radius: 2, x: 0, y: 0)
     }
 }
 
