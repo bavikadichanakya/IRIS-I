@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		A100009C2C00000100000001 /* IRISShortcutSnippetView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100009C2C00000100000001 /* IRISShortcutSnippetView.swift */; };
 		A100009B2C00000100000001 /* DynamicIslandPillView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100009B2C00000100000001 /* DynamicIslandPillView.swift */; };
 		A100009A2C00000100000001 /* IRISDynamicIslandManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100009A2C00000100000001 /* IRISDynamicIslandManager.swift */; };
 		A10000992C00000100000001 /* MemoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000992C00000100000001 /* MemoryView.swift */; };
@@ -112,6 +113,7 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		B100009C2C00000100000001 /* IRISShortcutSnippetView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IRISShortcutSnippetView.swift; sourceTree = "<group>"; };
 		B100009B2C00000100000001 /* DynamicIslandPillView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DynamicIslandPillView.swift; sourceTree = "<group>"; };
 		B100009A2C00000100000001 /* IRISDynamicIslandManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IRISDynamicIslandManager.swift; sourceTree = "<group>"; };
 		B10000992C00000100000001 /* MemoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemoryView.swift; sourceTree = "<group>"; };
@@ -331,6 +333,7 @@
 		G10000052C00000100000001 /* Views */ = {
 			isa = PBXGroup;
 			children = (
+				B100009C2C00000100000001 /* IRISShortcutSnippetView.swift */,
 				B100009B2C00000100000001 /* DynamicIslandPillView.swift */,
 				GLGK00012C00000100000001 /* LiquidGlassKit */,
 				B10000892C00000100000001 /* VoiceAgentView.swift */,
@@ -722,6 +725,7 @@ G100003C2C00000100000001 /* Intents */ = {
 				A10000092C00000100000001 /* HardwareTelemetry.swift in Sources */,
 				A100009A2C00000100000001 /* IRISDynamicIslandManager.swift in Sources */,
 				A100009B2C00000100000001 /* DynamicIslandPillView.swift in Sources */,
+				A100009C2C00000100000001 /* IRISShortcutSnippetView.swift in Sources */,
 				A100000A2C00000100000001 /* MemoryPressureMonitor.swift in Sources */,
 				A100000B2C00000100000001 /* ThermalStateMonitor.swift in Sources */,
 				A100000C2C00000100000001 /* ModelEngineProtocol.swift in Sources */,
