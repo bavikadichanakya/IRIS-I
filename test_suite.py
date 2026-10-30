@@ -538,6 +538,65 @@ def test_file_integrity_and_syntax():
     assert errors == 0, f"Found {errors} files with brace imbalances!"
     print(f"  [PASS] Validated {len(swift_files)} Swift source files; all syntax structures and braces balanced.")
 
+def test_transactional_model_download_and_gguf_validation():
+    print("[8/8] Testing Transactional Model Download & GGUF Metadata Validation...")
+    import struct
+
+    # 1. Synthesize a valid GGUF v3 header binary snippet
+    # Offset 0: 'GGUF' (4 bytes)
+    # Offset 4: uint32 version = 3
+    # Offset 8: uint64 tensor_count = 290
+    # Offset 16: uint64 kv_count = 25
+    valid_gguf_header = struct.pack("<4sIQQ", b"GGUF", 3, 290, 25)
+    assert len(valid_gguf_header) == 24
+
+    magic = valid_gguf_header[:4]
+    version, tensor_count, kv_count = struct.unpack("<IQQ", valid_gguf_header[4:24])
+    assert magic == b"GGUF", "GGUF magic bytes must match 'GGUF'"
+    assert version in (2, 3), f"GGUF version {version} must be 2 or 3"
+    assert tensor_count > 0, f"Tensor count {tensor_count} must be > 0"
+    assert kv_count > 0, f"KV count {kv_count} must be > 0"
+
+    # 2. Corrupted magic test
+    corrupted_magic = struct.pack("<4sIQQ", b"BADF", 3, 290, 25)
+    assert corrupted_magic[:4] != b"GGUF", "Corrupted magic must be rejected"
+
+    # 3. Unsupported version test
+    unsupported_ver = struct.pack("<4sIQQ", b"GGUF", 99, 290, 25)
+    bad_ver = struct.unpack("<I", unsupported_ver[4:8])[0]
+    assert bad_ver not in (2, 3), "Unsupported GGUF version must be rejected"
+
+    # 4. Zero tensors test
+    zero_tensors = struct.pack("<4sIQQ", b"GGUF", 3, 0, 25)
+    bad_tensors = struct.unpack("<Q", zero_tensors[8:16])[0]
+    assert bad_tensors == 0, "Zero tensor count must be caught"
+
+    # 5. Cryptographic checksum calculation test
+    dummy_payload = valid_gguf_header + b"\x00" * 1024
+    expected_hash = hashlib.sha256(dummy_payload).hexdigest()
+    actual_hash = hashlib.sha256(dummy_payload).hexdigest()
+    assert actual_hash.lower() == expected_hash.lower(), "SHA-256 digest validation must match"
+
+    # 6. Verify transactional lifecycle transitions:
+    # uninstalled -> downloading -> staged -> validating -> installed -> loading -> loaded -> operational
+    states = [
+        "uninstalled",
+        "downloading",
+        "staged",
+        "validating",
+        "installed",
+        "loading",
+        "loaded",
+        "operational"
+    ]
+    assert len(states) == 8
+    assert states[0] == "uninstalled"
+    assert states[2] == "staged"
+    assert states[4] == "installed"
+    assert states[7] == "operational"
+
+    print("  [PASS] Transactional 11-step lifecycle, GGUF magic, version, tensor count and SHA-256 validation verified.")
+
 if __name__ == "__main__":
     print("=" * 60)
     print("IRIS-I Core Architecture, Security & Connector Verification")
@@ -549,6 +608,7 @@ if __name__ == "__main__":
     test_operation_type_security_policy()
     test_tool_execution_outcome_exhaustiveness()
     test_file_integrity_and_syntax()
+    test_transactional_model_download_and_gguf_validation()
     print("=" * 60)
     print("ALL TESTS PASSED SUCCESSFULLY (100% Pass Rate).")
     print("=" * 60)

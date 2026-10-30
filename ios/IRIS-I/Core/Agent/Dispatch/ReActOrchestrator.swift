@@ -207,28 +207,60 @@ public actor ReActOrchestrator {
                     try await runner.loadModel(manifest: baseline, contextSize: 2048, forceMockEngine: false)
                 } catch {
                     let msg = "Could not activate local neural model: \(error.localizedDescription)"
+                    let totalDuration = (CFAbsoluteTimeGetCurrent() - totalStartTime) * 1000.0
+                    let record = ExecutionRecord(
+                        userRequest: userPrompt,
+                        interpretedIntent: "Model Activation",
+                        selectedTool: nil,
+                        validatedArguments: [:],
+                        permissionResult: "n/a",
+                        executionState: .failed,
+                        toolOutcome: .failed,
+                        resultPayload: ["message": msg],
+                        errorDetails: error.localizedDescription,
+                        isVerified: false,
+                        durationMs: totalDuration,
+                        requiredUserAction: "Retry activating in Settings",
+                        timestamp: Date()
+                    )
                     return OrchestratorResponse(
                         textResponse: msg,
                         executedTools: [],
                         requiresConfirmation: false,
                         pendingConfirmationTicket: nil,
                         routingDurationMs: routingDuration,
-                        totalDurationMs: (CFAbsoluteTimeGetCurrent() - totalStartTime) * 1000.0,
+                        totalDurationMs: totalDuration,
                         stepCount: 1,
-                        executionRecord: nil
+                        executionRecord: record
                     )
                 }
             } else {
                 let msg = "The on-device neural brain (Qwen 2.5 3B) is not installed yet. You can download and activate it in Settings, or ask me to open apps like YouTube, Music, or Camera."
+                let totalDuration = (CFAbsoluteTimeGetCurrent() - totalStartTime) * 1000.0
+                let record = ExecutionRecord(
+                    userRequest: userPrompt,
+                    interpretedIntent: "Model Uninstalled Guidance",
+                    selectedTool: nil,
+                    validatedArguments: [:],
+                    permissionResult: "n/a",
+                    executionState: .unsupported,
+                    toolOutcome: .unsupported,
+                    resultPayload: ["message": msg],
+                    errorDetails: "Local GGUF model not installed",
+                    isVerified: false,
+                    durationMs: totalDuration,
+                    requiredUserAction: "Download baseline model in Settings",
+                    timestamp: Date()
+                )
                 return OrchestratorResponse(
                     textResponse: msg,
                     executedTools: [],
                     requiresConfirmation: false,
                     pendingConfirmationTicket: nil,
                     routingDurationMs: routingDuration,
-                    totalDurationMs: (CFAbsoluteTimeGetCurrent() - totalStartTime) * 1000.0,
+                    totalDurationMs: totalDuration,
                     stepCount: 1,
-                    executionRecord: nil
+                    executionRecord: record
                 )
             }
         }
@@ -359,6 +391,21 @@ public actor ReActOrchestrator {
         }
 
         let totalDuration = (CFAbsoluteTimeGetCurrent() - totalStartTime) * 1000.0
+        let loopRecord = ExecutionRecord(
+            userRequest: userPrompt,
+            interpretedIntent: executedToolNames.isEmpty ? "Natural language reasoning" : "Multi-step tool execution (\(executedToolNames.joined(separator: ", ")))",
+            selectedTool: executedToolNames.last,
+            validatedArguments: [:],
+            permissionResult: "authorized",
+            executionState: .completedVerified,
+            toolOutcome: .completedVerified,
+            resultPayload: ["response": finalAssistantText],
+            errorDetails: nil,
+            isVerified: true,
+            durationMs: totalDuration,
+            requiredUserAction: nil,
+            timestamp: Date()
+        )
         return OrchestratorResponse(
             textResponse: finalAssistantText,
             executedTools: executedToolNames,
@@ -366,7 +413,8 @@ public actor ReActOrchestrator {
             pendingConfirmationTicket: nil,
             routingDurationMs: routingDuration,
             totalDurationMs: totalDuration,
-            stepCount: iteration
+            stepCount: iteration,
+            executionRecord: loopRecord
         )
     }
 
@@ -459,6 +507,27 @@ public actor ReActOrchestrator {
             responseText = "Action execution timed out."
         }
 
+        var strParams: [String: String] = [:]
+        for (k, v) in parameters { strParams[k] = "\(v)" }
+        var strPayload: [String: String] = [:]
+        for (k, v) in result.outputPayload { strPayload[k] = "\(v)" }
+
+        let confirmedRecord = ExecutionRecord(
+            userRequest: "Confirmed Action: \(tool.name)",
+            interpretedIntent: "Authorized ticket execution",
+            selectedTool: tool.name,
+            validatedArguments: strParams,
+            permissionResult: "user_confirmed",
+            executionState: result.outcome == .completedVerified ? .completedVerified : (result.outcome == .completedUnverified ? .completedUnverified : .failed),
+            toolOutcome: result.outcome,
+            resultPayload: strPayload,
+            errorDetails: result.error,
+            isVerified: result.verified,
+            durationMs: totalDuration,
+            requiredUserAction: nil,
+            timestamp: Date()
+        )
+
         return OrchestratorResponse(
             textResponse: responseText,
             executedTools: [tool.name],
@@ -466,7 +535,8 @@ public actor ReActOrchestrator {
             pendingConfirmationTicket: nil,
             routingDurationMs: 0,
             totalDurationMs: totalDuration,
-            stepCount: 1
+            stepCount: 1,
+            executionRecord: confirmedRecord
         )
     }
 }

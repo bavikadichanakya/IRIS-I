@@ -53,14 +53,17 @@ public struct AppOpenerTool: IRISAgentTool {
             let url = try await AppLaunchRegistry.shared.launchApp(name: appName, parameter: parameter)
             let duration = (CFAbsoluteTimeGetCurrent() - startTime) * 1000.0
 
-            return AgentExecutionResult.success(
+            // External handoff: SpringBoard dispatched URL scheme, but target app internal state is unobservable
+            return AgentExecutionResult(
                 tool: name,
-                verified: false, // Dispatched to OS; internal outcome within target app is unobservable
-                payload: [
+                outcome: .completedUnverified,
+                outputPayload: [
                     "app_name": appName,
                     "dispatched_url": url.absoluteString,
-                    "message": "Opened \(appName) on your device."
+                    "message": "Dispatched launch request for \(appName) to system URL scheme."
                 ],
+                error: nil,
+                verified: false,
                 durationMs: duration
             )
         } catch let err as AppLaunchError {

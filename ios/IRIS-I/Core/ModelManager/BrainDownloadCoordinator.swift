@@ -65,6 +65,14 @@ public final class BrainDownloadCoordinator: ObservableObject {
             return
         }
 
+        // Storage pre-flight check
+        guard storage.hasSufficientSpace(requiredBytes: manifest.requiredDiskBytes) else {
+            let freeMB = storage.availableDiskSpaceBytes() / (1024 * 1024)
+            let reqMB = manifest.requiredDiskBytes / (1024 * 1024)
+            self.statusMessage = "Storage exhausted: Requires \(reqMB) MB, but only \(freeMB) MB free."
+            return
+        }
+
         guard let downloadURL = manifest.verifiedDownloadURL else {
             self.statusMessage = "Error: Verified download URL unavailable"
             return
@@ -73,7 +81,7 @@ public final class BrainDownloadCoordinator: ObservableObject {
         self.isDownloading = true
         self.downloadProgress = 0.0
         self.downloadSpeedMBs = 0.0
-        self.statusMessage = "Connecting to model repository..."
+        self.statusMessage = "Connecting to verified model repository..."
 
         downloadTask?.cancel()
         downloadTask = Task {
@@ -95,30 +103,32 @@ public final class BrainDownloadCoordinator: ObservableObject {
                 return
             }
 
-            // Verify installation on disk
+            // Steps 3-7: Verified and promoted by ModelDownloadManager
             self.isDownloading = false
+            self.statusMessage = "Verifying GGUF header, checksum & compatibility..."
             await self.refreshStateAsync()
 
             if storage.isModelInstalled(manifest) {
-                self.statusMessage = "Download complete! Activating neural brain..."
+                self.statusMessage = "Validation successful. Initializing Metal backend..."
                 self.activateInstalledBrain(manifest: manifest)
             } else {
-                self.statusMessage = "Download completed but file verification failed."
+                self.statusMessage = "Download failed: Checksum or GGUF metadata mismatch."
             }
         }
     }
 
-    /// Loads the on-disk GGUF model into unified RAM and marks it active
+    /// Loads the on-disk GGUF model into unified RAM, allocates context, executes real inference warmup, and activates
     public func activateInstalledBrain(manifest: ModelManifest) {
         Task {
             do {
-                self.statusMessage = "Loading Qwen 2.5 3B into Metal unified memory..."
+                self.statusMessage = "Step 8-9: Allocating Metal context (2048 tokens)..."
                 try await runner.loadModel(manifest: manifest, contextSize: 2048, forceMockEngine: false)
                 await self.refreshStateAsync()
-                self.statusMessage = "Neural Brain Active (100% On-Device · A19)"
-                SpeechManager.shared.speak(text: "Local neural brain downloaded and activated. I'm ready.")
+                self.statusMessage = "Step 10-11: Verified Operational (100% On-Device · A19)"
+                SpeechManager.shared.speak(text: "Local neural brain validated, warmed up, and active.")
             } catch {
-                self.statusMessage = "Engine activation error: \(error.localizedDescription)"
+                self.statusMessage = "Activation error: \(error.localizedDescription)"
+                await self.refreshStateAsync()
             }
         }
     }

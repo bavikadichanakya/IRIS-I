@@ -121,7 +121,31 @@ public actor LocalModelRunner {
             self.activeEngine = engine
             self.activeManifest = manifest
             self.activeContextSize = contextSize
-            self.lifecycleState = .ready(contextSize: contextSize)
+            self.lifecycleState = .loaded(contextSize: contextSize)
+
+            // Step 10: Execute a real warmup inference request to verify operational status
+            do {
+                let testStream = await engine.generateStream(prompt: "Hello", maxTokens: 4, temperature: 0.1)
+                var generatedAny = false
+                for try await token in testStream {
+                    if !token.isEmpty {
+                        generatedAny = true
+                    }
+                }
+                guard generatedAny else {
+                    throw EngineError.generationFailed("Warmup inference returned zero tokens.")
+                }
+                // Step 11: Mark operational only after successful real inference
+                self.lifecycleState = .operational(contextSize: contextSize)
+            } catch {
+                await engine.unload()
+                self.activeEngine = nil
+                self.activeManifest = nil
+                self.activeContextSize = 0
+                let errText = "Warmup verification failed: \(error.localizedDescription)"
+                self.lifecycleState = .failed(error: errText)
+                throw EngineError.generationFailed(errText)
+            }
         } catch {
             // Ensure no stale pointers or misleading READY state
             await engine.unload()

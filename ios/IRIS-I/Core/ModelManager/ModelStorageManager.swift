@@ -13,6 +13,7 @@ public final class ModelStorageManager: Sendable {
     public let baseDirectory: URL
     public let weightsDirectory: URL
     public let downloadsDirectory: URL
+    public let stagingDirectory: URL
 
     public init(fileManager: FileManager = .default) {
         let appSupport = fileManager.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
@@ -20,15 +21,73 @@ public final class ModelStorageManager: Sendable {
         self.baseDirectory = irisDir
         self.weightsDirectory = irisDir.appendingPathComponent("Models/weights", isDirectory: true)
         self.downloadsDirectory = irisDir.appendingPathComponent("Models/downloads", isDirectory: true)
+        self.stagingDirectory = irisDir.appendingPathComponent("Models/staging", isDirectory: true)
 
         try? fileManager.createDirectory(at: weightsDirectory, withIntermediateDirectories: true)
         try? fileManager.createDirectory(at: downloadsDirectory, withIntermediateDirectories: true)
+        try? fileManager.createDirectory(at: stagingDirectory, withIntermediateDirectories: true)
 
         // Exclude entire Models directory from iCloud backups
         var resourceValues = URLResourceValues()
         resourceValues.isExcludedFromBackup = true
         var mutableWeights = weightsDirectory
         try? mutableWeights.setResourceValues(resourceValues)
+    }
+
+    public func stagingURL(for filename: String) -> URL {
+        stagingDirectory.appendingPathComponent(filename)
+    }
+
+    public func weightsURL(for filename: String) -> URL {
+        weightsDirectory.appendingPathComponent(filename)
+    }
+
+    /// Queries the actual available free disk space on device volume in bytes
+    public func availableDiskSpaceBytes() -> Int64 {
+        do {
+            let values = try baseDirectory.resourceValues(forKeys: [.volumeAvailableCapacityForImportantUsageKey])
+            if let capacity = values.volumeAvailableCapacityForImportantUsage {
+                return capacity
+            }
+        } catch {}
+        // Fallback to POSIX statvfs
+        if let attrs = try? FileManager.default.attributesOfFileSystem(forPath: baseDirectory.path),
+           let freeSize = attrs[.systemFreeSize] as? Int64 {
+            return freeSize
+        }
+        return 0
+    }
+
+    /// Verifies if the device has enough free storage with a 500 MB safety buffer
+    public func hasSufficientSpace(requiredBytes: Int64) -> Bool {
+        let free = availableDiskSpaceBytes()
+        let safetyBuffer: Int64 = 500 * 1024 * 1024 // 500 MB safety buffer
+        return free > (requiredBytes + safetyBuffer)
+    }
+
+    /// Atomically promotes a verified model from staging to permanent weights storage
+    public func atomicPromote(stagingURL: URL, filename: String) throws -> URL {
+        let fm = FileManager.default
+        let destURL = weightsURL(for: filename)
+
+        try fm.createDirectory(at: destURL.deletingLastPathComponent(), withIntermediateDirectories: true)
+
+        if fm.fileExists(atPath: destURL.path) {
+            try fm.removeItem(at: destURL)
+        }
+
+        try fm.moveItem(at: stagingURL, to: destURL)
+        return destURL
+    }
+
+    /// Cleans up any leftover artifacts in the staging directory
+    public func cleanupStaging() {
+        let fm = FileManager.default
+        if let items = try? fm.contentsOfDirectory(at: stagingDirectory, includingPropertiesForKeys: nil) {
+            for item in items {
+                try? fm.removeItem(at: item)
+            }
+        }
     }
 
     public func fileURL(for filename: String) -> URL {

@@ -31,15 +31,23 @@ final class ModelIntegrityTests: XCTestCase {
 
         // Create a mock file with exact GGUF magic bytes: 'G', 'G', 'U', 'F' (0x47, 0x47, 0x55, 0x46)
         var data = Data([0x47, 0x47, 0x55, 0x46])
-        // Pad with 1.2 MB of dummy data to satisfy minimum size requirement
+        var version: UInt32 = 3
+        var tensorCount: UInt64 = 100
+        var kvCount: UInt64 = 10
+        data.append(Data(bytes: &version, count: 4))
+        data.append(Data(bytes: &tensorCount, count: 8))
+        data.append(Data(bytes: &kvCount, count: 8))
+        // Pad with 1.2 MB of dummy data to satisfy test size requirement
         data.append(Data(repeating: 0x2A, count: 1_200_000))
         try data.write(to: fileURL)
 
         let validator = ModelIntegrityValidator()
-        let calculatedHash = try await validator.validate(fileURL: fileURL)
+        let result = try await validator.validate(fileURL: fileURL, minByteSize: 1_000_000)
 
-        XCTAssertFalse(calculatedHash.isEmpty, "Should calculate SHA-256 successfully")
-        XCTAssertEqual(calculatedHash.count, 64, "SHA-256 must be 64 hex characters")
+        XCTAssertEqual(result.version, 3, "GGUF version should be 3")
+        XCTAssertEqual(result.tensorCount, 100, "Tensor count should match")
+        XCTAssertFalse(result.sha256.isEmpty, "Should calculate SHA-256 successfully")
+        XCTAssertEqual(result.sha256.count, 64, "SHA-256 must be 64 hex characters")
     }
 
     func testCorruptedGGUFHeaderIsRejected() async throws {
@@ -53,7 +61,7 @@ final class ModelIntegrityTests: XCTestCase {
         let validator = ModelIntegrityValidator()
 
         do {
-            _ = try await validator.validate(fileURL: fileURL)
+            _ = try await validator.validate(fileURL: fileURL, minByteSize: 1_000_000)
             XCTFail("Should have thrown IntegrityError.invalidGGUFMagic")
         } catch let IntegrityError.invalidGGUFMagic(found) {
             XCTAssertEqual(found, "42414421")
@@ -66,6 +74,12 @@ final class ModelIntegrityTests: XCTestCase {
         let fileURL = tempDirectory.appendingPathComponent("checksum_test.gguf")
 
         var data = Data([0x47, 0x47, 0x55, 0x46])
+        var version: UInt32 = 3
+        var tensorCount: UInt64 = 50
+        var kvCount: UInt64 = 5
+        data.append(Data(bytes: &version, count: 4))
+        data.append(Data(bytes: &tensorCount, count: 8))
+        data.append(Data(bytes: &kvCount, count: 8))
         data.append(Data(repeating: 0x11, count: 1_200_000))
         try data.write(to: fileURL)
 
@@ -73,7 +87,7 @@ final class ModelIntegrityTests: XCTestCase {
         let wrongHash = "0000000000000000000000000000000000000000000000000000000000000000"
 
         do {
-            _ = try await validator.validate(fileURL: fileURL, expectedSHA256: wrongHash)
+            _ = try await validator.validate(fileURL: fileURL, expectedSHA256: wrongHash, minByteSize: 1_000_000)
             XCTFail("Should have thrown IntegrityError.checksumMismatch")
         } catch let IntegrityError.checksumMismatch(expected, actual) {
             XCTAssertEqual(expected, wrongHash)

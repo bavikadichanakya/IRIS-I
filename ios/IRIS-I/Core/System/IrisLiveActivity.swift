@@ -165,7 +165,22 @@ public struct IrisLiveActivity: Widget {
                 }
 
                 DynamicIslandExpandedRegion(.bottom) {
-                    EmptyView()
+                    if let text = context.state.transcript, !text.isEmpty {
+                        HStack(spacing: 6) {
+                            Circle()
+                                .fill(Color(red: 0.22, green: 0.86, blue: 0.42))
+                                .frame(width: 5, height: 5)
+                            Text(text)
+                                .font(.system(size: 12, weight: .regular))
+                                .foregroundColor(Color(white: 0.88))
+                                .lineLimit(2)
+                            Spacer()
+                        }
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 4)
+                    } else {
+                        EmptyView()
+                    }
                 }
             } compactLeading: {
                 // Compact UI: Left side of the Dynamic Island cutout (fits within 52pt limit)

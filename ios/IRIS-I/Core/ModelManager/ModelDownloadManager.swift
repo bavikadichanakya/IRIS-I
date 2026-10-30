@@ -43,6 +43,13 @@ public actor ModelDownloadManager: NSObject, URLSessionDownloadDelegate {
     ) -> AsyncStream<DownloadSnapshot> {
         cancelDownload()
 
+        // Storage pre-flight check: ensure sufficient disk space is available
+        guard ModelStorageManager.shared.hasSufficientSpace(requiredBytes: manifest.requiredDiskBytes) else {
+            let (stream, continuation) = AsyncStream<DownloadSnapshot>.makeStream()
+            continuation.finish()
+            return stream
+        }
+
         self.activeManifest = manifest
         self.targetManifest = manifest
         self.targetFilename = manifest.filename
@@ -107,25 +114,25 @@ public actor ModelDownloadManager: NSObject, URLSessionDownloadDelegate {
         downloadTask: URLSessionDownloadTask,
         didFinishDownloadingTo location: URL
     ) {
-        // Critical iOS Requirement: URLSession deletes `location` the moment this delegate method returns.
-        // We MUST move or copy the file synchronously to permanent storage before returning!
+        // Critical iOS Requirement: URLSession deletes `location` the moment this delegate callback exits.
+        // Step 2: We MUST move the temporary file synchronously to intermediate staging before returning!
         let storage = ModelStorageManager.shared
         guard let filename = self.targetFilename else {
             return
         }
-        let destURL = storage.fileURL(for: filename)
+        let stagingURL = storage.stagingURL(for: filename)
         do {
-            try FileManager.default.createDirectory(at: destURL.deletingLastPathComponent(), withIntermediateDirectories: true)
-            if FileManager.default.fileExists(atPath: destURL.path) {
-                try FileManager.default.removeItem(at: destURL)
+            try FileManager.default.createDirectory(at: stagingURL.deletingLastPathComponent(), withIntermediateDirectories: true)
+            if FileManager.default.fileExists(atPath: stagingURL.path) {
+                try FileManager.default.removeItem(at: stagingURL)
             }
-            try FileManager.default.moveItem(at: location, to: destURL)
+            try FileManager.default.moveItem(at: location, to: stagingURL)
         } catch {
-            print("ModelDownloadManager: Failed to move temp file synchronously: \(error)")
+            print("ModelDownloadManager: Failed to move temp file to staging synchronously: \(error)")
         }
 
         Task {
-            await self.handleDownloadCompletion(destURL: destURL)
+            await self.handleDownloadCompletion(stagingURL: stagingURL, filename: filename)
         }
     }
 
@@ -165,22 +172,23 @@ public actor ModelDownloadManager: NSObject, URLSessionDownloadDelegate {
         progressContinuation?.yield(snapshot)
     }
 
-    private func handleDownloadCompletion(destURL: URL) async {
+    private func handleDownloadCompletion(stagingURL: URL, filename: String) async {
         guard let manifest = activeManifest else { return }
 
         do {
-            // Validate integrity on the safely moved permanent file
+            // Steps 3, 4, 5, 6: Verify file exists, byte size, checksum, and GGUF header metadata in staging
             _ = try await ModelIntegrityValidator.shared.validate(
-                fileURL: destURL,
-                expectedSHA256: manifest.expectedSHA256
+                fileURL: stagingURL,
+                expectedSHA256: manifest.expectedSHA256,
+                minByteSize: 10_000_000
             )
+            // Step 7: Atomically promote the validated artifact into permanent model storage
+            _ = try ModelStorageManager.shared.atomicPromote(stagingURL: stagingURL, filename: filename)
             progressContinuation?.finish()
         } catch {
-            // Only remove if file is tiny (< 1 MB) or totally corrupted
-            if let attrs = try? FileManager.default.attributesOfItem(atPath: destURL.path),
-               let size = attrs[.size] as? Int64, size < 1_000_000 {
-                try? FileManager.default.removeItem(at: destURL)
-            }
+            print("ModelDownloadManager: Validation/Promotion failed: \(error)")
+            // Staging cleanup on failure
+            try? FileManager.default.removeItem(at: stagingURL)
             progressContinuation?.finish()
         }
     }
