@@ -18,8 +18,7 @@ public protocol SpeechRecognitionManagerDelegate: AnyObject, Sendable {
     func speechRecognitionManager(_ manager: SpeechRecognitionManager, didFailWithError error: Error)
 }
 
-@MainActor
-public final class SpeechRecognitionManager: NSObject {
+public final class SpeechRecognitionManager: NSObject, @unchecked Sendable {
     public static let shared = SpeechRecognitionManager()
 
     public weak var delegate: SpeechRecognitionManagerDelegate?

@@ -16,8 +16,7 @@ public protocol VoiceResponseManagerDelegate: AnyObject, Sendable {
     func voiceResponseManagerDidCancelSpeaking(_ manager: VoiceResponseManager)
 }
 
-@MainActor
-public final class VoiceResponseManager: NSObject {
+public final class VoiceResponseManager: NSObject, @unchecked Sendable {
     public static let shared = VoiceResponseManager()
 
     public weak var delegate: VoiceResponseManagerDelegate?

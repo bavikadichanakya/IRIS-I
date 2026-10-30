@@ -16,8 +16,7 @@ public protocol AudioSessionManagerDelegate: AnyObject, Sendable {
     func audioSessionManagerDidChangeRoute(_ manager: AudioSessionManager, toBluetooth: Bool)
 }
 
-@MainActor
-public final class AudioSessionManager: NSObject {
+public final class AudioSessionManager: NSObject, @unchecked Sendable {
     public static let shared = AudioSessionManager()
 
     public weak var delegate: AudioSessionManagerDelegate?

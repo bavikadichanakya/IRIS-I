@@ -143,8 +143,9 @@ public final class VoiceSessionCoordinator: ObservableObject {
 
         do {
             try speechManager.startRecognition()
-            try audioManager.startCapture { [weak self] buffer in
-                self?.speechManager.appendAudioBuffer(buffer)
+            let speechRef = self.speechManager
+            try audioManager.startCapture { buffer in
+                speechRef.appendAudioBuffer(buffer)
             }
 
             // Only transition to .listening AFTER audio engine and recognizer have engaged
