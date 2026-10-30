@@ -18,10 +18,21 @@ public struct IRISLiveActivityAttributes: ActivityAttributes {
         public var isListening: Bool
         public var audioLevel: Float
 
+        public var status: String {
+            get { statusText }
+            set { statusText = newValue }
+        }
+
         public init(statusText: String = "Listening...", isListening: Bool = true, audioLevel: Float = 0.0) {
             self.statusText = statusText
             self.isListening = isListening
             self.audioLevel = audioLevel
+        }
+
+        public init(status: String) {
+            self.statusText = status
+            self.isListening = true
+            self.audioLevel = 0.2
         }
     }
 
@@ -31,6 +42,8 @@ public struct IRISLiveActivityAttributes: ActivityAttributes {
         self.title = title
     }
 }
+
+public typealias IrisWidgetAttributes = IRISLiveActivityAttributes
 
 @MainActor
 public final class IRISDynamicIslandManager: ObservableObject {

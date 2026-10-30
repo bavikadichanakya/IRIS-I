@@ -9,6 +9,7 @@
 /* Begin PBXBuildFile section */
 		A100009C2C00000100000001 /* IRISShortcutSnippetView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100009C2C00000100000001 /* IRISShortcutSnippetView.swift */; };
 		A100009B2C00000100000001 /* DynamicIslandPillView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100009B2C00000100000001 /* DynamicIslandPillView.swift */; };
+		A100009D2C00000100000001 /* IrisLiveActivity.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100009D2C00000100000001 /* IrisLiveActivity.swift */; };
 		A100009A2C00000100000001 /* IRISDynamicIslandManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = B100009A2C00000100000001 /* IRISDynamicIslandManager.swift */; };
 		A10000992C00000100000001 /* MemoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000992C00000100000001 /* MemoryView.swift */; };
 		A10000982C00000100000001 /* ActionsCatalogView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10000982C00000100000001 /* ActionsCatalogView.swift */; };
@@ -115,6 +116,7 @@
 /* Begin PBXFileReference section */
 		B100009C2C00000100000001 /* IRISShortcutSnippetView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IRISShortcutSnippetView.swift; sourceTree = "<group>"; };
 		B100009B2C00000100000001 /* DynamicIslandPillView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DynamicIslandPillView.swift; sourceTree = "<group>"; };
+		B100009D2C00000100000001 /* IrisLiveActivity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IrisLiveActivity.swift; sourceTree = "<group>"; };
 		B100009A2C00000100000001 /* IRISDynamicIslandManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IRISDynamicIslandManager.swift; sourceTree = "<group>"; };
 		B10000992C00000100000001 /* MemoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemoryView.swift; sourceTree = "<group>"; };
 		B10000982C00000100000001 /* ActionsCatalogView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActionsCatalogView.swift; sourceTree = "<group>"; };
@@ -303,6 +305,7 @@
 			isa = PBXGroup;
 			children = (
 				B10000092C00000100000001 /* HardwareTelemetry.swift */,
+				B100009D2C00000100000001 /* IrisLiveActivity.swift */,
 				B100009A2C00000100000001 /* IRISDynamicIslandManager.swift */,
 				B100000A2C00000100000001 /* MemoryPressureMonitor.swift */,
 				B100000B2C00000100000001 /* ThermalStateMonitor.swift */,
@@ -723,6 +726,7 @@ G100003C2C00000100000001 /* Intents */ = {
 				A10000072C00000100000001 /* ModelIntegrityValidator.swift in Sources */,
 				A10000082C00000100000001 /* ModelDownloadManager.swift in Sources */,
 				A10000092C00000100000001 /* HardwareTelemetry.swift in Sources */,
+				A100009D2C00000100000001 /* IrisLiveActivity.swift in Sources */,
 				A100009A2C00000100000001 /* IRISDynamicIslandManager.swift in Sources */,
 				A100009B2C00000100000001 /* DynamicIslandPillView.swift in Sources */,
 				A100009C2C00000100000001 /* IRISShortcutSnippetView.swift in Sources */,

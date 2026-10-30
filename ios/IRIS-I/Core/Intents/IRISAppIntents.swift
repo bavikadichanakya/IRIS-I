@@ -104,8 +104,44 @@ public struct StartIRISVoiceIntent: AppIntent {
 }
 
 @available(iOS 16.0, macOS 13.0, watchOS 9.0, tvOS 16.0, *)
+public struct StartListeningIntent: AppIntent {
+    public static var title: LocalizedStringResource = "Start Iris Voice Agent"
+    public static var description = IntentDescription("Wakes IRIS and immediately begins listening for voice commands in the Dynamic Island.")
+
+    public static var isDiscoverable: Bool = true
+    public static var openAppWhenRun: Bool = false
+
+    public init() {}
+
+    @MainActor
+    public func perform() async throws -> some IntentResult {
+        // 1. Trigger the Live Activity in Dynamic Island
+        #if canImport(ActivityKit)
+        IRISDynamicIslandManager.shared.startLiveActivity()
+        #endif
+
+        // 2. Start speech recognizer / AVAudioEngine listening sequence
+        Task {
+            await SpeechManager.shared.startListening()
+        }
+
+        return .result()
+    }
+}
+
+@available(iOS 16.0, macOS 13.0, watchOS 9.0, tvOS 16.0, *)
 public struct IRISAppShortcutsProvider: AppShortcutsProvider {
     public static var appShortcuts: [AppShortcut] {
+        AppShortcut(
+            intent: StartListeningIntent(),
+            phrases: [
+                "Start \(.applicationName) Voice Agent",
+                "Start \(.applicationName)",
+                "Listen \(.applicationName)"
+            ],
+            shortTitle: "Start Iris Voice Agent",
+            systemImageName: "mic.fill"
+        )
         AppShortcut(
             intent: AskIRISIntent(),
             phrases: [
