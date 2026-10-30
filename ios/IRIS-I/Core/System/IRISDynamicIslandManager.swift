@@ -74,7 +74,7 @@ public final class IRISDynamicIslandManager: ObservableObject {
                 let alertConfig = AlertConfiguration(
                     title: "Hey IRIS",
                     body: "Listening...",
-                    sound: nil
+                    sound: .default
                 )
                 await activity.update(
                     ActivityContent(state: initialState, staleDate: nil),
