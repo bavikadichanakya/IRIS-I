@@ -13,6 +13,7 @@ import UIKit
 
 public struct AppLaunchDescriptor: Sendable {
     public let appName: String
+    public var displayName: String { appName }
     public let urlScheme: String
     public let queryScheme: String?
     public let universalLinkURL: URL?

@@ -610,8 +610,8 @@ public struct VoiceAgentView: View {
             // Determine app descriptor and icon truthfully
             if record.toolName == "app_opener" {
                 let target = record.validatedArguments["appName"] ?? record.validatedArguments["query"] ?? "App"
-                if let desc = AppLaunchRegistry.shared.descriptor(for: target) {
-                    activeAppName = desc.displayName
+                if let desc = await AppLaunchRegistry.shared.descriptor(for: target) {
+                    activeAppName = desc.appName
                     activeAppIcon = "app.badge.fill"
                 } else {
                     activeAppName = target.capitalized
