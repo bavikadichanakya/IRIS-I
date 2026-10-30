@@ -160,7 +160,9 @@ public final class SpeechManager: NSObject, ObservableObject, @unchecked Sendabl
             let normalized = min(1.0, max(0.0, rms * 10.0))
 
             Task { @MainActor [weak self] in
-                self?.audioLevel = normalized
+                guard let self = self else { return }
+                self.audioLevel = normalized
+                IRISDynamicIslandManager.shared.updateLiveActivity(statusText: "Listening...", isListening: true, audioLevel: normalized)
             }
         }
 
@@ -168,6 +170,7 @@ public final class SpeechManager: NSObject, ObservableObject, @unchecked Sendabl
             audioEngine.prepare()
             try audioEngine.start()
             self.state = .listening
+            IRISDynamicIslandManager.shared.startLiveActivity()
         } catch {
             self.errorMessage = "Audio engine could not start: \(error.localizedDescription)"
             stopListeningInternal()
@@ -181,13 +184,21 @@ public final class SpeechManager: NSObject, ObservableObject, @unchecked Sendabl
                     let transcribed = result.bestTranscription.formattedString
                     self.recognizedText = transcribed
 
-                    // Check for wake word in real-time
-                    let lower = transcribed.lowercased()
-                    if lower.contains("hey iris") || lower.contains("iris") {
+                    let cleanLower = transcribed.lowercased()
+                        .trimmingCharacters(in: .punctuationCharacters.union(.whitespacesAndNewlines))
+
+                    if cleanLower.contains("hey iris") || cleanLower.contains("iris") {
                         self.wakeWordDetected = true
+                        // If user specifically said "Hey IRIS" (or "IRIS") alone, trigger greeting immediately without waiting
+                        if cleanLower == "hey iris" || cleanLower == "iris" {
+                            self.silenceTask?.cancel()
+                            self.silenceTask = nil
+                            self.processVoiceQuery()
+                            return
+                        }
                     }
 
-                    // Reset auto-send silence timer
+                    // Reset auto-send silence timer for voice commands
                     self.resetSilenceTimer()
                 }
 
@@ -196,6 +207,13 @@ public final class SpeechManager: NSObject, ObservableObject, @unchecked Sendabl
                         self.processVoiceQuery()
                     } else if self.state == .listening {
                         self.stopListeningInternal()
+                        // Automatically restart listener so wake word is continuously ready
+                        Task {
+                            try? await Task.sleep(nanoseconds: 300_000_000)
+                            if self.state == .idle {
+                                await self.startListening()
+                            }
+                        }
                     }
                 }
             }
@@ -254,40 +272,39 @@ public final class SpeechManager: NSObject, ObservableObject, @unchecked Sendabl
             return
         }
 
-        // Detect and strip wake-word prefixes
+        // Detect and strip wake-word prefixes cleanly, accounting for speech recognition punctuation
         let lower = input.lowercased()
-        let query: String
-        if lower.hasPrefix("hey iris,") {
-            query = String(input.dropFirst(9)).trimmingCharacters(in: .whitespacesAndNewlines)
-        } else if lower.hasPrefix("hey iris ") {
-            query = String(input.dropFirst(8)).trimmingCharacters(in: .whitespacesAndNewlines)
-        } else if lower == "hey iris" {
-            query = ""
-        } else if lower.hasPrefix("iris,") {
-            query = String(input.dropFirst(5)).trimmingCharacters(in: .whitespacesAndNewlines)
-        } else if lower.hasPrefix("iris ") {
-            query = String(input.dropFirst(4)).trimmingCharacters(in: .whitespacesAndNewlines)
-        } else if lower == "iris" {
-            query = ""
-        } else {
-            query = input
+        var clean = lower.trimmingCharacters(in: .punctuationCharacters.union(.whitespacesAndNewlines))
+        for wakeVariant in ["hey iris", "hey, iris", "iris"] {
+            if clean.hasPrefix(wakeVariant) {
+                var remaining = clean.dropFirst(wakeVariant.count)
+                while let first = remaining.first, first == "," || first == "." || first == " " || first == ":" || first == "!" || first == "?" {
+                    remaining = remaining.dropFirst()
+                }
+                clean = String(remaining)
+                break
+            }
         }
+        let query = clean.trimmingCharacters(in: .punctuationCharacters.union(.whitespacesAndNewlines))
 
         // If user only uttered the wake word, respond with greeting and immediately listen for follow-up command
         if query.isEmpty {
             self.state = .speaking
             self.spokenResponse = "What can I do for you?"
             self.isAwaitingFollowUp = true
+            IRISDynamicIslandManager.shared.updateLiveActivity(statusText: "What can I do for you?", isListening: false, audioLevel: 0.5)
             speak(text: self.spokenResponse)
             return
         }
 
         self.state = .processing
+        IRISDynamicIslandManager.shared.updateLiveActivity(statusText: "Thinking...", isListening: false, audioLevel: 0.3)
         Task {
             let orchestrator = ReActOrchestrator.shared
             let response = await orchestrator.process(userPrompt: query)
             await MainActor.run {
                 self.spokenResponse = response.textResponse
+                IRISDynamicIslandManager.shared.updateLiveActivity(statusText: "Responding...", isListening: false, audioLevel: 0.6)
                 self.speak(text: response.textResponse)
             }
         }
@@ -312,6 +329,9 @@ public final class SpeechManager: NSObject, ObservableObject, @unchecked Sendabl
         self.audioLevel = 0.0
         if state == .listening {
             self.state = .idle
+        }
+        if !isAwaitingFollowUp && state != .speaking && state != .processing {
+            IRISDynamicIslandManager.shared.endLiveActivity()
         }
     }
 
@@ -377,6 +397,7 @@ extension SpeechManager: AVSpeechSynthesizerDelegate {
                 await self.startListening()
             } else if self.state == .speaking {
                 self.state = .idle
+                IRISDynamicIslandManager.shared.endLiveActivity()
             }
         }
     }
@@ -385,6 +406,7 @@ extension SpeechManager: AVSpeechSynthesizerDelegate {
         Task { @MainActor in
             if self.state == .speaking {
                 self.state = .idle
+                IRISDynamicIslandManager.shared.endLiveActivity()
             }
         }
     }

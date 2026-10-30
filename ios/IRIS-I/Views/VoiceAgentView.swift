@@ -57,7 +57,7 @@ public struct VoiceAgentView: View {
                                 insertion: .opacity.combined(with: .scale(scale: 0.96)),
                                 removal: .opacity
                             ))
-                    } else if speechManager.state == .listening || speechManager.state == .processing {
+                    } else if speechManager.state == .listening || speechManager.state == .processing || speechManager.state == .speaking {
                         listeningThinkingStage
                             .transition(.asymmetric(
                                 insertion: .opacity.combined(with: .scale(scale: 0.96)),
@@ -167,7 +167,7 @@ public struct VoiceAgentView: View {
                 Image(systemName: "waveform")
                     .font(.system(size: 13, weight: .semibold))
                     .foregroundColor(.black)
-                Text(speechManager.state == .processing ? "Thinking..." : "Listening...")
+                Text(speechManager.state == .processing ? "Thinking..." : (speechManager.state == .speaking ? "Responding..." : "Listening..."))
                     .font(.system(size: 13, weight: .semibold))
                     .foregroundColor(.black)
                 Image(systemName: "checkmark")
@@ -208,11 +208,11 @@ public struct VoiceAgentView: View {
 
             // State Text
             VStack(spacing: 4) {
-                Text(speechManager.state == .processing ? "Processing..." : "I'm listening")
+                Text(speechManager.state == .processing ? "Processing..." : (speechManager.state == .speaking ? "IRIS" : "I'm listening"))
                     .font(.system(size: 22, weight: .bold))
                     .foregroundColor(.black)
 
-                Text(speechManager.recognizedText.isEmpty ? "Speak naturally" : "\"\(speechManager.recognizedText)\"")
+                Text(speechManager.state == .speaking ? speechManager.spokenResponse : (speechManager.recognizedText.isEmpty ? "Speak naturally" : "\"\(speechManager.recognizedText)\""))
                     .font(.system(size: 15))
                     .foregroundColor(Color(white: 0.35))
                     .multilineTextAlignment(.center)
