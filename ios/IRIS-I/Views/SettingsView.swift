@@ -64,12 +64,27 @@ public struct SettingsView: View {
                                     Spacer()
 
                                     HStack(spacing: 5) {
-                                        Circle()
-                                            .fill(brainCoordinator.isModelActive ? Color.green : Color.orange)
-                                            .frame(width: 8, height: 8)
-                                        Text(brainCoordinator.isModelActive ? "Active" : (brainCoordinator.isDownloading ? "Downloading" : "Ready"))
-                                            .font(.system(size: 13, weight: .semibold))
-                                            .foregroundColor(brainCoordinator.isModelActive ? .green : Color(white: 0.40))
+                                        if brainCoordinator.isModelActive {
+                                            Circle().fill(Color.green).frame(width: 8, height: 8)
+                                            Text("Active")
+                                                .font(.system(size: 13, weight: .semibold))
+                                                .foregroundColor(.green)
+                                        } else if brainCoordinator.isDownloading {
+                                            Circle().fill(Color.blue).frame(width: 8, height: 8)
+                                            Text("Downloading")
+                                                .font(.system(size: 13, weight: .semibold))
+                                                .foregroundColor(.blue)
+                                        } else if brainCoordinator.isModelInstalled {
+                                            Circle().fill(Color.orange).frame(width: 8, height: 8)
+                                            Text("Installed")
+                                                .font(.system(size: 13, weight: .semibold))
+                                                .foregroundColor(.orange)
+                                        } else {
+                                            Circle().fill(Color.secondary).frame(width: 8, height: 8)
+                                            Text("Not Installed")
+                                                .font(.system(size: 13, weight: .semibold))
+                                                .foregroundColor(Color(white: 0.50))
+                                        }
                                     }
 
                                     Image(systemName: "chevron.right")

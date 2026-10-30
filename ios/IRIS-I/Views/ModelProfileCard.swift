@@ -120,7 +120,7 @@ public struct ModelProfileCard: View {
             }
 
             // Live Download Progress Bar (if this model is downloading)
-            if brainCoordinator.isDownloading && manifest.id == "qwen2.5-3b-instruct" {
+            if brainCoordinator.isDownloading && manifest.verifiedDownloadURL != nil {
                 VStack(alignment: .leading, spacing: 4) {
                     ProgressView(value: brainCoordinator.downloadProgress)
                         .tint(.blue)
@@ -172,6 +172,12 @@ public struct ModelProfileCard: View {
                         }
                         .buttonStyle(.borderedProminent)
                         .tint(.blue)
+
+                        Button(action: onImportTapped) {
+                            Image(systemName: "square.and.arrow.down")
+                                .font(.caption)
+                        }
+                        .buttonStyle(.bordered)
                     } else {
                         Button(action: onImportTapped) {
                             Label("Import .GGUF File", systemImage: "square.and.arrow.down")
@@ -180,12 +186,6 @@ public struct ModelProfileCard: View {
                         }
                         .buttonStyle(.bordered)
                     }
-
-                    Button(action: onSelectLoad) {
-                        Label("Test (Mock)", systemImage: "sparkles")
-                            .font(.caption)
-                    }
-                    .buttonStyle(.bordered)
                 }
             }
         }

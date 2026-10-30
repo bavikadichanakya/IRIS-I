@@ -168,33 +168,22 @@ public struct IrisLiveActivity: Widget {
                     EmptyView()
                 }
             } compactLeading: {
-                // Compact UI: Left side of the Dynamic Island cutout
-                HStack(spacing: 6) {
-                    PearlOrbCompactView(size: 20)
-
-                    VStack(alignment: .leading, spacing: 0) {
-                        Text("Hey IRIS")
-                            .font(.system(size: 12, weight: .bold))
-                            .foregroundColor(.white)
-                            .lineLimit(1)
-                        Text(context.state.statusText)
-                            .font(.system(size: 9, weight: .medium))
-                            .foregroundColor(Color(white: 0.65))
-                            .lineLimit(1)
+                // Compact UI: Left side of the Dynamic Island cutout (fits within 52pt limit)
+                PearlOrbCompactView(size: 20)
+                    .padding(.leading, 4)
+            } compactTrailing: {
+                // Compact UI: Right side of the Dynamic Island cutout (fits within 52pt limit)
+                HStack(spacing: 4) {
+                    if context.state.isListening && context.state.audioLevel > 0.05 {
+                        DynamicIslandWaveform(audioLevel: context.state.audioLevel, barCount: 4, maxHeight: 12)
+                    } else {
+                        GreenMicButton(size: 18)
                     }
                 }
-            } compactTrailing: {
-                // Compact UI: Right side of the Dynamic Island cutout
-                HStack(spacing: 5) {
-                    DynamicIslandWaveform(audioLevel: context.state.audioLevel, barCount: 5, maxHeight: 13)
-
-                    GreenMicButton(size: 20)
-                }
+                .padding(.trailing, 4)
             } minimal: {
                 // Minimal UI: Sharing island with another activity
-                HStack(spacing: 2) {
-                    PearlOrbCompactView(size: 13)
-                }
+                PearlOrbCompactView(size: 14)
             }
             .keylineTint(Color.white.opacity(0.3))
         }

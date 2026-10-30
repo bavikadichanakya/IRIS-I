@@ -77,6 +77,43 @@ def test_fast_intent_router():
         if clean in valid_telemetry_queries:
             return ("matched", "SystemInfoTool", {"action": "telemetry"}, duration_ms)
         
+        valid_greeting_queries = {
+            "hello", "hi", "hey", "hey iris", "iris",
+            "good morning", "good afternoon", "good evening",
+            "how are you", "how are you doing", "what's up", "whats up"
+        }
+        if clean in valid_greeting_queries:
+            return ("matched", "SystemInfoTool", {"action": "greeting"}, duration_ms)
+            
+        valid_capabilities_queries = {
+            "who are you", "what are you", "what can you do", "help",
+            "what are your capabilities", "what can iris do", "what is iris",
+            "capabilities", "how do you work"
+        }
+        if clean in valid_capabilities_queries:
+            return ("matched", "SystemInfoTool", {"action": "capabilities"}, duration_ms)
+            
+        valid_direct_media_queries = {
+            "play music", "play some music", "play songs", "play a song",
+            "music", "apple music", "open music", "open apple music"
+        }
+        if clean in valid_direct_media_queries:
+            return ("matched", "AppOpenerTool", {"app_name": "Music"}, duration_ms)
+            
+        valid_direct_camera_queries = {
+            "take a photo", "take photo", "take a picture", "take picture",
+            "camera", "open camera", "take photos"
+        }
+        if clean in valid_direct_camera_queries:
+            return ("matched", "AppOpenerTool", {"app_name": "Camera"}, duration_ms)
+            
+        valid_single_apps = {
+            "youtube": "YouTube", "spotify": "Spotify", "settings": "Settings",
+            "camera": "Camera", "photos": "Photos", "maps": "Maps"
+        }
+        if clean in valid_single_apps:
+            return ("matched", "AppOpenerTool", {"app_name": valid_single_apps[clean]}, duration_ms)
+        
         launch_prefixes = [
             "open up ", "open ", "launch ", "start ",
             "take me to ", "bring up ", "switch to ", "go to ", "jump to ",
@@ -123,7 +160,11 @@ def test_fast_intent_router():
         ("switch to YouTube", "AppOpenerTool", "youtube"),
         ("bring up Spotify", "AppOpenerTool", "spotify"),
         ("please open TikTok", "AppOpenerTool", "tiktok"),
-        ("go to Apple Music", "AppOpenerTool", "apple music")
+        ("go to Apple Music", "AppOpenerTool", "apple music"),
+        ("Hello", "SystemInfoTool", "greeting"),
+        ("What can you do?", "SystemInfoTool", "capabilities"),
+        ("Play music", "AppOpenerTool", "Music"),
+        ("Take a photo", "AppOpenerTool", "Camera")
     ]
     for q, expected_tool, expected_arg in positives:
         status, tool, args, dur = route(q)

@@ -16,12 +16,13 @@ import AppIntents
 @available(iOS 16.0, macOS 13.0, watchOS 9.0, tvOS 16.0, *)
 public struct AskIRISIntent: AppIntent {
     public static var title: LocalizedStringResource = "Ask IRIS"
-    public static var description = IntentDescription("Executes natural-language voice or text commands with the on-device IRIS assistant engine.")
+    public static var description = IntentDescription("Executes natural-language voice commands via Dynamic Island Live Activity.")
 
-    /// Runs directly in the system Shortcuts overlay without opening the full app window
+    /// Runs directly in the Dynamic Island without opening the full app window
     public static var openAppWhenRun: Bool = false
+    public static var isDiscoverable: Bool = true
 
-    @Parameter(title: "Command")
+    @Parameter(title: "Command", default: nil)
     public var command: String?
 
     public init() {}
@@ -30,16 +31,19 @@ public struct AskIRISIntent: AppIntent {
         self.command = command
     }
 
-    public func perform() async throws -> some IntentResult & ShowsSnippetView {
+    public func perform() async throws -> some IntentResult {
         if let query = command?.trimmingCharacters(in: .whitespacesAndNewlines), !query.isEmpty {
             let orchestrator = ReActOrchestrator.shared
             let response = await orchestrator.process(userPrompt: query)
             await MainActor.run {
+                #if canImport(ActivityKit)
+                IRISDynamicIslandManager.shared.updateLiveActivity(statusText: "Responding...", isListening: false, audioLevel: 0.6)
+                #endif
                 SpeechManager.shared.speak(text: response.textResponse)
             }
-            return .result(view: IRISShortcutSnippetView(statusText: "Responding...", isListening: false, recognizedText: response.textResponse))
+            return .result()
         } else {
-            // Direct 1-press trigger from Action Button: display the Image 2 snippet overlay
+            // Instant 1-press trigger from Action Button: start real Dynamic Island Live Activity
             await MainActor.run {
                 #if canImport(ActivityKit)
                 IRISDynamicIslandManager.shared.startLiveActivity()
@@ -48,7 +52,7 @@ public struct AskIRISIntent: AppIntent {
                     await SpeechManager.shared.startListening()
                 }
             }
-            return .result(view: IRISShortcutSnippetView(statusText: "Listening...", isListening: true, recognizedText: ""))
+            return .result()
         }
     }
 }
@@ -85,12 +89,13 @@ public struct OpenAppWithIRISIntent: AppIntent {
 @available(iOS 16.0, macOS 13.0, watchOS 9.0, tvOS 16.0, *)
 public struct StartIRISVoiceIntent: AppIntent {
     public static var title: LocalizedStringResource = "Wake IRIS Voice"
-    public static var description = IntentDescription("Wakes IRIS and immediately begins listening for voice commands with the Pearl Orb interface.")
+    public static var description = IntentDescription("Wakes IRIS and immediately begins listening for voice commands in the Dynamic Island.")
     public static var openAppWhenRun: Bool = false
+    public static var isDiscoverable: Bool = true
 
     public init() {}
 
-    public func perform() async throws -> some IntentResult & ShowsSnippetView {
+    public func perform() async throws -> some IntentResult {
         await MainActor.run {
             #if canImport(ActivityKit)
             IRISDynamicIslandManager.shared.startLiveActivity()
@@ -99,7 +104,7 @@ public struct StartIRISVoiceIntent: AppIntent {
                 await SpeechManager.shared.startListening()
             }
         }
-        return .result(view: IRISShortcutSnippetView(statusText: "Listening...", isListening: true, recognizedText: ""))
+        return .result()
     }
 }
 
@@ -109,7 +114,7 @@ public struct StartListeningIntent: AppIntent {
     public static var description = IntentDescription("Wakes IRIS and immediately begins listening for voice commands in the Dynamic Island.")
 
     public static var isDiscoverable: Bool = true
-    public static var openAppWhenRun: Bool = true
+    public static var openAppWhenRun: Bool = false
 
     public init() {}
 
@@ -121,7 +126,9 @@ public struct StartListeningIntent: AppIntent {
         #endif
 
         // 2. Start speech recognizer / AVAudioEngine listening sequence
-        await SpeechManager.shared.startListening()
+        Task {
+            await SpeechManager.shared.startListening()
+        }
 
         return .result()
     }
@@ -134,32 +141,22 @@ public struct IRISAppShortcutsProvider: AppShortcutsProvider {
             intent: StartListeningIntent(),
             phrases: [
                 "Start \(.applicationName) Voice Agent",
-                "Start \(.applicationName)",
-                "Listen \(.applicationName)"
+                "Ask \(.applicationName)",
+                "Hey \(.applicationName)",
+                "Start \(.applicationName)"
             ],
-            shortTitle: "Start Iris Voice Agent",
+            shortTitle: "Ask IRIS",
             systemImageName: "mic.fill"
         )
         AppShortcut(
             intent: AskIRISIntent(),
             phrases: [
-                "\(.applicationName)",
-                "Ask \(.applicationName)",
                 "Tell \(.applicationName) to \(\.$command)",
                 "\(.applicationName) \(\.$command)",
                 "Ask \(.applicationName) to \(\.$command)"
             ],
-            shortTitle: "Ask IRIS",
+            shortTitle: "Ask IRIS Command",
             systemImageName: "sparkles"
-        )
-        AppShortcut(
-            intent: StartIRISVoiceIntent(),
-            phrases: [
-                "Wake \(.applicationName)",
-                "Open \(.applicationName) Voice"
-            ],
-            shortTitle: "Wake IRIS Voice",
-            systemImageName: "mic.fill"
         )
     }
 }

@@ -222,8 +222,8 @@ public struct GlassTabBar<Value: Hashable>: View {
                         .lineLimit(1)
                 }
             }
-            .foregroundStyle(isSelected ? AnyShapeStyle(Color.white) : AnyShapeStyle(Color.secondary))
-            .scaleEffect(isSelected ? 1.05 : 1.0)
+            .foregroundStyle(isSelected ? AnyShapeStyle(Color.black) : AnyShapeStyle(Color.secondary))
+            .scaleEffect(isSelected ? 1.02 : 1.0)
             .frame(maxWidth: .infinity)
             .padding(.vertical, 7)
             .background {
@@ -313,103 +313,50 @@ public struct LiquidGlassLens: View {
 
     public var body: some View {
         ZStack {
-            // 1. Soft ambient elevation shadow
+            // 1. Soft subtle ambient elevation shadow
             Capsule()
-                .fill(Color.black.opacity(0.40))
-                .blur(radius: 6)
-                .offset(y: 4)
+                .fill(Color.black.opacity(0.08))
+                .blur(radius: 4)
+                .offset(y: 2)
 
             // 2. Underlying frosted glass blur
             Capsule()
                 .fill(.ultraThinMaterial)
 
-            // 3. Dark optical depth tint
+            // 3. Crisp luminous tint
             Capsule()
-                .fill(Color.black.opacity(0.20))
+                .fill(Color.white.opacity(0.85))
 
-            // 4. Glossy specular top dome reflection
+            // 4. Subtle accent gradient shimmer
             Capsule()
                 .fill(
                     LinearGradient(
-                        stops: [
-                            .init(color: .white.opacity(0.40), location: 0.0),
-                            .init(color: .white.opacity(0.10), location: 0.35),
-                            .init(color: .clear, location: 0.65)
+                        colors: [
+                            Color(red: 0.60, green: 0.80, blue: 1.00).opacity(0.25),
+                            Color(red: 0.85, green: 0.70, blue: 1.00).opacity(0.20)
                         ],
-                        startPoint: .top,
-                        endPoint: .bottom
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
                     )
                 )
 
-            // 5. Chromatic dispersion - Top edge rainbow caustics (cyan -> violet -> specular white -> teal)
-            Capsule()
-                .strokeBorder(
-                    LinearGradient(
-                        stops: [
-                            .init(color: Color(red: 0.1, green: 0.8, blue: 1.0).opacity(0.95), location: 0.15),
-                            .init(color: Color(red: 0.8, green: 0.3, blue: 1.0).opacity(0.85), location: 0.38),
-                            .init(color: Color.white.opacity(0.98), location: 0.50),
-                            .init(color: Color(red: 0.2, green: 0.9, blue: 0.7).opacity(0.85), location: 0.62),
-                            .init(color: Color(red: 0.4, green: 0.6, blue: 1.0).opacity(0.95), location: 0.85)
-                        ],
-                        startPoint: .leading,
-                        endPoint: .trailing
-                    ),
-                    lineWidth: 1.5
-                )
-                .mask {
-                    VStack {
-                        Rectangle()
-                            .fill(LinearGradient(colors: [.black, .clear], startPoint: .top, endPoint: .bottom))
-                            .frame(height: 18)
-                        Spacer()
-                    }
-                }
-
-            // 6. Chromatic dispersion - Bottom edge rainbow caustics (amber -> orange -> magenta -> teal)
-            Capsule()
-                .strokeBorder(
-                    LinearGradient(
-                        stops: [
-                            .init(color: Color(red: 1.0, green: 0.55, blue: 0.1).opacity(0.9), location: 0.18),
-                            .init(color: Color(red: 1.0, green: 0.2, blue: 0.5).opacity(0.8), location: 0.40),
-                            .init(color: Color.white.opacity(0.95), location: 0.50),
-                            .init(color: Color(red: 0.1, green: 0.9, blue: 0.8).opacity(0.85), location: 0.62),
-                            .init(color: Color(red: 0.9, green: 0.8, blue: 0.1).opacity(0.9), location: 0.82)
-                        ],
-                        startPoint: .leading,
-                        endPoint: .trailing
-                    ),
-                    lineWidth: 1.5
-                )
-                .mask {
-                    VStack {
-                        Spacer()
-                        Rectangle()
-                            .fill(LinearGradient(colors: [.clear, .black], startPoint: .top, endPoint: .bottom))
-                            .frame(height: 18)
-                    }
-                }
-
-            // 7. Full perimeter razor-thin specular outline
+            // 5. Razor-thin specular outline
             Capsule()
                 .strokeBorder(
                     LinearGradient(
                         colors: [
-                            .white.opacity(0.7),
-                            .white.opacity(0.12),
-                            .white.opacity(0.4)
+                            .white.opacity(0.95),
+                            .white.opacity(0.40),
+                            Color(red: 0.70, green: 0.80, blue: 1.00).opacity(0.50)
                         ],
                         startPoint: .top,
                         endPoint: .bottom
                     ),
-                    lineWidth: 0.75
+                    lineWidth: 1.0
                 )
         }
-        .padding(.vertical, -8)
-        .padding(.horizontal, -3)
-        .shadow(color: .black.opacity(0.40), radius: 8, x: 0, y: 4)
-        .shadow(color: Color(red: 0.1, green: 0.8, blue: 1.0).opacity(0.20), radius: 5, x: 0, y: -2)
-        .shadow(color: Color(red: 1.0, green: 0.5, blue: 0.1).opacity(0.18), radius: 5, x: 0, y: 2)
+        .padding(.vertical, 2)
+        .padding(.horizontal, 2)
+        .shadow(color: Color.black.opacity(0.06), radius: 6, x: 0, y: 3)
     }
 }

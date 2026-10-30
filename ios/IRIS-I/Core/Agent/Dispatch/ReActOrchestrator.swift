@@ -196,7 +196,43 @@ public actor ReActOrchestrator {
 
         let routingDuration = (CFAbsoluteTimeGetCurrent() - totalStartTime) * 1000.0
 
-        // 2. Tier 2: Local Model ReAct Loop
+        // 2. Tier 2: Local Model ReAct Loop Preflight
+        let isModelLoaded = await runner.isModelLoaded
+        if !isModelLoaded {
+            let baseline = ModelCatalog.shared.baseline3B
+            let isInstalled = ModelStorageManager.shared.isModelInstalled(baseline)
+            if isInstalled {
+                progressStream?("Initializing neural brain context...")
+                do {
+                    try await runner.loadModel(manifest: baseline, contextSize: 2048, forceMockEngine: false)
+                } catch {
+                    let msg = "Could not activate local neural model: \(error.localizedDescription)"
+                    return OrchestratorResponse(
+                        textResponse: msg,
+                        executedTools: [],
+                        requiresConfirmation: false,
+                        pendingConfirmationTicket: nil,
+                        routingDurationMs: routingDuration,
+                        totalDurationMs: (CFAbsoluteTimeGetCurrent() - totalStartTime) * 1000.0,
+                        stepCount: 1,
+                        executionRecord: nil
+                    )
+                }
+            } else {
+                let msg = "The on-device neural brain (Qwen 2.5 3B) is not installed yet. You can download and activate it in Settings, or ask me to open apps like YouTube, Music, or Camera."
+                return OrchestratorResponse(
+                    textResponse: msg,
+                    executedTools: [],
+                    requiresConfirmation: false,
+                    pendingConfirmationTicket: nil,
+                    routingDurationMs: routingDuration,
+                    totalDurationMs: (CFAbsoluteTimeGetCurrent() - totalStartTime) * 1000.0,
+                    stepCount: 1,
+                    executionRecord: nil
+                )
+            }
+        }
+
         var conversationMessages: [ChatMessage] = sessionHistory
         conversationMessages.append(ChatMessage(role: "user", content: userPrompt))
 

@@ -27,6 +27,8 @@ public actor ModelDownloadManager: NSObject, URLSessionDownloadDelegate {
     private var currentSpeedMBs: Double = 0.0
 
     private var progressContinuation: AsyncStream<DownloadSnapshot>.Continuation?
+    nonisolated(unsafe) private var targetFilename: String?
+    nonisolated(unsafe) private var targetManifest: ModelManifest?
 
     private lazy var session: URLSession = {
         let config = URLSessionConfiguration.default
@@ -42,6 +44,8 @@ public actor ModelDownloadManager: NSObject, URLSessionDownloadDelegate {
         cancelDownload()
 
         self.activeManifest = manifest
+        self.targetManifest = manifest
+        self.targetFilename = manifest.filename
         self.startTime = Date()
         self.lastSpeedCheckTime = Date()
         self.lastBytesWritten = 0
@@ -75,6 +79,8 @@ public actor ModelDownloadManager: NSObject, URLSessionDownloadDelegate {
         activeTask?.cancel()
         activeTask = nil
         resumeData = nil
+        targetFilename = nil
+        targetManifest = nil
         progressContinuation?.finish()
         progressContinuation = nil
     }
@@ -101,8 +107,25 @@ public actor ModelDownloadManager: NSObject, URLSessionDownloadDelegate {
         downloadTask: URLSessionDownloadTask,
         didFinishDownloadingTo location: URL
     ) {
+        // Critical iOS Requirement: URLSession deletes `location` the moment this delegate method returns.
+        // We MUST move or copy the file synchronously to permanent storage before returning!
+        let storage = ModelStorageManager.shared
+        guard let filename = self.targetFilename else {
+            return
+        }
+        let destURL = storage.fileURL(for: filename)
+        do {
+            try FileManager.default.createDirectory(at: destURL.deletingLastPathComponent(), withIntermediateDirectories: true)
+            if FileManager.default.fileExists(atPath: destURL.path) {
+                try FileManager.default.removeItem(at: destURL)
+            }
+            try FileManager.default.moveItem(at: location, to: destURL)
+        } catch {
+            print("ModelDownloadManager: Failed to move temp file synchronously: \(error)")
+        }
+
         Task {
-            await self.handleDownloadCompletion(tempLocation: location)
+            await self.handleDownloadCompletion(destURL: destURL)
         }
     }
 
@@ -142,19 +165,11 @@ public actor ModelDownloadManager: NSObject, URLSessionDownloadDelegate {
         progressContinuation?.yield(snapshot)
     }
 
-    private func handleDownloadCompletion(tempLocation: URL) async {
+    private func handleDownloadCompletion(destURL: URL) async {
         guard let manifest = activeManifest else { return }
-        let storage = ModelStorageManager.shared
-        let destURL = storage.fileURL(for: manifest.filename)
 
         do {
-            try FileManager.default.createDirectory(at: destURL.deletingLastPathComponent(), withIntermediateDirectories: true)
-            if FileManager.default.fileExists(atPath: destURL.path) {
-                try FileManager.default.removeItem(at: destURL)
-            }
-            try FileManager.default.moveItem(at: tempLocation, to: destURL)
-
-            // Validate integrity
+            // Validate integrity on the safely moved permanent file
             _ = try await ModelIntegrityValidator.shared.validate(
                 fileURL: destURL,
                 expectedSHA256: manifest.expectedSHA256

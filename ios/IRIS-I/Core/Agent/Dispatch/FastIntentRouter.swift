@@ -80,6 +80,51 @@ public struct FastIntentRouter: Sendable {
         "hardware telemetry"
     ]
 
+    private static let validGreetingQueries: Set<String> = [
+        "hello", "hi", "hey", "hey iris", "iris",
+        "good morning", "good afternoon", "good evening",
+        "how are you", "how are you doing", "what's up", "whats up"
+    ]
+
+    private static let validCapabilitiesQueries: Set<String> = [
+        "who are you", "what are you", "what can you do", "help",
+        "what are your capabilities", "what can iris do", "what is iris",
+        "capabilities", "how do you work"
+    ]
+
+    private static let validDirectMediaQueries: Set<String> = [
+        "play music", "play some music", "play songs", "play a song",
+        "music", "apple music", "open music", "open apple music"
+    ]
+
+    private static let validDirectCameraQueries: Set<String> = [
+        "take a photo", "take photo", "take a picture", "take picture",
+        "camera", "open camera", "take photos"
+    ]
+
+    private static let validSingleAppNames: [String: String] = [
+        "youtube": "YouTube",
+        "spotify": "Spotify",
+        "settings": "Settings",
+        "camera": "Camera",
+        "photos": "Photos",
+        "maps": "Maps",
+        "messages": "Messages",
+        "notes": "Notes",
+        "calendar": "Calendar",
+        "reminders": "Reminders",
+        "whatsapp": "WhatsApp",
+        "telegram": "Telegram",
+        "facetime": "FaceTime",
+        "chatgpt": "ChatGPT",
+        "twitter": "Twitter",
+        "instagram": "Instagram",
+        "tiktok": "TikTok",
+        "slack": "Slack",
+        "discord": "Discord",
+        "reddit": "Reddit"
+    ]
+
     private static let wakeAndCourtesyPrefixes: [String] = [
         "hey iris, ", "hey iris ", "iris, ", "iris ",
         "please tell me ", "tell me ", "can you tell me ", "could you tell me ",
@@ -168,7 +213,57 @@ public struct FastIntentRouter: Sendable {
             )
         }
 
-        // 5. Generalized app opening patterns
+        // 5. Greeting queries
+        if Self.validGreetingQueries.contains(clean) {
+            let duration = (CFAbsoluteTimeGetCurrent() - startTime) * 1000.0
+            return .matched(
+                toolName: "SystemInfoTool",
+                arguments: ["action": "greeting"],
+                routingDurationMs: duration
+            )
+        }
+
+        // 6. Capabilities queries
+        if Self.validCapabilitiesQueries.contains(clean) {
+            let duration = (CFAbsoluteTimeGetCurrent() - startTime) * 1000.0
+            return .matched(
+                toolName: "SystemInfoTool",
+                arguments: ["action": "capabilities"],
+                routingDurationMs: duration
+            )
+        }
+
+        // 7. Direct media / music phrases
+        if Self.validDirectMediaQueries.contains(clean) {
+            let duration = (CFAbsoluteTimeGetCurrent() - startTime) * 1000.0
+            return .matched(
+                toolName: "AppOpenerTool",
+                arguments: ["app_name": "Music"],
+                routingDurationMs: duration
+            )
+        }
+
+        // 8. Direct camera / photo phrases
+        if Self.validDirectCameraQueries.contains(clean) {
+            let duration = (CFAbsoluteTimeGetCurrent() - startTime) * 1000.0
+            return .matched(
+                toolName: "AppOpenerTool",
+                arguments: ["app_name": "Camera"],
+                routingDurationMs: duration
+            )
+        }
+
+        // 9. Direct single-app names
+        if let canonicalName = Self.validSingleAppNames[clean] {
+            let duration = (CFAbsoluteTimeGetCurrent() - startTime) * 1000.0
+            return .matched(
+                toolName: "AppOpenerTool",
+                arguments: ["app_name": canonicalName],
+                routingDurationMs: duration
+            )
+        }
+
+        // 10. Generalized app opening patterns
         var appCandidate = ""
         for prefix in Self.launchVerbPrefixes {
             if clean.hasPrefix(prefix) {

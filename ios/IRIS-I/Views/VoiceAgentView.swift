@@ -56,9 +56,30 @@ public struct VoiceAgentView: View {
     public var body: some View {
         NavigationStack {
             ZStack {
-                // Background Clean Pearlescent Canvas
-                Color(red: 0.96, green: 0.96, blue: 0.98)
-                    .ignoresSafeArea()
+                // Luminous Light Glass Ambiance
+                LinearGradient(
+                    colors: [
+                        Color(red: 0.97, green: 0.98, blue: 1.00), // Ice White
+                        Color(red: 0.94, green: 0.96, blue: 0.99), // Soft Ice-Blue
+                        Color(red: 0.95, green: 0.94, blue: 0.98)  // Subtle Lavender Mist
+                    ],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
+                .ignoresSafeArea()
+
+                // Soft Ambient Depth Backlights
+                Circle()
+                    .fill(Color(red: 0.65, green: 0.82, blue: 1.00).opacity(0.18))
+                    .frame(width: 320, height: 320)
+                    .blur(radius: 60)
+                    .offset(x: -80, y: -120)
+
+                Circle()
+                    .fill(Color(red: 0.85, green: 0.72, blue: 1.00).opacity(0.15))
+                    .frame(width: 300, height: 300)
+                    .blur(radius: 50)
+                    .offset(x: 90, y: 140)
 
                 VStack(spacing: 0) {
                     // Top Navigation Header
@@ -167,7 +188,9 @@ public struct VoiceAgentView: View {
                 size: 260,
                 audioLevel: speechManager.audioLevel,
                 isListening: false,
-                isThinking: false
+                isThinking: false,
+                isResponding: false,
+                isError: speechManager.errorMessage != nil
             ) {
                 toggleListening()
             }
@@ -219,7 +242,9 @@ public struct VoiceAgentView: View {
                 size: 210,
                 audioLevel: speechManager.audioLevel,
                 isListening: speechManager.state == .listening,
-                isThinking: speechManager.state == .processing
+                isThinking: speechManager.state == .processing,
+                isResponding: speechManager.state == .speaking,
+                isError: speechManager.errorMessage != nil
             ) {
                 toggleListening()
             }

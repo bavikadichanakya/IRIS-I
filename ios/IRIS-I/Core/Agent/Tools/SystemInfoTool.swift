@@ -127,10 +127,36 @@ public struct SystemInfoTool: IRISAgentTool {
                 durationMs: duration
             )
 
+        case "greeting":
+            let duration = (CFAbsoluteTimeGetCurrent() - startTime) * 1000.0
+            let msg = "Hello! I'm IRIS, your on-device personal assistant. How can I help you today?"
+            return AgentExecutionResult.success(
+                tool: name,
+                verified: true,
+                payload: [
+                    "greeting": msg,
+                    "message": msg
+                ],
+                durationMs: duration
+            )
+
+        case "capabilities":
+            let duration = (CFAbsoluteTimeGetCurrent() - startTime) * 1000.0
+            let msg = "I can open apps like YouTube, Music, and Camera, check time and battery, search the web, manage calendar events, and run local reasoning with on-device AI."
+            return AgentExecutionResult.success(
+                tool: name,
+                verified: true,
+                payload: [
+                    "capabilities": msg,
+                    "message": msg
+                ],
+                durationMs: duration
+            )
+
         default:
             return AgentExecutionResult.failure(
                 tool: name,
-                error: "Unknown action '\(action)'. Supported actions: time, date, battery, telemetry.",
+                error: "Unknown action '\(action)'. Supported actions: time, date, battery, telemetry, greeting, capabilities.",
                 durationMs: (CFAbsoluteTimeGetCurrent() - startTime) * 1000.0
             )
         }
