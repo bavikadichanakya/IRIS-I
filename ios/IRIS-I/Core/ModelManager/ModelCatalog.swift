@@ -20,10 +20,10 @@ public final class ModelCatalog: Sendable {
         quantization: "Q4_K_M",
         profileTier: .baseline,
         filename: "qwen2.5-3b-instruct-q4_k_m.gguf",
-        estimatedSizeBytes: 1_950_000_000, // ~1.95 GB
+        estimatedSizeBytes: 1_997_879_712, // ~1.99 GB
         defaultContextSize: 2048,
         maxContextSize: 4096,
-        expectedSHA256: nil, // Must be supplied by verified artifact manifest or import
+        expectedSHA256: "670d82d0fbee6289b661eb323612c65bd2e97ec8c65cdbd9131aa44d30e9816a", // Official HuggingFace Qwen LFS SHA-256
         verifiedDownloadURL: URL(string: "https://huggingface.co/Qwen/Qwen2.5-3B-Instruct-GGUF/resolve/main/qwen2.5-3b-instruct-q4_k_m.gguf"),
         summary: "Primary supported local model for iPhone 17 (A19). Qwen 2.5 architecture, ChatML template, fast reasoning, low memory pressure, reliable structured tool calling."
     )
