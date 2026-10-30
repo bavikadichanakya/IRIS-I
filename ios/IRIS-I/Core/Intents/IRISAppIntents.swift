@@ -72,11 +72,30 @@ public struct OpenAppWithIRISIntent: AppIntent {
 }
 
 @available(iOS 16.0, macOS 13.0, watchOS 9.0, tvOS 16.0, *)
+public struct StartIRISVoiceIntent: AppIntent {
+    public static var title: LocalizedStringResource = "Wake IRIS Voice"
+    public static var description = IntentDescription("Wakes IRIS and immediately begins listening for voice commands with the Pearl Orb interface.")
+    public static var openAppWhenRun: Bool = true
+
+    public init() {}
+
+    public func perform() async throws -> some IntentResult {
+        await MainActor.run {
+            Task {
+                await SpeechManager.shared.startListening()
+            }
+        }
+        return .result()
+    }
+}
+
+@available(iOS 16.0, macOS 13.0, watchOS 9.0, tvOS 16.0, *)
 public struct IRISAppShortcutsProvider: AppShortcutsProvider {
     public static var appShortcuts: [AppShortcut] {
         AppShortcut(
             intent: AskIRISIntent(),
             phrases: [
+                "\(.applicationName)",
                 "Ask \(.applicationName)",
                 "Tell \(.applicationName) to \(\.$command)",
                 "\(.applicationName) \(\.$command)",
@@ -84,6 +103,15 @@ public struct IRISAppShortcutsProvider: AppShortcutsProvider {
             ],
             shortTitle: "Ask IRIS",
             systemImageName: "sparkles"
+        )
+        AppShortcut(
+            intent: StartIRISVoiceIntent(),
+            phrases: [
+                "Wake \(.applicationName)",
+                "Open \(.applicationName) Voice"
+            ],
+            shortTitle: "Wake IRIS Voice",
+            systemImageName: "mic.fill"
         )
     }
 }

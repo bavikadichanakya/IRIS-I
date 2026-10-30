@@ -119,3 +119,4 @@ public struct DynamicIslandPillView: View {
         return min(1.0, Float(base) * 0.3 + reactive * 0.7)
     }
 }
+
