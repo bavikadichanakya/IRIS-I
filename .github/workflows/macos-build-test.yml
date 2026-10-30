@@ -98,6 +98,8 @@ jobs:
           mkdir -p build/Device/IRIS-I.app/PlugIns
           cp -R build/Device/IRISWidgets.appex build/Device/IRIS-I.app/PlugIns/
           test -f "build/Device/IRIS-I.app/PlugIns/IRISWidgets.appex/IRISWidgets" || { echo "ERROR: IRISWidgets.appex not embedded in IRIS-I.app"; exit 1; }
+          cp IRIS-I/Resources/AppIcon*.png build/Device/IRIS-I.app/
+          test -f "build/Device/IRIS-I.app/AppIcon60x60@3x.png" || { echo "ERROR: AppIcon not embedded in IRIS-I.app"; exit 1; }
 
       - name: Upload IRIS-I iOS Device App
         uses: actions/upload-artifact@v4
