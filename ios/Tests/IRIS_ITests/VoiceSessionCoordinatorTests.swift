@@ -134,7 +134,7 @@ final class VoiceSessionCoordinatorTests: XCTestCase {
         switch result {
         case .matched(let toolName, let arguments, let duration):
             XCTAssertEqual(toolName, "AppOpenerTool")
-            XCTAssertEqual(arguments["app_name"] as? String, "YouTube")
+            XCTAssertEqual(arguments["app_name"] as? String, "youtube")
             XCTAssertLessThan(duration, 10.0)
         case .unmatched:
             XCTFail("Expected 'open YouTube' to match AppOpenerTool")
