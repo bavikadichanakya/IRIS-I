@@ -70,5 +70,15 @@ final class PersonalMemoryStoreTests: XCTestCase {
         }
         wait(for: [exp], timeout: 2.0)
     }
+
+    func testFreshDatabaseStartsEmpty() {
+        let tempURL = FileManager.default.temporaryDirectory.appendingPathComponent("iris_fresh_test_\(UUID().uuidString).sqlite3")
+        defer { try? FileManager.default.removeItem(at: tempURL) }
+
+        let freshStore = PersonalMemoryStore(customPath: tempURL)
+        XCTAssertTrue(freshStore.allNotes().isEmpty, "Fresh database must start with zero notes.")
+        XCTAssertTrue(freshStore.allPreferences().isEmpty, "Fresh database must start with zero preferences.")
+        XCTAssertTrue(freshStore.recentInteractions(limit: 10).isEmpty, "Fresh database must start with zero conversation records.")
+    }
 }
 

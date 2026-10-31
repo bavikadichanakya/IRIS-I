@@ -3,7 +3,7 @@
 //  IRIS_ITests
 //
 //  Verifies end-to-end ReAct dispatching, fast-path routing, direct ticket execution,
-//  and cancellation.
+//  cancellation, and regression tests for authoritative execution record aggregation.
 //
 
 import XCTest
@@ -77,5 +77,128 @@ final class ReActOrchestratorTests: XCTestCase {
 
         let response = await orchestrator.process(userPrompt: "Write a 500 page book about galaxies and astrophysics.")
         XCTAssertNotNil(response.textResponse)
+    }
+
+    // MARK: - Regression Tests for Execution Record Aggregation
+
+    func testConversationalResponseWithoutToolCalls() {
+        let record = ReActOrchestrator.aggregateExecutionRecord(
+            userPrompt: "Hello IRIS, how are you?",
+            executedToolNames: [],
+            executedToolSnapshots: [],
+            finalAssistantText: "I am functioning normally, sir.",
+            totalDuration: 125.0
+        )
+
+        XCTAssertNil(record.selectedTool, "Conversational response must have selectedTool = nil")
+        XCTAssertNil(record.toolOutcome, "Conversational response must not claim a tool outcome")
+        XCTAssertEqual(record.executionState, .notStarted, "Conversational response must not claim tool execution completed")
+        XCTAssertFalse(record.isVerified, "Conversational response must not claim verified tool execution")
+        XCTAssertEqual(record.resultPayload["response"], "I am functioning normally, sir.")
+    }
+
+    func testOneSuccessfulToolCallExecutionRecord() {
+        let successResult = AgentExecutionResult(
+            success: true,
+            toolName: "SystemInfoTool",
+            outcome: .completedVerified,
+            outputPayload: ["time": "18:30:00"],
+            durationMs: 5.0,
+            verified: true
+        )
+
+        let record = ReActOrchestrator.aggregateExecutionRecord(
+            userPrompt: "What is the time?",
+            executedToolNames: ["SystemInfoTool"],
+            executedToolSnapshots: [(tool: "SystemInfoTool", arguments: ["action": "time"], result: successResult)],
+            finalAssistantText: "The time is 6:30 PM.",
+            totalDuration: 42.0
+        )
+
+        XCTAssertEqual(record.selectedTool, "SystemInfoTool")
+        XCTAssertEqual(record.executionState, .completedVerified)
+        XCTAssertEqual(record.toolOutcome, .completedVerified)
+        XCTAssertTrue(record.isVerified)
+        XCTAssertEqual(record.resultPayload["time"], "18:30:00")
+    }
+
+    func testOneFailedToolCallExecutionRecord() {
+        let failedResult = AgentExecutionResult.failure(
+            tool: "WeatherTool",
+            error: "Service unavailable",
+            outcome: .failed
+        )
+
+        let record = ReActOrchestrator.aggregateExecutionRecord(
+            userPrompt: "Check weather",
+            executedToolNames: ["WeatherTool"],
+            executedToolSnapshots: [(tool: "WeatherTool", arguments: ["city": "Cupertino"], result: failedResult)],
+            finalAssistantText: "Could not retrieve weather.",
+            totalDuration: 55.0
+        )
+
+        XCTAssertEqual(record.selectedTool, "WeatherTool")
+        XCTAssertEqual(record.executionState, .failed)
+        XCTAssertEqual(record.toolOutcome, .failed)
+        XCTAssertFalse(record.isVerified)
+        XCTAssertEqual(record.errorDetails, "Service unavailable")
+    }
+
+    func testMultipleToolsWithMixedOutcomesPrioritizesFailure() {
+        let successResult = AgentExecutionResult(
+            success: true,
+            toolName: "SystemInfoTool",
+            outcome: .completedVerified,
+            outputPayload: ["battery": "80%"],
+            durationMs: 4.0,
+            verified: true
+        )
+        let failedResult = AgentExecutionResult.failure(
+            tool: "MessagingTool",
+            error: "Missing contact",
+            outcome: .failed
+        )
+
+        let snapshots: [(tool: String, arguments: [String: Any], result: AgentExecutionResult)] = [
+            (tool: "SystemInfoTool", arguments: ["action": "battery"], result: successResult),
+            (tool: "MessagingTool", arguments: [:], result: failedResult)
+        ]
+
+        let record = ReActOrchestrator.aggregateExecutionRecord(
+            userPrompt: "Check battery and text it to Bob",
+            executedToolNames: ["SystemInfoTool", "MessagingTool"],
+            executedToolSnapshots: snapshots,
+            finalAssistantText: "Battery checked but could not send text.",
+            totalDuration: 88.0
+        )
+
+        XCTAssertEqual(record.selectedTool, "MessagingTool")
+        XCTAssertEqual(record.executionState, .failed, "Mixed outcome with a failure must not report false success")
+        XCTAssertEqual(record.toolOutcome, .failed)
+        XCTAssertFalse(record.isVerified)
+    }
+
+    func testExternalAppHandoffExecutionRecord() {
+        let handoffResult = AgentExecutionResult(
+            success: true,
+            toolName: "AppOpenerTool",
+            outcome: .completedUnverified,
+            outputPayload: ["opened": "YouTube"],
+            durationMs: 12.0,
+            verified: false
+        )
+
+        let record = ReActOrchestrator.aggregateExecutionRecord(
+            userPrompt: "Open YouTube",
+            executedToolNames: ["AppOpenerTool"],
+            executedToolSnapshots: [(tool: "AppOpenerTool", arguments: ["app_name": "youtube"], result: handoffResult)],
+            finalAssistantText: "Launching YouTube.",
+            totalDuration: 25.0
+        )
+
+        XCTAssertEqual(record.selectedTool, "AppOpenerTool")
+        XCTAssertEqual(record.executionState, .completedUnverified)
+        XCTAssertEqual(record.toolOutcome, .completedUnverified)
+        XCTAssertFalse(record.isVerified, "External app handoff must remain unverified")
     }
 }

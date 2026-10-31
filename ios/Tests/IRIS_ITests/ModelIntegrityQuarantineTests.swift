@@ -46,6 +46,9 @@ final class ModelIntegrityQuarantineTests: XCTestCase {
         // Verify allProfiles contains specialized0_8B and baseline3B
         XCTAssertTrue(catalog.allProfiles.contains { $0.id == spec08B.id })
         XCTAssertTrue(catalog.allProfiles.contains { $0.id == catalog.baseline3B.id })
+        XCTAssertFalse(spec08B.isConfigured, "Specialized 0.8B must remain unconfigured until verified checkpoint is released.")
+        XCTAssertNil(spec08B.verifiedDownloadURL, "Must not point to an unrelated download URL.")
+        XCTAssertTrue(catalog.baseline3B.isConfigured, "Baseline 3B must have verified SHA256 and verified download URL.")
     }
 }
 

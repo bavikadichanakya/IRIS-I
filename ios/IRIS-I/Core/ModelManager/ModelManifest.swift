@@ -52,6 +52,10 @@ public struct ModelManifest: Identifiable, Codable, Sendable, Hashable {
         profileTier == .experimental
     }
 
+    public var isConfigured: Bool {
+        verifiedDownloadURL != nil && expectedSHA256 != nil
+    }
+
     public var requiredDiskBytes: Int64 {
         estimatedSizeBytes
     }

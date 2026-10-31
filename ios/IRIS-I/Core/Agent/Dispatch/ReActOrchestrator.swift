@@ -457,131 +457,13 @@ public actor ReActOrchestrator {
         let totalDuration = (CFAbsoluteTimeGetCurrent() - totalStartTime) * 1000.0
 
         // Derive authoritative ExecutionRecord reflecting the REAL tool outcomes
-        let loopRecord: ExecutionRecord
-        if executedToolSnapshots.isEmpty {
-            loopRecord = ExecutionRecord(
-                userRequest: userPrompt,
-                interpretedIntent: "Conversational reasoning",
-                selectedTool: nil,
-                validatedArguments: [:],
-                permissionResult: "authorized",
-                executionState: .completedVerified,
-                toolOutcome: .completedVerified,
-                resultPayload: ["response": finalAssistantText],
-                errorDetails: nil,
-                isVerified: false,
-                durationMs: totalDuration,
-                requiredUserAction: nil,
-                timestamp: Date()
-            )
-        } else if let failedSnapshot = executedToolSnapshots.first(where: { $0.result.outcome == .failed }) {
-            var strArgs: [String: String] = [:]
-            for (k, v) in failedSnapshot.arguments { strArgs[k] = "\(v)" }
-            var strPayload: [String: String] = [:]
-            for (k, v) in failedSnapshot.result.outputPayload { strPayload[k] = "\(v)" }
-
-            loopRecord = ExecutionRecord(
-                userRequest: userPrompt,
-                interpretedIntent: "Tool execution failed: \(failedSnapshot.tool)",
-                selectedTool: failedSnapshot.tool,
-                validatedArguments: strArgs,
-                permissionResult: "authorized",
-                executionState: .failed,
-                toolOutcome: .failed,
-                resultPayload: strPayload,
-                errorDetails: failedSnapshot.result.error,
-                isVerified: false,
-                durationMs: totalDuration,
-                requiredUserAction: "Check tool parameters and retry",
-                timestamp: Date()
-            )
-        } else if let deniedSnapshot = executedToolSnapshots.first(where: { $0.result.outcome == .deniedPolicy }) {
-            var strArgs: [String: String] = [:]
-            for (k, v) in deniedSnapshot.arguments { strArgs[k] = "\(v)" }
-            var strPayload: [String: String] = [:]
-            for (k, v) in deniedSnapshot.result.outputPayload { strPayload[k] = "\(v)" }
-
-            loopRecord = ExecutionRecord(
-                userRequest: userPrompt,
-                interpretedIntent: "Tool denied by security policy: \(deniedSnapshot.tool)",
-                selectedTool: deniedSnapshot.tool,
-                validatedArguments: strArgs,
-                permissionResult: "denied",
-                executionState: .failed,
-                toolOutcome: .deniedPolicy,
-                resultPayload: strPayload,
-                errorDetails: deniedSnapshot.result.error,
-                isVerified: false,
-                durationMs: totalDuration,
-                requiredUserAction: "Enable necessary system permissions in Settings",
-                timestamp: Date()
-            )
-        } else if let unsuppSnapshot = executedToolSnapshots.first(where: { $0.result.outcome == .unsupported }) {
-            var strArgs: [String: String] = [:]
-            for (k, v) in unsuppSnapshot.arguments { strArgs[k] = "\(v)" }
-            var strPayload: [String: String] = [:]
-            for (k, v) in unsuppSnapshot.result.outputPayload { strPayload[k] = "\(v)" }
-
-            loopRecord = ExecutionRecord(
-                userRequest: userPrompt,
-                interpretedIntent: "Unsupported tool operation: \(unsuppSnapshot.tool)",
-                selectedTool: unsuppSnapshot.tool,
-                validatedArguments: strArgs,
-                permissionResult: "unsupported",
-                executionState: .unsupported,
-                toolOutcome: .unsupported,
-                resultPayload: strPayload,
-                errorDetails: unsuppSnapshot.result.error,
-                isVerified: false,
-                durationMs: totalDuration,
-                requiredUserAction: nil,
-                timestamp: Date()
-            )
-        } else if executedToolSnapshots.allSatisfy({ $0.result.verified && $0.result.outcome == .completedVerified }) {
-            let lastSnapshot = executedToolSnapshots.last!
-            var strArgs: [String: String] = [:]
-            for (k, v) in lastSnapshot.arguments { strArgs[k] = "\(v)" }
-            var strPayload: [String: String] = [:]
-            for (k, v) in lastSnapshot.result.outputPayload { strPayload[k] = "\(v)" }
-
-            loopRecord = ExecutionRecord(
-                userRequest: userPrompt,
-                interpretedIntent: "Verified multi-step execution (\(executedToolNames.joined(separator: ", ")))",
-                selectedTool: lastSnapshot.tool,
-                validatedArguments: strArgs,
-                permissionResult: "authorized",
-                executionState: .completedVerified,
-                toolOutcome: .completedVerified,
-                resultPayload: strPayload,
-                errorDetails: nil,
-                isVerified: true,
-                durationMs: totalDuration,
-                requiredUserAction: nil,
-                timestamp: Date()
-            )
-        } else {
-            let lastSnapshot = executedToolSnapshots.last!
-            var strArgs: [String: String] = [:]
-            for (k, v) in lastSnapshot.arguments { strArgs[k] = "\(v)" }
-            var strPayload: [String: String] = [:]
-            for (k, v) in lastSnapshot.result.outputPayload { strPayload[k] = "\(v)" }
-
-            loopRecord = ExecutionRecord(
-                userRequest: userPrompt,
-                interpretedIntent: "Handoff execution (\(executedToolNames.joined(separator: ", ")))",
-                selectedTool: lastSnapshot.tool,
-                validatedArguments: strArgs,
-                permissionResult: "authorized",
-                executionState: .completedUnverified,
-                toolOutcome: .completedUnverified,
-                resultPayload: strPayload,
-                errorDetails: nil,
-                isVerified: false,
-                durationMs: totalDuration,
-                requiredUserAction: nil,
-                timestamp: Date()
-            )
-        }
+        let loopRecord = ReActOrchestrator.aggregateExecutionRecord(
+            userPrompt: userPrompt,
+            executedToolNames: executedToolNames,
+            executedToolSnapshots: executedToolSnapshots,
+            finalAssistantText: finalAssistantText,
+            totalDuration: totalDuration
+        )
 
         let responseSnapshot = finalAssistantText
         await MainActor.run {
@@ -739,5 +621,155 @@ public actor ReActOrchestrator {
             stepCount: 1,
             executionRecord: confirmedRecord
         )
+    }
+
+    // MARK: - Authoritative Execution Record Aggregation
+
+    public static func aggregateExecutionRecord(
+        userPrompt: String,
+        executedToolNames: [String],
+        executedToolSnapshots: [(tool: String, arguments: [String: Any], result: AgentExecutionResult)],
+        finalAssistantText: String,
+        totalDuration: Double
+    ) -> ExecutionRecord {
+        if executedToolSnapshots.isEmpty {
+            return ExecutionRecord(
+                userRequest: userPrompt,
+                interpretedIntent: "Conversational response",
+                selectedTool: nil,
+                validatedArguments: [:],
+                permissionResult: "authorized",
+                executionState: .notStarted,
+                toolOutcome: nil,
+                resultPayload: ["response": finalAssistantText],
+                errorDetails: nil,
+                isVerified: false,
+                durationMs: totalDuration,
+                requiredUserAction: nil,
+                timestamp: Date()
+            )
+        } else if let failedSnapshot = executedToolSnapshots.first(where: { $0.result.outcome == .failed }) {
+            var strArgs: [String: String] = [:]
+            for (k, v) in failedSnapshot.arguments { strArgs[k] = "\(v)" }
+            var strPayload: [String: String] = [:]
+            for (k, v) in failedSnapshot.result.outputPayload { strPayload[k] = "\(v)" }
+
+            return ExecutionRecord(
+                userRequest: userPrompt,
+                interpretedIntent: "Tool execution failed: \(failedSnapshot.tool)",
+                selectedTool: failedSnapshot.tool,
+                validatedArguments: strArgs,
+                permissionResult: "authorized",
+                executionState: .failed,
+                toolOutcome: .failed,
+                resultPayload: strPayload,
+                errorDetails: failedSnapshot.result.error,
+                isVerified: false,
+                durationMs: totalDuration,
+                requiredUserAction: "Check tool parameters and retry",
+                timestamp: Date()
+            )
+        } else if let deniedSnapshot = executedToolSnapshots.first(where: { $0.result.outcome == .deniedPolicy }) {
+            var strArgs: [String: String] = [:]
+            for (k, v) in deniedSnapshot.arguments { strArgs[k] = "\(v)" }
+            var strPayload: [String: String] = [:]
+            for (k, v) in deniedSnapshot.result.outputPayload { strPayload[k] = "\(v)" }
+
+            return ExecutionRecord(
+                userRequest: userPrompt,
+                interpretedIntent: "Tool denied by security policy: \(deniedSnapshot.tool)",
+                selectedTool: deniedSnapshot.tool,
+                validatedArguments: strArgs,
+                permissionResult: "denied",
+                executionState: .failed,
+                toolOutcome: .deniedPolicy,
+                resultPayload: strPayload,
+                errorDetails: deniedSnapshot.result.error,
+                isVerified: false,
+                durationMs: totalDuration,
+                requiredUserAction: "Enable necessary system permissions in Settings",
+                timestamp: Date()
+            )
+        } else if let unsuppSnapshot = executedToolSnapshots.first(where: { $0.result.outcome == .unsupported }) {
+            var strArgs: [String: String] = [:]
+            for (k, v) in unsuppSnapshot.arguments { strArgs[k] = "\(v)" }
+            var strPayload: [String: String] = [:]
+            for (k, v) in unsuppSnapshot.result.outputPayload { strPayload[k] = "\(v)" }
+
+            return ExecutionRecord(
+                userRequest: userPrompt,
+                interpretedIntent: "Unsupported tool operation: \(unsuppSnapshot.tool)",
+                selectedTool: unsuppSnapshot.tool,
+                validatedArguments: strArgs,
+                permissionResult: "unsupported",
+                executionState: .unsupported,
+                toolOutcome: .unsupported,
+                resultPayload: strPayload,
+                errorDetails: unsuppSnapshot.result.error,
+                isVerified: false,
+                durationMs: totalDuration,
+                requiredUserAction: nil,
+                timestamp: Date()
+            )
+        } else if !executedToolSnapshots.isEmpty && executedToolSnapshots.allSatisfy({ $0.result.verified && $0.result.outcome == .completedVerified }),
+                  let lastSnapshot = executedToolSnapshots.last {
+            var strArgs: [String: String] = [:]
+            for (k, v) in lastSnapshot.arguments { strArgs[k] = "\(v)" }
+            var strPayload: [String: String] = [:]
+            for (k, v) in lastSnapshot.result.outputPayload { strPayload[k] = "\(v)" }
+
+            return ExecutionRecord(
+                userRequest: userPrompt,
+                interpretedIntent: "Verified multi-step execution (\(executedToolNames.joined(separator: ", ")))",
+                selectedTool: lastSnapshot.tool,
+                validatedArguments: strArgs,
+                permissionResult: "authorized",
+                executionState: .completedVerified,
+                toolOutcome: .completedVerified,
+                resultPayload: strPayload,
+                errorDetails: nil,
+                isVerified: true,
+                durationMs: totalDuration,
+                requiredUserAction: nil,
+                timestamp: Date()
+            )
+        } else if let lastSnapshot = executedToolSnapshots.last {
+            var strArgs: [String: String] = [:]
+            for (k, v) in lastSnapshot.arguments { strArgs[k] = "\(v)" }
+            var strPayload: [String: String] = [:]
+            for (k, v) in lastSnapshot.result.outputPayload { strPayload[k] = "\(v)" }
+
+            return ExecutionRecord(
+                userRequest: userPrompt,
+                interpretedIntent: "Handoff execution (\(executedToolNames.joined(separator: ", ")))",
+                selectedTool: lastSnapshot.tool,
+                validatedArguments: strArgs,
+                permissionResult: "authorized",
+                executionState: .completedUnverified,
+                toolOutcome: .completedUnverified,
+                resultPayload: strPayload,
+                errorDetails: nil,
+                isVerified: false,
+                durationMs: totalDuration,
+                requiredUserAction: nil,
+                timestamp: Date()
+            )
+        } else {
+            return ExecutionRecord(
+                userRequest: userPrompt,
+                interpretedIntent: "Conversational response",
+                selectedTool: nil,
+                validatedArguments: [:],
+                permissionResult: "authorized",
+                executionState: .notStarted,
+                toolOutcome: nil,
+                resultPayload: ["response": finalAssistantText],
+                errorDetails: nil,
+                isVerified: false,
+                durationMs: totalDuration,
+                requiredUserAction: nil,
+                timestamp: Date()
+            )
+        }
     }
 }

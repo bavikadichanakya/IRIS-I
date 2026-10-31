@@ -7,6 +7,9 @@
 //
 
 import XCTest
+#if canImport(Speech)
+import Speech
+#endif
 #if canImport(IRIS_ICore)
 @testable import IRIS_ICore
 #elseif canImport(IRIS_I)
@@ -152,5 +155,30 @@ final class VoiceSessionCoordinatorTests: XCTestCase {
         case .unmatched:
             XCTFail("Expected 'what is the time' to match SystemInfoTool")
         }
+    }
+
+    func testSpeechRecognitionOfflineRequirements() {
+        let manager = SpeechRecognitionManager.shared
+        XCTAssertTrue(manager.isStrictOnDeviceRequired, "Strict on-device speech recognition must be enforced")
+
+        #if canImport(Speech)
+        // Test unsupported recognizer throws explicit offline error
+        let unsupportedRecognizer = SFSpeechRecognizer(locale: Locale(identifier: "und"))
+        if let unsupp = unsupportedRecognizer {
+            if !unsupp.supportsOnDeviceRecognition {
+                XCTAssertThrowsError(try manager.validateOfflineCapability(for: unsupp)) { error in
+                    let nsError = error as NSError
+                    XCTAssertEqual(nsError.domain, "IRIS.Speech")
+                }
+            }
+        }
+
+        // Test nil recognizer throws unavailable error
+        XCTAssertThrowsError(try manager.validateOfflineCapability(for: nil)) { error in
+            let nsError = error as NSError
+            XCTAssertEqual(nsError.domain, "IRIS.Speech")
+            XCTAssertEqual(nsError.code, -1)
+        }
+        #endif
     }
 }

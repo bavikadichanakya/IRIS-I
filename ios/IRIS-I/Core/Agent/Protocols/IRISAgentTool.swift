@@ -54,7 +54,7 @@ public struct ExecutionRecord: Identifiable, Sendable {
     public let validatedArguments: [String: String]
     public let permissionResult: String
     public let executionState: StructuredExecutionState
-    public let toolOutcome: ToolExecutionOutcome
+    public let toolOutcome: ToolExecutionOutcome?
     public let resultPayload: [String: String]
     public let errorDetails: String?
     public let isVerified: Bool
@@ -82,7 +82,7 @@ public struct ExecutionRecord: Identifiable, Sendable {
         validatedArguments: [String: String] = [:],
         permissionResult: String = "authorized",
         executionState: StructuredExecutionState,
-        toolOutcome: ToolExecutionOutcome,
+        toolOutcome: ToolExecutionOutcome? = nil,
         resultPayload: [String: String] = [:],
         errorDetails: String? = nil,
         isVerified: Bool = false,
@@ -116,7 +116,7 @@ public struct ExecutionRecord: Identifiable, Sendable {
         validatedArguments: [String: String] = [:],
         permissionResult: String = "authorized",
         executionState: StructuredExecutionState,
-        toolOutcome: ToolExecutionOutcome,
+        toolOutcome: ToolExecutionOutcome? = nil,
         resultPayload: String? = nil,
         errorDetails: String? = nil,
         isVerified: Bool = false,

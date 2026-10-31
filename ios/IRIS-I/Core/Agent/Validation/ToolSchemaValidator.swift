@@ -143,9 +143,6 @@ public struct ToolSchemaValidator: Sendable {
             case "string":
                 if let str = value as? String {
                     sanitized[key] = str
-                } else if let num = value as? NSNumber {
-                    // Normalize numbers sent as strings
-                    sanitized[key] = num.stringValue
                 } else {
                     errors.append(.typeMismatch(field: key, expectedType: "string", actualType: "\(type(of: value))", tool: tool.name))
                     continue

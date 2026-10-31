@@ -29,10 +29,10 @@ public struct WakeWordSettingsSubsectionView: View {
                             .foregroundColor(.purple)
                     }
 
-                    Text("Hands-Free Activation")
+                    Text("Hands-Free Activation (Experimental)")
                         .font(.system(size: 18, weight: .bold))
                         .foregroundColor(.black)
-                    Text("Trigger IRIS locally without touching your screen using real-time on-device acoustic envelope detection.")
+                    Text("Experimental on-device acoustic envelope detector (energy & zero-crossing heuristics). Not a neural speech model. Use Action Button or Siri for guaranteed instant activation.")
                         .font(.system(size: 13))
                         .foregroundColor(Color(white: 0.45))
                         .multilineTextAlignment(.center)
@@ -42,7 +42,7 @@ public struct WakeWordSettingsSubsectionView: View {
                         Circle()
                             .fill(detector.isListening ? Color.green : Color.orange)
                             .frame(width: 8, height: 8)
-                        Text(detector.isListening ? "Acoustic Engine Active" : "Engine Idle")
+                        Text(detector.isListening ? "Heuristic Detector Active" : "Detector Idle")
                             .font(.system(size: 12, weight: .semibold))
                             .foregroundColor(detector.isListening ? .green : .orange)
                     }

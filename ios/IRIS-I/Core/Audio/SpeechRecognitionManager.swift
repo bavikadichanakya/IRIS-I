@@ -76,31 +76,45 @@ public final class SpeechRecognitionManager: NSObject, @unchecked Sendable {
     /// Enforces strictly local recognition without sending voice data to remote servers.
     public var isStrictOnDeviceRequired: Bool = true
 
+    /// Validates that offline on-device speech recognition is available and supported.
+    /// Throws an explicit error if unsupported or unavailable; never falls back to cloud.
+    #if canImport(Speech)
+    public func validateOfflineCapability(for recognizer: SFSpeechRecognizer? = nil) throws {
+        let rec = recognizer ?? self.recognizer
+        guard let rec = rec, rec.isAvailable else {
+            throw NSError(
+                domain: "IRIS.Speech",
+                code: -1,
+                userInfo: [NSLocalizedDescriptionKey: "Speech recognizer is unavailable on this device."]
+            )
+        }
+
+        guard rec.supportsOnDeviceRecognition else {
+            throw NSError(
+                domain: "IRIS.Speech",
+                code: -2,
+                userInfo: [NSLocalizedDescriptionKey: "On-device speech recognition is not supported for locale '\(rec.locale.identifier)'. Cloud fallback is strictly prohibited to guarantee total on-device privacy."]
+            )
+        }
+    }
+    #else
+    public func validateOfflineCapability() throws {}
+    #endif
+
     public func startRecognition() throws {
         #if canImport(Speech)
         stopRecognition()
 
-        guard let recognizer = self.recognizer, recognizer.isAvailable else {
+        try validateOfflineCapability(for: self.recognizer)
+
+        guard let recognizer = self.recognizer else {
             throw NSError(domain: "IRIS.Speech", code: -1, userInfo: [NSLocalizedDescriptionKey: "Speech recognizer is unavailable."])
         }
 
         let request = SFSpeechAudioBufferRecognitionRequest()
         request.shouldReportPartialResults = true
-
-        if recognizer.supportsOnDeviceRecognition {
-            request.requiresOnDeviceRecognition = true
-            print("[SPEECH_REC] Strict on-device recognition enforced (100% offline).")
-        } else {
-            print("[SPEECH_REC] Warning: On-device speech recognition not supported for locale \(recognizer.locale.identifier).")
-            if isStrictOnDeviceRequired {
-                throw NSError(
-                    domain: "IRIS.Speech",
-                    code: -2,
-                    userInfo: [NSLocalizedDescriptionKey: "On-device speech recognition is not supported for locale '\(recognizer.locale.identifier)'. Audio will not be sent to cloud servers in strict offline mode."]
-                )
-            }
-            request.requiresOnDeviceRecognition = false
-        }
+        request.requiresOnDeviceRecognition = true
+        print("[SPEECH_REC] Strict on-device recognition enforced (100% offline).")
         self.recognitionRequest = request
 
         self.recognitionTask = recognizer.recognitionTask(with: request) { [weak self] result, error in

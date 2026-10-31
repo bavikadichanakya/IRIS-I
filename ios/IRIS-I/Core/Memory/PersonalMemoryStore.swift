@@ -62,11 +62,15 @@ public final class PersonalMemoryStore: @unchecked Sendable {
     private let queue = DispatchQueue(label: "com.iris.memory.store", qos: .userInitiated)
     private let dbPath: URL
 
-    private init() {
-        let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
-        let memoryDir = appSupport.appendingPathComponent("IRIS-I/Memory", isDirectory: true)
-        try? FileManager.default.createDirectory(at: memoryDir, withIntermediateDirectories: true)
-        self.dbPath = memoryDir.appendingPathComponent("iris_memory.sqlite3")
+    public init(customPath: URL? = nil) {
+        if let customPath = customPath {
+            self.dbPath = customPath
+        } else {
+            let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
+            let memoryDir = appSupport.appendingPathComponent("IRIS-I/Memory", isDirectory: true)
+            try? FileManager.default.createDirectory(at: memoryDir, withIntermediateDirectories: true)
+            self.dbPath = memoryDir.appendingPathComponent("iris_memory.sqlite3")
+        }
 
         openAndInitDatabase()
     }
@@ -126,8 +130,7 @@ public final class PersonalMemoryStore: @unchecked Sendable {
             execute(sql: createInteractionsSQL)
             execute(sql: createNotesSQL)
             execute(sql: createPreferencesSQL)
-
-            seedInitialDefaultsIfNeeded()
+            // Rule: Clean startup. Never seed synthetic mock data into genuine user databases.
         }
     }
 
@@ -142,27 +145,28 @@ public final class PersonalMemoryStore: @unchecked Sendable {
         }
     }
 
-    private func seedInitialDefaultsIfNeeded() {
-        if allNotesInternal().isEmpty {
-            let initialNotes = [
-                ("Default Music Player", "Prefers Apple Music over Spotify for Siri voice commands.", "Media", 2),
-                ("Daily Standup Routine", "Set recurring reminder for team standup at 10:00 AM.", "Routines", 3),
-                ("Location Context", "Primary work area: Cupertino / San Francisco Bay Area.", "Context", 2)
-            ]
-            for (title, content, category, imp) in initialNotes {
-                _ = addNoteInternal(title: title, content: content, category: category, importance: imp)
+    /// Explicit opt-in helper strictly isolated to tests or SwiftUI canvas previews.
+    /// Never called automatically in production runtime.
+    public func seedSampleDataForTesting() {
+        queue.sync {
+            if allNotesInternal().isEmpty {
+                let sampleNotes = [
+                    ("Project Architecture", "Maintain local Metal inference and strict privacy standards.", "Work", 3),
+                    ("Personal Schedule", "Daily standup reminder at 10:00 AM.", "Routines", 2)
+                ]
+                for (title, content, category, imp) in sampleNotes {
+                    _ = addNoteInternal(title: title, content: content, category: category, importance: imp)
+                }
             }
-        }
 
-        if allPreferencesInternal().isEmpty {
-            let initialPrefs = [
-                ("preferred_voice", "Samantha (Enhanced Local)", "Voice"),
-                ("confirmation_required_calls", "true", "Security"),
-                ("confirmation_required_messages", "true", "Security"),
-                ("wake_word_phrase", "Hey IRIS", "Activation")
-            ]
-            for (k, v, c) in initialPrefs {
-                setPreferenceInternal(key: k, value: v, category: c)
+            if allPreferencesInternal().isEmpty {
+                let samplePrefs = [
+                    ("confirmation_required_calls", "true", "Security"),
+                    ("confirmation_required_messages", "true", "Security")
+                ]
+                for (k, v, c) in samplePrefs {
+                    setPreferenceInternal(key: k, value: v, category: c)
+                }
             }
         }
     }
@@ -179,8 +183,8 @@ public final class PersonalMemoryStore: @unchecked Sendable {
             let id = UUID().uuidString
             let now = Date().timeIntervalSince1970
             let toolName = executionRecord?.selectedTool ?? ""
-            let execState = executionRecord?.executionState.rawValue ?? "completedVerified"
-            let outcome = executionRecord?.toolOutcome.rawValue ?? "completedVerified"
+            let execState = executionRecord?.executionState.rawValue ?? "notStarted"
+            let outcome = executionRecord?.toolOutcome?.rawValue ?? "none"
             let verified = (executionRecord?.isVerified ?? false) ? 1 : 0
             let duration = executionRecord?.durationMs ?? 0.0
 

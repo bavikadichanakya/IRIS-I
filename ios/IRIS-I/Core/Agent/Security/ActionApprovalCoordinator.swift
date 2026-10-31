@@ -21,7 +21,8 @@ public final class ActionApprovalCoordinator: ObservableObject {
 
     private var approvalQueue: [ConfirmationTicket] = []
     private var countdownTimer: AnyCancellable?
-    private var approvalContinuation: CheckedContinuation<OrchestratorResponse, Error>?
+    private var continuations: [UUID: CheckedContinuation<OrchestratorResponse, Error>] = [:]
+    private var consumedTicketIds: Set<UUID> = []
 
     public init() {}
 
@@ -36,9 +37,10 @@ public final class ActionApprovalCoordinator: ObservableObject {
     }
 
     /// Async variation that suspends until the user approves or rejects the action.
+    /// Safely associates each request with its own dedicated continuation by ticketId.
     public func requestApprovalAsync(ticket: ConfirmationTicket) async throws -> OrchestratorResponse {
         return try await withCheckedThrowingContinuation { continuation in
-            self.approvalContinuation = continuation
+            self.continuations[ticket.ticketId] = continuation
             self.requestApproval(ticket: ticket)
         }
     }
@@ -74,10 +76,33 @@ public final class ActionApprovalCoordinator: ObservableObject {
     }
 
     /// Approves the active ticket, optionally with verified edited parameters.
+    /// Enforces: active ticket match, single-use ticket consumption, and replay prevention.
     public func approve(
         ticket: ConfirmationTicket,
         parameters: [String: Any]? = nil
     ) async -> Result<OrchestratorResponse, Error> {
+        // 1. Verify active ticket
+        guard let current = self.activeTicket, current.ticketId == ticket.ticketId else {
+            let error = NSError(
+                domain: "IRIS.ActionApproval",
+                code: 400,
+                userInfo: [NSLocalizedDescriptionKey: "Ticket is not currently active or was already dismissed."]
+            )
+            return .failure(error)
+        }
+
+        // 2. Prevent replay
+        guard !consumedTicketIds.contains(ticket.ticketId) else {
+            let error = NSError(
+                domain: "IRIS.ActionApproval",
+                code: 403,
+                userInfo: [NSLocalizedDescriptionKey: "Ticket \(ticket.ticketId) has already been consumed and cannot be replayed."]
+            )
+            return .failure(error)
+        }
+
+        consumedTicketIds.insert(ticket.ticketId)
+
         let finalParams = parameters ?? ticket.rawParameters
 
         do {
@@ -86,14 +111,16 @@ public final class ActionApprovalCoordinator: ObservableObject {
                 parameters: finalParams
             )
             self.lastExecutionResponse = response
-            self.approvalContinuation?.resume(returning: response)
-            self.approvalContinuation = nil
+            if let continuation = self.continuations.removeValue(forKey: ticket.ticketId) {
+                continuation.resume(returning: response)
+            }
             dismissAndProcessNext()
             return .success(response)
         } catch {
             self.lastErrorMessage = error.localizedDescription
-            self.approvalContinuation?.resume(throwing: error)
-            self.approvalContinuation = nil
+            if let continuation = self.continuations.removeValue(forKey: ticket.ticketId) {
+                continuation.resume(throwing: error)
+            }
             dismissAndProcessNext()
             return .failure(error)
         }
@@ -101,16 +128,47 @@ public final class ActionApprovalCoordinator: ObservableObject {
 
     /// Explicitly cancels or rejects the active authorization ticket.
     public func reject(ticket: ConfirmationTicket, reason: String = "User declined authorization.") {
+        guard let current = self.activeTicket, current.ticketId == ticket.ticketId else { return }
+        consumedTicketIds.insert(ticket.ticketId)
+
         let error = NSError(domain: "IRIS.ActionApproval", code: 403, userInfo: [NSLocalizedDescriptionKey: reason])
-        self.approvalContinuation?.resume(throwing: error)
-        self.approvalContinuation = nil
+        if let continuation = self.continuations.removeValue(forKey: ticket.ticketId) {
+            continuation.resume(throwing: error)
+        }
         dismissAndProcessNext()
     }
 
     private func handleTicketExpiration(_ ticket: ConfirmationTicket) {
-        let error = NSError(domain: "IRIS.ActionApproval", code: 408, userInfo: [NSLocalizedDescriptionKey: "Authorization request timed out and expired."])
-        self.approvalContinuation?.resume(throwing: error)
-        self.approvalContinuation = nil
+        guard self.activeTicket?.ticketId == ticket.ticketId else { return }
+        consumedTicketIds.insert(ticket.ticketId)
+
+        let error = NSError(
+            domain: "IRIS.ActionApproval",
+            code: 408,
+            userInfo: [NSLocalizedDescriptionKey: "Authorization request timed out and expired."]
+        )
+        if let continuation = self.continuations.removeValue(forKey: ticket.ticketId) {
+            continuation.resume(throwing: error)
+        }
+        dismissAndProcessNext()
+    }
+
+    /// Cancels all currently queued approval requests, ensuring no continuation remains suspended.
+    public func cancelAllQueued(reason: String = "Approval queue was cancelled.") {
+        let cancelError = NSError(domain: "IRIS.ActionApproval", code: 499, userInfo: [NSLocalizedDescriptionKey: reason])
+        if let active = self.activeTicket {
+            consumedTicketIds.insert(active.ticketId)
+            if let cont = self.continuations.removeValue(forKey: active.ticketId) {
+                cont.resume(throwing: cancelError)
+            }
+        }
+        for ticket in approvalQueue {
+            consumedTicketIds.insert(ticket.ticketId)
+            if let cont = self.continuations.removeValue(forKey: ticket.ticketId) {
+                cont.resume(throwing: cancelError)
+            }
+        }
+        approvalQueue.removeAll()
         dismissAndProcessNext()
     }
 
@@ -122,17 +180,31 @@ public final class ActionApprovalCoordinator: ObservableObject {
         self.isPresentingApproval = false
 
         // Process next queued ticket if present
-        if !approvalQueue.isEmpty {
+        while !approvalQueue.isEmpty {
             let nextTicket = approvalQueue.removeFirst()
-            // Ensure next ticket is not already expired
             if !nextTicket.isExpired {
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
                     self.presentTicket(nextTicket)
                 }
+                return
             } else {
-                dismissAndProcessNext()
+                consumedTicketIds.insert(nextTicket.ticketId)
+                if let cont = self.continuations.removeValue(forKey: nextTicket.ticketId) {
+                    cont.resume(throwing: NSError(domain: "IRIS.ActionApproval", code: 408, userInfo: [NSLocalizedDescriptionKey: "Queued ticket expired before presentation."]))
+                }
             }
         }
     }
-}
 
+    public func resetForTesting() {
+        cancelAllQueued(reason: "Reset for testing")
+        consumedTicketIds.removeAll()
+        continuations.removeAll()
+        activeTicket = nil
+        approvalQueue.removeAll()
+        isPresentingApproval = false
+        timeRemainingSeconds = 0
+        lastExecutionResponse = nil
+        lastErrorMessage = nil
+    }
+}
