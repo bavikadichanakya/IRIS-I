@@ -10,6 +10,9 @@
 import Foundation
 import Combine
 import AVFoundation
+#if canImport(UIKit)
+import UIKit
+#endif
 
 public enum WakeWordPhrase: String, CaseIterable, Sendable {
     case heyIris = "Hey IRIS"
