@@ -160,7 +160,8 @@ public struct QuickDrawerMenuSubsectionView: View {
                         Button {
                             let generator = UIImpactFeedbackGenerator(style: .medium)
                             generator.impactOccurred()
-                            SpeechManager.shared.cancelSpeech()
+                            SpeechManager.shared.stopListeningInternal()
+                            SpeechManager.shared.stopSpeaking()
                             withAnimation {
                                 quickActionBanner = "Voice session reset successfully."
                             }
@@ -332,3 +333,4 @@ public struct QuickDrawerMenuSubsectionView: View {
         .buttonStyle(.plain)
     }
 }
+
