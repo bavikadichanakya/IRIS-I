@@ -7,6 +7,17 @@
 
 import Foundation
 
+/// Strict integrity state of a local neural model artifact.
+public enum ModelIntegrityState: String, Codable, Sendable {
+    case downloading
+    case staged
+    case validating
+    case verified
+    case installed
+    case failed
+    case quarantined
+}
+
 public final class ModelStorageManager: Sendable {
     public static let shared = ModelStorageManager()
 
@@ -14,6 +25,7 @@ public final class ModelStorageManager: Sendable {
     public let weightsDirectory: URL
     public let downloadsDirectory: URL
     public let stagingDirectory: URL
+    public let quarantineDirectory: URL
 
     public init(fileManager: FileManager = .default) {
         let appSupport = fileManager.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
@@ -22,10 +34,12 @@ public final class ModelStorageManager: Sendable {
         self.weightsDirectory = irisDir.appendingPathComponent("Models/weights", isDirectory: true)
         self.downloadsDirectory = irisDir.appendingPathComponent("Models/downloads", isDirectory: true)
         self.stagingDirectory = irisDir.appendingPathComponent("Models/staging", isDirectory: true)
+        self.quarantineDirectory = irisDir.appendingPathComponent("Models/quarantine", isDirectory: true)
 
         try? fileManager.createDirectory(at: weightsDirectory, withIntermediateDirectories: true)
         try? fileManager.createDirectory(at: downloadsDirectory, withIntermediateDirectories: true)
         try? fileManager.createDirectory(at: stagingDirectory, withIntermediateDirectories: true)
+        try? fileManager.createDirectory(at: quarantineDirectory, withIntermediateDirectories: true)
 
         // Exclude entire Models directory from iCloud backups
         var resourceValues = URLResourceValues()
@@ -40,6 +54,31 @@ public final class ModelStorageManager: Sendable {
 
     public func weightsURL(for filename: String) -> URL {
         weightsDirectory.appendingPathComponent(filename)
+    }
+
+    public func quarantineURL(for filename: String) -> URL {
+        quarantineDirectory.appendingPathComponent(filename)
+    }
+
+    /// Safely isolates an artifact that failed integrity verification into quarantine.
+    public func quarantine(stagingURL: URL, filename: String) throws -> URL {
+        let fm = FileManager.default
+        let destURL = quarantineURL(for: filename)
+
+        try fm.createDirectory(at: destURL.deletingLastPathComponent(), withIntermediateDirectories: true)
+
+        if fm.fileExists(atPath: destURL.path) {
+            try fm.removeItem(at: destURL)
+        }
+
+        try fm.moveItem(at: stagingURL, to: destURL)
+        return destURL
+    }
+
+    /// Lists all quarantined model files awaiting investigation.
+    public func quarantinedFiles() -> [URL] {
+        let fm = FileManager.default
+        return (try? fm.contentsOfDirectory(at: quarantineDirectory, includingPropertiesForKeys: nil)) ?? []
     }
 
     /// Queries the actual available free disk space on device volume in bytes

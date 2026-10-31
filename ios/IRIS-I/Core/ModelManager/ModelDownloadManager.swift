@@ -188,10 +188,11 @@ public actor ModelDownloadManager: NSObject, URLSessionDownloadDelegate {
             progressContinuation?.finish()
         } catch {
             print("ModelDownloadManager: Validation/Promotion failed: \(error)")
-            // Crucial safety rule: Never delete a downloaded 2 GB file if it has a valid GGUF structure
+            // Strict integrity rule: A downloaded model that fails its expected SHA-256 check
+            // must NOT be promoted as a trusted model. Move to quarantine directory for inspection.
             if case IntegrityError.checksumMismatch = error {
-                print("ModelDownloadManager: Checksum differed from catalog constant, but GGUF header is valid. Promoting to prevent data loss.")
-                _ = try? ModelStorageManager.shared.atomicPromote(stagingURL: stagingURL, filename: filename)
+                print("ModelDownloadManager: Checksum mismatch detected! Quarantining artifact to prevent unauthorized execution.")
+                _ = try? ModelStorageManager.shared.quarantine(stagingURL: stagingURL, filename: filename)
             } else {
                 try? FileManager.default.removeItem(at: stagingURL)
             }

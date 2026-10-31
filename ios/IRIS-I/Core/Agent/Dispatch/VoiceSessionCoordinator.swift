@@ -162,6 +162,7 @@ public final class VoiceSessionCoordinator: ObservableObject {
             let speechRef = self.speechManager
             try audioManager.startCapture { buffer in
                 speechRef.appendAudioBuffer(buffer)
+                AudioFrameProcessor.shared.processBuffer(buffer)
             }
 
             // Step 4: Publish authoritative listening state
@@ -173,6 +174,16 @@ public final class VoiceSessionCoordinator: ObservableObject {
             print("[VOICE_SESSION] Failed to start audio engine: \(error.localizedDescription)")
             handleSessionError("Failed to start audio engine: \(error.localizedDescription)")
             cleanupAudioPipeline()
+        }
+    }
+
+    /// Called by the acoustic WakeWordDetector when the wake phrase is recognized
+    public func wakeWordDetected(phrase: String) {
+        print("[VOICE_SESSION] Acoustic wake phrase confirmed: '\(phrase)'")
+        Task { @MainActor in
+            if case .idle = self.state {
+                await self.startVoiceSession()
+            }
         }
     }
 

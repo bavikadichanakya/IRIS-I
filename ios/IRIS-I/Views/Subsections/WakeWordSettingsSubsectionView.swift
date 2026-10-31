@@ -3,20 +3,15 @@
 //  IRIS-I
 //
 //  Subsection: Wake Word & Hands-Free Activation Configuration.
-//  Configures wake word sensitivity, background listener, and threshold calibration.
+//  Configures genuine on-device acoustic wake-word detection, sensitivity calibration,
+//  live RMS input telemetry, and honest iOS background execution diagnostic states.
 //
 
 import SwiftUI
 
 public struct WakeWordSettingsSubsectionView: View {
     @ObservedObject private var speechManager = SpeechManager.shared
-    @State private var selectedPhrase: String = "Hey IRIS"
-    @State private var sensitivityIndex: Int = 1 // 0: Low, 1: Standard, 2: High
-    @State private var isCalibrating: Bool = false
-    @State private var liveAudioLevel: Float = 0.0
-
-    private let phraseOptions = ["Hey IRIS", "IRIS"]
-    private let sensitivityLevels = ["Low", "Standard", "High"]
+    @ObservedObject private var detector = WakeWordDetector.shared
 
     public init() {}
 
@@ -37,11 +32,21 @@ public struct WakeWordSettingsSubsectionView: View {
                     Text("Hands-Free Activation")
                         .font(.system(size: 18, weight: .bold))
                         .foregroundColor(.black)
-                    Text("Trigger IRIS without touching your screen using high-efficiency on-device neural acoustic detection.")
+                    Text("Trigger IRIS locally without touching your screen using real-time on-device acoustic envelope detection.")
                         .font(.system(size: 13))
                         .foregroundColor(Color(white: 0.45))
                         .multilineTextAlignment(.center)
                         .padding(.horizontal, 20)
+
+                    HStack(spacing: 8) {
+                        Circle()
+                            .fill(detector.isListening ? Color.green : Color.orange)
+                            .frame(width: 8, height: 8)
+                        Text(detector.isListening ? "Acoustic Engine Active" : "Engine Idle")
+                            .font(.system(size: 12, weight: .semibold))
+                            .foregroundColor(detector.isListening ? .green : .orange)
+                    }
+                    .padding(.top, 4)
                 }
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 20)
@@ -58,16 +63,21 @@ public struct WakeWordSettingsSubsectionView: View {
                         .padding(.horizontal, 24)
 
                     VStack(spacing: 0) {
-                        ForEach(phraseOptions, id: \.self) { phrase in
+                        ForEach(WakeWordPhrase.allCases, id: \.self) { phrase in
                             Button {
-                                selectedPhrase = phrase
+                                detector.selectedPhrase = phrase
                             } label: {
                                 HStack {
-                                    Text(phrase)
-                                        .font(.system(size: 16, weight: .semibold))
-                                        .foregroundColor(.black)
+                                    VStack(alignment: .leading, spacing: 2) {
+                                        Text(phrase.rawValue)
+                                            .font(.system(size: 16, weight: .semibold))
+                                            .foregroundColor(.black)
+                                        Text(phrase == .heyIris ? "Default bilateral phonetic signature (/heɪ aɪ.rɪs/)" : "Compact single-word acoustic trigger (/aɪ.rɪs/)")
+                                            .font(.system(size: 11))
+                                            .foregroundColor(Color(white: 0.50))
+                                    }
                                     Spacer()
-                                    if selectedPhrase == phrase {
+                                    if detector.selectedPhrase == phrase {
                                         Image(systemName: "checkmark.circle.fill")
                                             .foregroundColor(.purple)
                                     }
@@ -75,7 +85,7 @@ public struct WakeWordSettingsSubsectionView: View {
                                 .padding(.horizontal, 16)
                                 .padding(.vertical, 14)
                             }
-                            if phrase != phraseOptions.last {
+                            if phrase != WakeWordPhrase.allCases.last {
                                 Divider().padding(.leading, 16)
                             }
                         }
@@ -94,9 +104,9 @@ public struct WakeWordSettingsSubsectionView: View {
                         .padding(.horizontal, 24)
 
                     VStack(spacing: 14) {
-                        Picker("Sensitivity", selection: $sensitivityIndex) {
-                            ForEach(0..<sensitivityLevels.count, id: \.self) { idx in
-                                Text(sensitivityLevels[idx]).tag(idx)
+                        Picker("Sensitivity", selection: $detector.sensitivity) {
+                            ForEach(WakeWordSensitivity.allCases, id: \.self) { sens in
+                                Text(sens.title).tag(sens)
                             }
                         }
                         .pickerStyle(.segmented)
@@ -115,7 +125,7 @@ public struct WakeWordSettingsSubsectionView: View {
 
                 // Live Calibration / Meter
                 VStack(alignment: .leading, spacing: 10) {
-                    Text("MIC SENSITIVITY CALIBRATION")
+                    Text("LIVE ACOUSTIC TELEMETRY")
                         .font(.system(size: 12, weight: .bold))
                         .foregroundColor(Color(white: 0.45))
                         .padding(.horizontal, 24)
@@ -126,9 +136,9 @@ public struct WakeWordSettingsSubsectionView: View {
                                 .font(.system(size: 14, weight: .medium))
                                 .foregroundColor(.black)
                             Spacer()
-                            Text(speechManager.audioLevel > 0.05 ? "Signal Detected" : "Quiet")
+                            Text(effectiveAudioLevel > 0.05 ? "Signal Detected" : "Quiet")
                                 .font(.system(size: 12, weight: .semibold))
-                                .foregroundColor(speechManager.audioLevel > 0.05 ? .green : .secondary)
+                                .foregroundColor(effectiveAudioLevel > 0.05 ? .green : .secondary)
                         }
 
                         // Live audio level gauge
@@ -146,18 +156,18 @@ public struct WakeWordSettingsSubsectionView: View {
                                             endPoint: .trailing
                                         )
                                     )
-                                    .frame(width: max(0, min(geo.size.width, geo.size.width * CGFloat(speechManager.audioLevel))), height: 12)
-                                    .animation(.easeOut(duration: 0.1), value: speechManager.audioLevel)
+                                    .frame(width: max(0, min(geo.size.width, geo.size.width * CGFloat(effectiveAudioLevel))), height: 12)
+                                    .animation(.easeOut(duration: 0.1), value: effectiveAudioLevel)
                             }
                         }
                         .frame(height: 12)
 
                         HStack {
-                            Text("Threshold")
+                            Text("Threshold: \(String(format: "%.2f", detector.sensitivity.detectionThreshold))")
                                 .font(.system(size: 11))
                                 .foregroundColor(Color(white: 0.50))
                             Spacer()
-                            Text("A19 Neural Acoustic Engine")
+                            Text("Detections: \(detector.detectionCount)")
                                 .font(.system(size: 11, weight: .medium))
                                 .foregroundColor(.purple)
                         }
@@ -169,27 +179,42 @@ public struct WakeWordSettingsSubsectionView: View {
                     .padding(.horizontal, 20)
                 }
 
-                // Background Toggle
+                // iOS Background Constraints Diagnostic Card
                 VStack(alignment: .leading, spacing: 10) {
-                    Text("BACKGROUND OPERATION")
+                    Text("IOS BACKGROUND ARCHITECTURE")
                         .font(.system(size: 12, weight: .bold))
                         .foregroundColor(Color(white: 0.45))
                         .padding(.horizontal, 24)
 
-                    VStack(spacing: 0) {
-                        Toggle(isOn: $speechManager.isBackgroundWakeWordEnabled) {
-                            VStack(alignment: .leading, spacing: 3) {
-                                Text("Listen While In Background")
-                                    .font(.system(size: 15, weight: .medium))
-                                    .foregroundColor(.black)
-                                Text("Requires AVAudioSession background audio capability")
-                                    .font(.system(size: 12))
-                                    .foregroundColor(Color(white: 0.45))
-                            }
+                    VStack(alignment: .leading, spacing: 14) {
+                        HStack(spacing: 10) {
+                            Circle()
+                                .fill(detector.backgroundExecutionState.isCapableOfAcousticDetection ? Color.green : Color.orange)
+                                .frame(width: 10, height: 10)
+                            Text("Current State: \(detector.backgroundExecutionState.rawValue)")
+                                .font(.system(size: 14, weight: .bold))
+                                .foregroundColor(.black)
                         }
-                        .padding(.horizontal, 16)
-                        .padding(.vertical, 14)
+
+                        Text(detector.backgroundExecutionState.explanation)
+                            .font(.system(size: 12))
+                            .foregroundColor(Color(white: 0.40))
+                            .lineSpacing(2)
+
+                        Divider()
+
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("Legitimate Invocation Paths:")
+                                .font(.system(size: 12, weight: .bold))
+                                .foregroundColor(.black)
+
+                            bulletRow(icon: "button.programmable", text: "Action Button: 100% reliable instant foreground invocation.")
+                            bulletRow(icon: "waveform.badge.mic", text: "Siri & App Intents: Available globally even while device is locked.")
+                            bulletRow(icon: "slider.horizontal.3", text: "Shortcuts: Integrates with back-tap, Lock Screen, and Control Center.")
+                            bulletRow(icon: "mic.fill", text: "Foreground: Continuous acoustic detection for \"Hey IRIS\".")
+                        }
                     }
+                    .padding(16)
                     .background(Color.white)
                     .cornerRadius(18)
                     .shadow(color: Color.black.opacity(0.03), radius: 6, y: 2)
@@ -204,21 +229,30 @@ public struct WakeWordSettingsSubsectionView: View {
         .navigationBarTitleDisplayMode(.inline)
     }
 
+    private var effectiveAudioLevel: Float {
+        detector.liveRMS > 0.0 ? detector.liveRMS : speechManager.audioLevel
+    }
+
+    private func bulletRow(icon: String, text: String) -> some View {
+        HStack(alignment: .top, spacing: 8) {
+            Image(systemName: icon)
+                .font(.system(size: 12, weight: .medium))
+                .foregroundColor(.purple)
+                .frame(width: 16)
+            Text(text)
+                .font(.system(size: 11))
+                .foregroundColor(Color(white: 0.45))
+        }
+    }
+
     private var sensitivityDescription: String {
-        switch sensitivityIndex {
-        case 0:
-            return "Low: Reduces false activations in noisy environments. Requires louder speaking voice."
-        case 1:
-            return "Standard: Recommended default. Balanced for conversational volume at arm's length."
-        default:
-            return "High: Detects whispering and distant triggers across the room."
+        switch detector.sensitivity {
+        case .low:
+            return "Low (Threshold 0.82): Minimizes false activations in loud rooms. Requires clear speaking volume."
+        case .standard:
+            return "Standard (Threshold 0.70): Recommended default. Balanced for conversational volume at normal distance."
+        case .high:
+            return "High (Threshold 0.58): Maximum sensitivity. Detects quieter speech across a quiet room."
         }
     }
 }
-
-#Preview {
-    NavigationStack {
-        WakeWordSettingsSubsectionView()
-    }
-}
-

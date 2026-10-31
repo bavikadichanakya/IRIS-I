@@ -64,6 +64,18 @@ public final class SpeechRecognitionManager: NSObject, @unchecked Sendable {
         #endif
     }
 
+    /// Whether the current device and locale support strictly local on-device speech transcription.
+    public var supportsOnDeviceRecognition: Bool {
+        #if canImport(Speech)
+        return recognizer?.supportsOnDeviceRecognition ?? false
+        #else
+        return false
+        #endif
+    }
+
+    /// Enforces strictly local recognition without sending voice data to remote servers.
+    public var isStrictOnDeviceRequired: Bool = true
+
     public func startRecognition() throws {
         #if canImport(Speech)
         stopRecognition()
@@ -74,7 +86,21 @@ public final class SpeechRecognitionManager: NSObject, @unchecked Sendable {
 
         let request = SFSpeechAudioBufferRecognitionRequest()
         request.shouldReportPartialResults = true
-        request.requiresOnDeviceRecognition = false // Fast hybrid or on-device
+
+        if recognizer.supportsOnDeviceRecognition {
+            request.requiresOnDeviceRecognition = true
+            print("[SPEECH_REC] Strict on-device recognition enforced (100% offline).")
+        } else {
+            print("[SPEECH_REC] Warning: On-device speech recognition not supported for locale \(recognizer.locale.identifier).")
+            if isStrictOnDeviceRequired {
+                throw NSError(
+                    domain: "IRIS.Speech",
+                    code: -2,
+                    userInfo: [NSLocalizedDescriptionKey: "On-device speech recognition is not supported for locale '\(recognizer.locale.identifier)'. Audio will not be sent to cloud servers in strict offline mode."]
+                )
+            }
+            request.requiresOnDeviceRecognition = false
+        }
         self.recognitionRequest = request
 
         self.recognitionTask = recognizer.recognitionTask(with: request) { [weak self] result, error in

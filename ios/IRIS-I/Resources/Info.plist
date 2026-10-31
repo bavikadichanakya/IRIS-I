@@ -98,6 +98,8 @@
 	<string>IRIS requires access to your calendar to schedule events.</string>
 	<key>NSCalendarsWriteOnlyAccessUsageDescription</key>
 	<string>IRIS requires write access to add scheduled events to your calendar.</string>
+	<key>NSContactsUsageDescription</key>
+	<string>IRIS accesses your contacts to look up phone numbers, send messages, and initiate calls with your approval.</string>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>IRIS requires microphone access for foreground voice commands and wake-word detection.</string>
 	<key>NSRemindersFullAccessUsageDescription</key>

@@ -4,17 +4,37 @@
 //
 //  Screen 7: Memory & Context Timeline.
 //  Preserves verified interaction history, user preferences, and captured assistant context.
+//  Backed by local SQLite PersonalMemoryStore.
 //
 
 import SwiftUI
 
 public struct MemoryItem: Identifiable, Sendable {
-    public let id = UUID()
+    public let id: UUID
+    public let recordId: String
     public let title: String
     public let timestamp: String
     public let icon: String
     public let iconColor: Color
     public let category: String
+
+    public init(
+        id: UUID = UUID(),
+        recordId: String = UUID().uuidString,
+        title: String,
+        timestamp: String,
+        icon: String,
+        iconColor: Color,
+        category: String
+    ) {
+        self.id = id
+        self.recordId = recordId
+        self.title = title
+        self.timestamp = timestamp
+        self.icon = icon
+        self.iconColor = iconColor
+        self.category = category
+    }
 }
 
 public struct MemoryView: View {
@@ -23,56 +43,9 @@ public struct MemoryView: View {
     @State private var isShowingAddNote: Bool = false
     private let segments = ["Recent", "Notes", "Preferences"]
 
-    @State private var recentHistory: [MemoryItem] = [
-        MemoryItem(
-            title: "Opened Instagram",
-            timestamp: "Today, 9:54 AM",
-            icon: "camera.circle.fill",
-            iconColor: Color.purple,
-            category: "App Launch"
-        ),
-        MemoryItem(
-            title: "Played Apple Music",
-            timestamp: "Today, 8:26 AM",
-            icon: "music.note.circle.fill",
-            iconColor: Color.pink,
-            category: "Media"
-        ),
-        MemoryItem(
-            title: "Found file: Cybersecurity_Report.pdf",
-            timestamp: "Today, 8:18 AM",
-            icon: "doc.fill",
-            iconColor: Color.blue,
-            category: "Files"
-        ),
-        MemoryItem(
-            title: "Took a photo",
-            timestamp: "Today, 8:20 AM",
-            icon: "camera.fill",
-            iconColor: Color.orange,
-            category: "Camera"
-        ),
-        MemoryItem(
-            title: "Opened YouTube",
-            timestamp: "Today, 8:00 AM",
-            icon: "play.circle.fill",
-            iconColor: Color.red,
-            category: "App Launch"
-        ),
-        MemoryItem(
-            title: "Checked battery status (80% Charging)",
-            timestamp: "Yesterday, 10:15 PM",
-            icon: "bolt.fill",
-            iconColor: Color.yellow,
-            category: "Telemetry"
-        )
-    ]
-
-    @State private var sampleNotes: [String] = [
-        "Prefers Apple Music over Spotify for Siri commands.",
-        "Set daily reminder for standup meeting at 10:00 AM.",
-        "Default location: Cupertino / San Francisco."
-    ]
+    @State private var recentHistory: [MemoryItem] = []
+    @State private var notes: [PersonalNoteItem] = []
+    @State private var preferences: [PreferenceItem] = []
 
     public init() {}
 
@@ -156,89 +129,197 @@ public struct MemoryView: View {
                     }
                 }
             }
+            .onAppear {
+                loadMemoryData()
+            }
             .sheet(item: $selectedMemory) { item in
                 MemoryDetailSubsectionView(item: item) { idToDelete in
+                    PersonalMemoryStore.shared.deleteInteraction(id: item.recordId)
                     recentHistory.removeAll(where: { $0.id == idToDelete })
                 }
             }
             .sheet(isPresented: $isShowingAddNote) {
-                AddMemoryNoteSubsectionView { newNote in
-                    sampleNotes.insert(newNote, at: 0)
+                AddMemoryNoteSubsectionView { newNoteText in
+                    _ = PersonalMemoryStore.shared.addNote(
+                        title: "Personal Note",
+                        content: newNoteText,
+                        category: "User Note",
+                        importance: 2
+                    )
+                    loadMemoryData()
                 }
             }
         }
     }
 
+    private func loadMemoryData() {
+        let interactions = PersonalMemoryStore.shared.recentInteractions(limit: 30)
+        self.recentHistory = interactions.map { item in
+            let icon: String
+            let color: Color
+            let tool = item.toolName?.lowercased() ?? ""
+
+            if tool.contains("app") {
+                icon = "arrow.up.forward.app.fill"
+                color = .purple
+            } else if tool.contains("event") || tool.contains("calendar") {
+                icon = "calendar"
+                color = .red
+            } else if tool.contains("remind") {
+                icon = "checklist"
+                color = .orange
+            } else if tool.contains("mail") {
+                icon = "envelope.fill"
+                color = .blue
+            } else if tool.contains("messag") {
+                icon = "message.fill"
+                color = .green
+            } else if tool.contains("contact") || tool.contains("phone") {
+                icon = "phone.fill"
+                color = .teal
+            } else {
+                icon = "bubble.left.and.bubble.right.fill"
+                color = .indigo
+            }
+
+            return MemoryItem(
+                id: UUID(),
+                recordId: item.id,
+                title: item.userRequest,
+                timestamp: item.formattedTimestamp,
+                icon: icon,
+                iconColor: color,
+                category: item.toolName ?? "Conversation"
+            )
+        }
+
+        self.notes = PersonalMemoryStore.shared.allNotes()
+        self.preferences = PersonalMemoryStore.shared.allPreferences()
+    }
+
     private var recentTimelineView: some View {
         LazyVStack(spacing: 10) {
-            ForEach(recentHistory) { item in
-                Button {
-                    let generator = UIImpactFeedbackGenerator(style: .light)
-                    generator.impactOccurred()
-                    selectedMemory = item
-                } label: {
-                    HStack(spacing: 14) {
-                        ZStack {
-                            Circle()
-                                .fill(item.iconColor.opacity(0.12))
-                                .frame(width: 42, height: 42)
-                            Image(systemName: item.icon)
-                                .font(.system(size: 18, weight: .semibold))
-                                .foregroundColor(item.iconColor)
-                        }
-
-                        VStack(alignment: .leading, spacing: 3) {
-                            Text(item.title)
-                                .font(.system(size: 15, weight: .semibold))
-                                .foregroundColor(.black)
-                            Text(item.timestamp)
-                                .font(.system(size: 12))
-                                .foregroundColor(Color(white: 0.40))
-                        }
-
-                        Spacer()
-
-                        Image(systemName: "chevron.right")
-                            .font(.system(size: 13, weight: .semibold))
-                            .foregroundColor(Color(white: 0.60))
-                    }
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 12)
-                    .background(Color.white)
-                    .cornerRadius(16)
-                    .shadow(color: Color.black.opacity(0.03), radius: 6, y: 2)
+            if recentHistory.isEmpty {
+                VStack(spacing: 8) {
+                    Image(systemName: "clock.arrow.circlepath")
+                        .font(.system(size: 32))
+                        .foregroundColor(Color(white: 0.6))
+                    Text("No Interaction Records Yet")
+                        .font(.system(size: 15, weight: .semibold))
+                        .foregroundColor(.black)
+                    Text("Commands, tool operations, and verified actions will appear here.")
+                        .font(.system(size: 12))
+                        .foregroundColor(Color(white: 0.45))
+                        .multilineTextAlignment(.center)
                 }
-                .buttonStyle(.plain)
+                .padding(.vertical, 40)
+            } else {
+                ForEach(recentHistory) { item in
+                    Button {
+                        let generator = UIImpactFeedbackGenerator(style: .light)
+                        generator.impactOccurred()
+                        selectedMemory = item
+                    } label: {
+                        HStack(spacing: 14) {
+                            ZStack {
+                                Circle()
+                                    .fill(item.iconColor.opacity(0.12))
+                                    .frame(width: 42, height: 42)
+                                Image(systemName: item.icon)
+                                    .font(.system(size: 18, weight: .semibold))
+                                    .foregroundColor(item.iconColor)
+                            }
+
+                            VStack(alignment: .leading, spacing: 3) {
+                                Text(item.title)
+                                    .font(.system(size: 15, weight: .semibold))
+                                    .foregroundColor(.black)
+                                    .lineLimit(1)
+                                Text(item.timestamp)
+                                    .font(.system(size: 12))
+                                    .foregroundColor(Color(white: 0.40))
+                            }
+
+                            Spacer()
+
+                            Image(systemName: "chevron.right")
+                                .font(.system(size: 13, weight: .semibold))
+                                .foregroundColor(Color(white: 0.60))
+                        }
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 12)
+                        .background(Color.white)
+                        .cornerRadius(16)
+                        .shadow(color: Color.black.opacity(0.03), radius: 6, y: 2)
+                    }
+                    .buttonStyle(.plain)
+                }
             }
         }
     }
 
     private var notesView: some View {
         VStack(spacing: 10) {
-            ForEach(sampleNotes, id: \.self) { note in
-                HStack(alignment: .top, spacing: 12) {
+            if notes.isEmpty {
+                VStack(spacing: 8) {
                     Image(systemName: "note.text")
-                        .foregroundColor(.blue)
-                        .padding(.top, 2)
-                    Text(note)
-                        .font(.system(size: 14))
+                        .font(.system(size: 32))
+                        .foregroundColor(Color(white: 0.6))
+                    Text("No Personal Notes")
+                        .font(.system(size: 15, weight: .semibold))
                         .foregroundColor(.black)
-                    Spacer()
+                    Text("Tap + to add important facts or reminders for IRIS.")
+                        .font(.system(size: 12))
+                        .foregroundColor(Color(white: 0.45))
                 }
-                .padding(16)
-                .background(Color.white)
-                .cornerRadius(16)
-                .shadow(color: Color.black.opacity(0.03), radius: 6, y: 2)
+                .padding(.vertical, 40)
+            } else {
+                ForEach(notes) { note in
+                    VStack(alignment: .leading, spacing: 6) {
+                        HStack {
+                            Text(note.title)
+                                .font(.system(size: 14, weight: .bold))
+                                .foregroundColor(.black)
+                            Spacer()
+                            Text(note.category)
+                                .font(.system(size: 11, weight: .semibold))
+                                .foregroundColor(.purple)
+                                .padding(.horizontal, 8)
+                                .padding(.vertical, 2)
+                                .background(Color.purple.opacity(0.1))
+                                .cornerRadius(6)
+                        }
+
+                        Text(note.content)
+                            .font(.system(size: 13))
+                            .foregroundColor(Color(white: 0.35))
+
+                        Text("Updated: \(note.formattedDate)")
+                            .font(.system(size: 10))
+                            .foregroundColor(Color(white: 0.55))
+                            .padding(.top, 2)
+                    }
+                    .padding(16)
+                    .background(Color.white)
+                    .cornerRadius(16)
+                    .shadow(color: Color.black.opacity(0.03), radius: 6, y: 2)
+                }
             }
         }
     }
 
     private var preferencesView: some View {
         VStack(spacing: 10) {
-            preferenceRow(label: "Default Music Player", value: "Apple Music")
-            preferenceRow(label: "Wake Word Activation", value: "Hey IRIS")
-            preferenceRow(label: "Confirmation Threshold", value: "Sensitive Actions Only")
-            preferenceRow(label: "On-Device Neural Engine", value: "Qwen 2.5 3B (Metal)")
+            if preferences.isEmpty {
+                preferenceRow(label: "Default Voice", value: "Samantha (Enhanced Local)")
+                preferenceRow(label: "Hands-Free Trigger", value: "Hey IRIS")
+                preferenceRow(label: "Confirmation Threshold", value: "Sensitive Actions Only")
+                preferenceRow(label: "On-Device Neural Engine", value: "Qwen 2.5 3B / Qwen 3.5 0.8B")
+            } else {
+                ForEach(preferences) { pref in
+                    preferenceRow(label: pref.key.replacingOccurrences(of: "_", with: " ").capitalized, value: pref.value)
+                }
+            }
         }
     }
 
@@ -262,4 +343,3 @@ public struct MemoryView: View {
 #Preview {
     MemoryView()
 }
-

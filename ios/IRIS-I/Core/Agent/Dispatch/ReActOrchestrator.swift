@@ -64,6 +64,8 @@ public actor ReActOrchestrator {
         await toolRegistry.register(tool: EventKitTool())
         await toolRegistry.register(tool: AppOpenerTool())
         await toolRegistry.register(tool: ShortcutsTool())
+        await toolRegistry.register(tool: ContactsTool())
+        await toolRegistry.register(tool: PhoneCallTool())
         isInitialized = true
     }
 
@@ -178,6 +180,12 @@ public actor ReActOrchestrator {
 
                 progressStream?(responseText)
 
+                PersonalMemoryStore.shared.saveInteraction(
+                    request: userPrompt,
+                    response: responseText,
+                    executionRecord: record
+                )
+
                 return OrchestratorResponse(
                     textResponse: responseText,
                     executedTools: [toolName],
@@ -199,12 +207,17 @@ public actor ReActOrchestrator {
         // 2. Tier 2: Local Model ReAct Loop Preflight
         let isModelLoaded = await runner.isModelLoaded
         if !isModelLoaded {
-            let baseline = ModelCatalog.shared.baseline3B
-            let isInstalled = ModelStorageManager.shared.isModelInstalled(baseline)
-            if isInstalled {
-                progressStream?("Initializing neural brain context...")
+            let activeTarget = await BrainDownloadCoordinator.shared.activeManifest
+            let isTargetInstalled = ModelStorageManager.shared.isModelInstalled(activeTarget)
+            let fallbackBaseline = ModelCatalog.shared.baseline3B
+            let isFallbackInstalled = ModelStorageManager.shared.isModelInstalled(fallbackBaseline)
+
+            let modelToLoad: ModelManifest? = isTargetInstalled ? activeTarget : (isFallbackInstalled ? fallbackBaseline : nil)
+
+            if let model = modelToLoad {
+                progressStream?("Initializing neural brain context (\(model.displayName))...")
                 do {
-                    try await runner.loadModel(manifest: baseline, contextSize: 2048, forceMockEngine: false)
+                    try await runner.loadModel(manifest: model, contextSize: 2048, forceMockEngine: false)
                 } catch {
                     let msg = "Could not activate local neural model: \(error.localizedDescription)"
                     let totalDuration = (CFAbsoluteTimeGetCurrent() - totalStartTime) * 1000.0
@@ -235,7 +248,7 @@ public actor ReActOrchestrator {
                     )
                 }
             } else {
-                let msg = "The on-device neural brain (Qwen 2.5 3B) is not installed yet. You can download and activate it in Settings, or ask me to open apps like YouTube, Music, or Camera."
+                let msg = "No local on-device neural brain is installed yet. You can download and activate a model in Settings, or ask me to open apps like YouTube, Music, or Camera."
                 let totalDuration = (CFAbsoluteTimeGetCurrent() - totalStartTime) * 1000.0
                 let record = ExecutionRecord(
                     userRequest: userPrompt,
@@ -249,7 +262,7 @@ public actor ReActOrchestrator {
                     errorDetails: "Local GGUF model not installed",
                     isVerified: false,
                     durationMs: totalDuration,
-                    requiredUserAction: "Download baseline model in Settings",
+                    requiredUserAction: "Download model in Settings",
                     timestamp: Date()
                 )
                 return OrchestratorResponse(
@@ -266,13 +279,18 @@ public actor ReActOrchestrator {
         }
 
         var conversationMessages: [ChatMessage] = sessionHistory
+        let memoryContext = PersonalMemoryStore.shared.contextForPrompt(userPrompt)
+        if !memoryContext.isEmpty {
+            conversationMessages.append(ChatMessage(role: "system", content: memoryContext))
+        }
         conversationMessages.append(ChatMessage(role: "user", content: userPrompt))
 
         let availableTools = await toolRegistry.toolDefinitions()
-        let activeManifest = await runner.currentManifest ?? ModelCatalog.shared.baseline3B
+        let activeManifest = await runner.currentManifest ?? BrainDownloadCoordinator.shared.activeManifest
         let formatter = PromptTemplateFormatterFactory.formatter(for: activeManifest)
 
         var executedToolNames: [String] = []
+        var executedToolSnapshots: [(tool: String, arguments: [String: Any], result: AgentExecutionResult)] = []
         var iteration = 0
         var finalAssistantText = ""
 
@@ -324,6 +342,18 @@ public actor ReActOrchestrator {
                     continue
                 }
 
+                // Rule 3: Schema validation layer before tool execution
+                let validation = ToolSchemaValidator.validate(tool: tool, arguments: parsedTool.arguments)
+                if !validation.isValid {
+                    let feedback = formatter.formatToolFeedback(
+                        toolName: parsedTool.toolName,
+                        resultJson: validation.feedbackJsonString
+                    )
+                    conversationMessages.append(ChatMessage(role: "assistant", content: accumulatedText))
+                    conversationMessages.append(feedback)
+                    continue
+                }
+
                 // Check security policy gate
                 let policyDecision = await permissionManager.evaluate(
                     tool: tool,
@@ -337,6 +367,7 @@ public actor ReActOrchestrator {
                     progressStream?("\n[Executing \(tool.name)...]\n")
 
                     let result = await tool.execute(arguments: parsedTool.arguments)
+                    executedToolSnapshots.append((tool: tool.name, arguments: parsedTool.arguments, result: result))
 
                     // Convert payload to JSON string with outcome metadata
                     var payload = result.outputPayload
@@ -360,6 +391,25 @@ public actor ReActOrchestrator {
 
                 case .requiresConfirmation(let ticket):
                     let totalDuration = (CFAbsoluteTimeGetCurrent() - totalStartTime) * 1000.0
+                    var strArgs: [String: String] = [:]
+                    for (k, v) in parsedTool.arguments { strArgs[k] = "\(v)" }
+
+                    let pendingRecord = ExecutionRecord(
+                        userRequest: userPrompt,
+                        interpretedIntent: "Sensitive action requires user authorization: \(tool.name)",
+                        selectedTool: tool.name,
+                        validatedArguments: strArgs,
+                        permissionResult: "confirmation_required",
+                        executionState: .permissionRequired,
+                        toolOutcome: .confirmationRequired,
+                        resultPayload: ["ticket_id": ticket.ticketId, "tool": tool.name],
+                        errorDetails: nil,
+                        isVerified: false,
+                        durationMs: totalDuration,
+                        requiredUserAction: "Confirm or cancel action in authorization prompt",
+                        timestamp: Date()
+                    )
+
                     return OrchestratorResponse(
                         textResponse: "Action requires confirmation: \(tool.name)",
                         executedTools: executedToolNames,
@@ -367,10 +417,18 @@ public actor ReActOrchestrator {
                         pendingConfirmationTicket: ticket,
                         routingDurationMs: routingDuration,
                         totalDurationMs: totalDuration,
-                        stepCount: iteration
+                        stepCount: iteration,
+                        executionRecord: pendingRecord
                     )
 
                 case .denied(let reason):
+                    let denialResult = AgentExecutionResult.failure(
+                        tool: tool.name,
+                        error: "Security policy denied: \(reason)",
+                        outcome: .deniedPolicy
+                    )
+                    executedToolSnapshots.append((tool: tool.name, arguments: parsedTool.arguments, result: denialResult))
+
                     let feedback = formatter.formatToolFeedback(
                         toolName: tool.name,
                         resultJson: "{\"error\": \"Security denied: \(reason)\"}"
@@ -391,21 +449,157 @@ public actor ReActOrchestrator {
         }
 
         let totalDuration = (CFAbsoluteTimeGetCurrent() - totalStartTime) * 1000.0
-        let loopRecord = ExecutionRecord(
-            userRequest: userPrompt,
-            interpretedIntent: executedToolNames.isEmpty ? "Natural language reasoning" : "Multi-step tool execution (\(executedToolNames.joined(separator: ", ")))",
-            selectedTool: executedToolNames.last,
-            validatedArguments: [:],
-            permissionResult: "authorized",
-            executionState: .completedVerified,
-            toolOutcome: .completedVerified,
-            resultPayload: ["response": finalAssistantText],
-            errorDetails: nil,
-            isVerified: true,
-            durationMs: totalDuration,
-            requiredUserAction: nil,
-            timestamp: Date()
+
+        // Derive authoritative ExecutionRecord reflecting the REAL tool outcomes
+        let loopRecord: ExecutionRecord
+        if executedToolSnapshots.isEmpty {
+            loopRecord = ExecutionRecord(
+                userRequest: userPrompt,
+                interpretedIntent: "Conversational reasoning",
+                selectedTool: nil,
+                validatedArguments: [:],
+                permissionResult: "authorized",
+                executionState: .completedVerified,
+                toolOutcome: .completedVerified,
+                resultPayload: ["response": finalAssistantText],
+                errorDetails: nil,
+                isVerified: false,
+                durationMs: totalDuration,
+                requiredUserAction: nil,
+                timestamp: Date()
+            )
+        } else if let failedSnapshot = executedToolSnapshots.first(where: { $0.result.outcome == .failed }) {
+            var strArgs: [String: String] = [:]
+            for (k, v) in failedSnapshot.arguments { strArgs[k] = "\(v)" }
+            var strPayload: [String: String] = [:]
+            for (k, v) in failedSnapshot.result.outputPayload { strPayload[k] = "\(v)" }
+
+            loopRecord = ExecutionRecord(
+                userRequest: userPrompt,
+                interpretedIntent: "Tool execution failed: \(failedSnapshot.tool)",
+                selectedTool: failedSnapshot.tool,
+                validatedArguments: strArgs,
+                permissionResult: "authorized",
+                executionState: .failed,
+                toolOutcome: .failed,
+                resultPayload: strPayload,
+                errorDetails: failedSnapshot.result.error,
+                isVerified: false,
+                durationMs: totalDuration,
+                requiredUserAction: "Check tool parameters and retry",
+                timestamp: Date()
+            )
+        } else if let deniedSnapshot = executedToolSnapshots.first(where: { $0.result.outcome == .deniedPolicy }) {
+            var strArgs: [String: String] = [:]
+            for (k, v) in deniedSnapshot.arguments { strArgs[k] = "\(v)" }
+            var strPayload: [String: String] = [:]
+            for (k, v) in deniedSnapshot.result.outputPayload { strPayload[k] = "\(v)" }
+
+            loopRecord = ExecutionRecord(
+                userRequest: userPrompt,
+                interpretedIntent: "Tool denied by security policy: \(deniedSnapshot.tool)",
+                selectedTool: deniedSnapshot.tool,
+                validatedArguments: strArgs,
+                permissionResult: "denied",
+                executionState: .failed,
+                toolOutcome: .deniedPolicy,
+                resultPayload: strPayload,
+                errorDetails: deniedSnapshot.result.error,
+                isVerified: false,
+                durationMs: totalDuration,
+                requiredUserAction: "Enable necessary system permissions in Settings",
+                timestamp: Date()
+            )
+        } else if let unsuppSnapshot = executedToolSnapshots.first(where: { $0.result.outcome == .unsupported }) {
+            var strArgs: [String: String] = [:]
+            for (k, v) in unsuppSnapshot.arguments { strArgs[k] = "\(v)" }
+            var strPayload: [String: String] = [:]
+            for (k, v) in unsuppSnapshot.result.outputPayload { strPayload[k] = "\(v)" }
+
+            loopRecord = ExecutionRecord(
+                userRequest: userPrompt,
+                interpretedIntent: "Unsupported tool operation: \(unsuppSnapshot.tool)",
+                selectedTool: unsuppSnapshot.tool,
+                validatedArguments: strArgs,
+                permissionResult: "unsupported",
+                executionState: .unsupported,
+                toolOutcome: .unsupported,
+                resultPayload: strPayload,
+                errorDetails: unsuppSnapshot.result.error,
+                isVerified: false,
+                durationMs: totalDuration,
+                requiredUserAction: nil,
+                timestamp: Date()
+            )
+        } else if executedToolSnapshots.allSatisfy({ $0.result.verified && $0.result.outcome == .completedVerified }) {
+            let lastSnapshot = executedToolSnapshots.last!
+            var strArgs: [String: String] = [:]
+            for (k, v) in lastSnapshot.arguments { strArgs[k] = "\(v)" }
+            var strPayload: [String: String] = [:]
+            for (k, v) in lastSnapshot.result.outputPayload { strPayload[k] = "\(v)" }
+
+            loopRecord = ExecutionRecord(
+                userRequest: userPrompt,
+                interpretedIntent: "Verified multi-step execution (\(executedToolNames.joined(separator: ", ")))",
+                selectedTool: lastSnapshot.tool,
+                validatedArguments: strArgs,
+                permissionResult: "authorized",
+                executionState: .completedVerified,
+                toolOutcome: .completedVerified,
+                resultPayload: strPayload,
+                errorDetails: nil,
+                isVerified: true,
+                durationMs: totalDuration,
+                requiredUserAction: nil,
+                timestamp: Date()
+            )
+        } else {
+            let lastSnapshot = executedToolSnapshots.last!
+            var strArgs: [String: String] = [:]
+            for (k, v) in lastSnapshot.arguments { strArgs[k] = "\(v)" }
+            var strPayload: [String: String] = [:]
+            for (k, v) in lastSnapshot.result.outputPayload { strPayload[k] = "\(v)" }
+
+            loopRecord = ExecutionRecord(
+                userRequest: userPrompt,
+                interpretedIntent: "Handoff execution (\(executedToolNames.joined(separator: ", ")))",
+                selectedTool: lastSnapshot.tool,
+                validatedArguments: strArgs,
+                permissionResult: "authorized",
+                executionState: .completedUnverified,
+                toolOutcome: .completedUnverified,
+                resultPayload: strPayload,
+                errorDetails: nil,
+                isVerified: false,
+                durationMs: totalDuration,
+                requiredUserAction: nil,
+                timestamp: Date()
+            )
+        }
+
+        await MainActor.run {
+            #if canImport(ActivityKit)
+            switch loopRecord.executionState {
+            case .completedVerified:
+                IRISDynamicIslandManager.shared.updateSessionState(.completedVerified, details: finalAssistantText)
+            case .completedUnverified:
+                IRISDynamicIslandManager.shared.updateSessionState(.completedUnverified, details: finalAssistantText)
+            case .failed, .unsupported:
+                IRISDynamicIslandManager.shared.updateSessionState(.failed, details: finalAssistantText)
+            case .cancelled:
+                IRISDynamicIslandManager.shared.updateSessionState(.cancelled)
+            default:
+                break
+            }
+            #endif
+        }
+
+        PersonalMemoryStore.shared.saveInteraction(
+            request: userPrompt,
+            response: finalAssistantText,
+            executionRecord: loopRecord
         )
+
         return OrchestratorResponse(
             textResponse: finalAssistantText,
             executedTools: executedToolNames,

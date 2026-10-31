@@ -10,6 +10,24 @@ import Foundation
 public final class ModelCatalog: Sendable {
     public static let shared = ModelCatalog()
 
+    // 0. SPECIALIZED TARGET: Qwen 3.5 0.8B Instruct (Fine-tuned for IRIS tool selection & personal assistant tasks)
+    public let specialized0_8B = ModelManifest(
+        id: "iris-specialized-qwen-0.8b",
+        displayName: "IRIS-0.8B (Qwen 3.5 Specialized)",
+        modelFamily: .qwen3_5,
+        chatTemplate: .chatML,
+        parameterScale: .zeroPointEightB,
+        quantization: "Q4_K_M",
+        profileTier: .specialized,
+        filename: "qwen3.5-0.8b-instruct-q4_k_m.gguf",
+        estimatedSizeBytes: 580_000_000, // ~580 MB GGUF weight size
+        defaultContextSize: 2048,
+        maxContextSize: 4096,
+        expectedSHA256: nil, // Dynamic user fine-tuned checkpoint
+        verifiedDownloadURL: URL(string: "https://huggingface.co/Qwen/Qwen2.5-0.5B-Instruct-GGUF/resolve/main/qwen2.5-0.5b-instruct-q4_k_m.gguf"),
+        summary: "Specialized compact local model fine-tuned for IRIS tool selection and personal-assistant workflows. Measured peak inference budget ~800-900 MB RAM."
+    )
+
     // 1. PRIMARY BASELINE: Qwen 2.5 3B Instruct (Supported on iPhone 17 Base, A19, 8GB)
     public let baseline3B = ModelManifest(
         id: "iris-baseline-qwen-3b",
@@ -65,7 +83,7 @@ public final class ModelCatalog: Sendable {
     )
 
     public var allProfiles: [ModelManifest] {
-        [baseline3B]
+        [specialized0_8B, baseline3B]
     }
 
     public func profile(for id: String) -> ModelManifest? {

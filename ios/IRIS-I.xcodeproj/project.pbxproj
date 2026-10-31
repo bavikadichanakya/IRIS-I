@@ -7,6 +7,22 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		A_TSV_012C00000100000001 /* ToolSchemaValidator.swift in Sources */ = {isa = PBXBuildFile; fileRef = B_TSV_012C00000100000001 /* ToolSchemaValidator.swift */; };
+		A_AAC_012C00000100000001 /* ActionApprovalCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = B_AAC_012C00000100000001 /* ActionApprovalCoordinator.swift */; };
+		A_AAV_012C00000100000001 /* ActionApprovalView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B_AAV_012C00000100000001 /* ActionApprovalView.swift */; };
+		A_AFP_012C00000100000001 /* AudioFrameProcessor.swift in Sources */ = {isa = PBXBuildFile; fileRef = B_AFP_012C00000100000001 /* AudioFrameProcessor.swift */; };
+		A_WWD_012C00000100000001 /* WakeWordDetector.swift in Sources */ = {isa = PBXBuildFile; fileRef = B_WWD_012C00000100000001 /* WakeWordDetector.swift */; };
+		A_PMS_012C00000100000001 /* PersonalMemoryStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = B_PMS_012C00000100000001 /* PersonalMemoryStore.swift */; };
+		A_CTT_012C00000100000001 /* ContactsTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = B_CTT_012C00000100000001 /* ContactsTool.swift */; };
+		A_PCT_012C00000100000001 /* PhoneCallTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = B_PCT_012C00000100000001 /* PhoneCallTool.swift */; };
+		A_NDI_012C00000100000001 /* NaturalDateInterpreter.swift in Sources */ = {isa = PBXBuildFile; fileRef = B_NDI_012C00000100000001 /* NaturalDateInterpreter.swift */; };
+		A_NTM_012C00000100000001 /* NotificationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = B_NTM_012C00000100000001 /* NotificationManager.swift */; };
+		A_TSC_012C00000100000001 /* TaskScheduler.swift in Sources */ = {isa = PBXBuildFile; fileRef = B_TSC_012C00000100000001 /* TaskScheduler.swift */; };
+		A_TSVT_012C0000010000000 /* ToolSchemaValidatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B_TSVT_012C0000010000000 /* ToolSchemaValidatorTests.swift */; };
+		A_NDIT_012C0000010000000 /* NaturalDateInterpreterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B_NDIT_012C0000010000000 /* NaturalDateInterpreterTests.swift */; };
+		A_PMST_012C0000010000000 /* PersonalMemoryStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B_PMST_012C0000010000000 /* PersonalMemoryStoreTests.swift */; };
+		A_MIQT_012C0000010000000 /* ModelIntegrityQuarantineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B_MIQT_012C0000010000000 /* ModelIntegrityQuarantineTests.swift */; };
+		A_AACT_012C0000010000000 /* ActionApprovalCoordinatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B_AACT_012C0000010000000 /* ActionApprovalCoordinatorTests.swift */; };
 		ASUB00012C00000100000001 /* VoiceSettingsSubsectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BSUB00012C00000100000001 /* VoiceSettingsSubsectionView.swift */; };
 		ASUB00022C00000100000001 /* WakeWordSettingsSubsectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BSUB00022C00000100000001 /* WakeWordSettingsSubsectionView.swift */; };
 		ASUB00032C00000100000001 /* ShortcutsSettingsSubsectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BSUB00032C00000100000001 /* ShortcutsSettingsSubsectionView.swift */; };
@@ -143,6 +159,22 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		B_TSV_012C00000100000001 /* ToolSchemaValidator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Core/Agent/Validation/ToolSchemaValidator.swift"; sourceTree = "<group>"; };
+		B_AAC_012C00000100000001 /* ActionApprovalCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Core/Agent/Security/ActionApprovalCoordinator.swift"; sourceTree = "<group>"; };
+		B_AAV_012C00000100000001 /* ActionApprovalView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Views/Components/ActionApprovalView.swift"; sourceTree = "<group>"; };
+		B_AFP_012C00000100000001 /* AudioFrameProcessor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Core/Audio/AudioFrameProcessor.swift"; sourceTree = "<group>"; };
+		B_WWD_012C00000100000001 /* WakeWordDetector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Core/Audio/WakeWordDetector.swift"; sourceTree = "<group>"; };
+		B_PMS_012C00000100000001 /* PersonalMemoryStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Core/Memory/PersonalMemoryStore.swift"; sourceTree = "<group>"; };
+		B_CTT_012C00000100000001 /* ContactsTool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Core/Agent/Tools/ContactsTool.swift"; sourceTree = "<group>"; };
+		B_PCT_012C00000100000001 /* PhoneCallTool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Core/Agent/Tools/PhoneCallTool.swift"; sourceTree = "<group>"; };
+		B_NDI_012C00000100000001 /* NaturalDateInterpreter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Core/Utilities/NaturalDateInterpreter.swift"; sourceTree = "<group>"; };
+		B_NTM_012C00000100000001 /* NotificationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Core/Notifications/NotificationManager.swift"; sourceTree = "<group>"; };
+		B_TSC_012C00000100000001 /* TaskScheduler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Core/Notifications/TaskScheduler.swift"; sourceTree = "<group>"; };
+		B_TSVT_012C0000010000000 /* ToolSchemaValidatorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ToolSchemaValidatorTests.swift"; sourceTree = "<group>"; };
+		B_NDIT_012C0000010000000 /* NaturalDateInterpreterTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "NaturalDateInterpreterTests.swift"; sourceTree = "<group>"; };
+		B_PMST_012C0000010000000 /* PersonalMemoryStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "PersonalMemoryStoreTests.swift"; sourceTree = "<group>"; };
+		B_MIQT_012C0000010000000 /* ModelIntegrityQuarantineTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ModelIntegrityQuarantineTests.swift"; sourceTree = "<group>"; };
+		B_AACT_012C0000010000000 /* ActionApprovalCoordinatorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ActionApprovalCoordinatorTests.swift"; sourceTree = "<group>"; };
 		BSUB00012C00000100000001 /* VoiceSettingsSubsectionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceSettingsSubsectionView.swift; sourceTree = "<group>"; };
 		BSUB00022C00000100000001 /* WakeWordSettingsSubsectionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WakeWordSettingsSubsectionView.swift; sourceTree = "<group>"; };
 		BSUB00032C00000100000001 /* ShortcutsSettingsSubsectionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShortcutsSettingsSubsectionView.swift; sourceTree = "<group>"; };
@@ -340,6 +372,17 @@
 				G10000052C00000100000001 /* Views */,
 				G10000062C00000100000001 /* Bridge */,
 				G10000072C00000100000001 /* Resources */,
+				B_TSV_012C00000100000001 /* ToolSchemaValidator.swift */,
+				B_AAC_012C00000100000001 /* ActionApprovalCoordinator.swift */,
+				B_AAV_012C00000100000001 /* ActionApprovalView.swift */,
+				B_AFP_012C00000100000001 /* AudioFrameProcessor.swift */,
+				B_WWD_012C00000100000001 /* WakeWordDetector.swift */,
+				B_PMS_012C00000100000001 /* PersonalMemoryStore.swift */,
+				B_CTT_012C00000100000001 /* ContactsTool.swift */,
+				B_PCT_012C00000100000001 /* PhoneCallTool.swift */,
+				B_NDI_012C00000100000001 /* NaturalDateInterpreter.swift */,
+				B_NTM_012C00000100000001 /* NotificationManager.swift */,
+				B_TSC_012C00000100000001 /* TaskScheduler.swift */,
 			);
 			path = "IRIS-I";
 			sourceTree = "<group>";
@@ -497,6 +540,11 @@
 				B20000012C00000100000001 /* ModelIntegrityTests.swift */,
 								B20000022C00000100000001 /* ModelLifecycleTests.swift */,
 				BTVS00012C00000100000001 /* VoiceSessionCoordinatorTests.swift */,
+				B_TSVT_012C0000010000000 /* ToolSchemaValidatorTests.swift */,
+				B_NDIT_012C0000010000000 /* NaturalDateInterpreterTests.swift */,
+				B_PMST_012C0000010000000 /* PersonalMemoryStoreTests.swift */,
+				B_MIQT_012C0000010000000 /* ModelIntegrityQuarantineTests.swift */,
+				B_AACT_012C0000010000000 /* ActionApprovalCoordinatorTests.swift */,
 				B20000032C00000100000001 /* CancellationTests.swift */,
 				B20000042C00000100000001 /* RealEngineIntegrationTests.swift */,
 			);
@@ -861,6 +909,17 @@ G100003C2C00000100000001 /* Intents */ = {
 				ASUB00092C00000100000001 /* AddMemoryNoteSubsectionView.swift in Sources */,
 				ASUB00102C00000100000001 /* QuickDrawerMenuSubsectionView.swift in Sources */,
 								A10000882C00000100000001 /* SpeechManager.swift in Sources */,
+				A_TSV_012C00000100000001 /* ToolSchemaValidator.swift in Sources */,
+				A_AAC_012C00000100000001 /* ActionApprovalCoordinator.swift in Sources */,
+				A_AAV_012C00000100000001 /* ActionApprovalView.swift in Sources */,
+				A_AFP_012C00000100000001 /* AudioFrameProcessor.swift in Sources */,
+				A_WWD_012C00000100000001 /* WakeWordDetector.swift in Sources */,
+				A_PMS_012C00000100000001 /* PersonalMemoryStore.swift in Sources */,
+				A_CTT_012C00000100000001 /* ContactsTool.swift in Sources */,
+				A_PCT_012C00000100000001 /* PhoneCallTool.swift in Sources */,
+				A_NDI_012C00000100000001 /* NaturalDateInterpreter.swift in Sources */,
+				A_NTM_012C00000100000001 /* NotificationManager.swift in Sources */,
+				A_TSC_012C00000100000001 /* TaskScheduler.swift in Sources */,
 				AVSC00012C00000100000001 /* VoiceSessionCoordinator.swift in Sources */,
 				AASM00012C00000100000001 /* AudioSessionManager.swift in Sources */,
 				ASRM00012C00000100000001 /* SpeechRecognitionManager.swift in Sources */,
@@ -918,6 +977,11 @@ G100003C2C00000100000001 /* Intents */ = {
 				A20000392C00000100000001 /* WebSearchToolTests.swift in Sources */,
 				A20000012C00000100000001 /* ModelIntegrityTests.swift in Sources */,
 								A20000022C00000100000001 /* ModelLifecycleTests.swift in Sources */,
+				A_TSVT_012C0000010000000 /* ToolSchemaValidatorTests.swift in Sources */,
+				A_NDIT_012C0000010000000 /* NaturalDateInterpreterTests.swift in Sources */,
+				A_PMST_012C0000010000000 /* PersonalMemoryStoreTests.swift in Sources */,
+				A_MIQT_012C0000010000000 /* ModelIntegrityQuarantineTests.swift in Sources */,
+				A_AACT_012C0000010000000 /* ActionApprovalCoordinatorTests.swift in Sources */,
 				ATVS00012C00000100000001 /* VoiceSessionCoordinatorTests.swift in Sources */,
 				A20000032C00000100000001 /* CancellationTests.swift in Sources */,
 				A20000042C00000100000001 /* RealEngineIntegrationTests.swift in Sources */,

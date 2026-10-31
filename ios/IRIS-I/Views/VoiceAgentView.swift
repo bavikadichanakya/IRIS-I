@@ -44,8 +44,7 @@ public struct VoiceAgentView: View {
     @State private var activeResultTitle: String = "Opened successfully"
     @State private var executionSteps: [ExecutionStepItem] = []
     @State private var isShowingResult: Bool = false
-    @State private var pendingTicket: ConfirmationTicket? = nil
-    @State private var isShowingConfirmation: Bool = false
+    @ObservedObject private var approvalCoordinator = ActionApprovalCoordinator.shared
     @State private var textInputQuery: String = ""
     @State private var isShowingKeyboardInput: Bool = false
     @State private var isShowingDrawerMenu: Bool = false
@@ -118,22 +117,13 @@ public struct VoiceAgentView: View {
             }
             .animation(.spring(response: 0.38, dampingFraction: 0.8), value: speechManager.state)
             .animation(.spring(response: 0.38, dampingFraction: 0.8), value: isShowingResult)
-            .confirmationDialog(
-                "Action Authorization Required",
-                isPresented: $isShowingConfirmation,
-                titleVisibility: .visible
-            ) {
-                if let ticket = pendingTicket {
-                    Button("Authorize \(ticket.toolName)") {
-                        confirmAndExecute(ticket: ticket)
+            .sheet(isPresented: $approvalCoordinator.isPresentingApproval) {
+                if let ticket = approvalCoordinator.activeTicket {
+                    ActionApprovalView(ticket: ticket) { approvedParams in
+                        confirmAndExecute(ticket: ticket, customParams: approvedParams)
+                    } onReject: {
+                        approvalCoordinator.reject(ticket: ticket)
                     }
-                    Button("Cancel", role: .cancel) {
-                        pendingTicket = nil
-                    }
-                }
-            } message: {
-                if let ticket = pendingTicket {
-                    Text("Requires authorization for \(ticket.toolName).")
                 }
             }
             .sheet(isPresented: $isShowingKeyboardInput) {
@@ -677,24 +667,24 @@ public struct VoiceAgentView: View {
         }
 
         if response.requiresConfirmation, let ticket = response.pendingConfirmationTicket {
-            self.pendingTicket = ticket
-            self.isShowingConfirmation = true
-            self.speechManager.speak(text: "This action requires your confirmation. Please tap Authorize to proceed.")
+            self.approvalCoordinator.requestApproval(ticket: ticket)
+            self.speechManager.speak(text: "This action requires your confirmation. Please review and authorize to proceed.")
         } else {
             self.speechManager.speak(text: response.textResponse)
         }
     }
 
-    private func confirmAndExecute(ticket: ConfirmationTicket) {
+    private func confirmAndExecute(ticket: ConfirmationTicket, customParams: [String: Any]? = nil) {
+        let params = customParams ?? ticket.rawParameters
         Task {
             let response = await orchestrator.executeConfirmedAction(
                 ticketId: ticket.ticketId,
-                parameters: ticket.rawParameters
+                parameters: params
             )
             self.executedTools = response.executedTools
             self.speechManager.spokenResponse = response.textResponse
             self.speechManager.speak(text: response.textResponse)
-            self.pendingTicket = nil
+            self.approvalCoordinator.dismissAndProcessNext()
         }
     }
 }

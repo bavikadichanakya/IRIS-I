@@ -8,17 +8,20 @@
 import Foundation
 
 public enum ProfileTier: String, Codable, Sendable {
-    case baseline     // 3B Q4_K_M: Fully supported default for iPhone 17 (A19, 8GB)
+    case specialized  // 0.8B Q4_K_M: Fine-tuned compact personal assistant model (~800-900 MB RAM budget)
+    case baseline     // 3B Q4_K_M: Supported default for iPhone 17 (A19, 8GB)
     case experimental // 7B: Strictly experimental, requires explicit user confirmation
 }
 
 public enum ParameterScale: String, Codable, Sendable {
+    case zeroPointEightB = "0.8B"
     case threeB = "3B"
     case sevenB = "7B"
 }
 
 public enum ModelFamily: String, Codable, Sendable {
-    case qwen2_5 = "qwen2.5"     // Primary intended target for IRIS-I (ChatML template)
+    case qwen3_5 = "qwen3.5"     // Target specialized model for IRIS (ChatML template)
+    case qwen2_5 = "qwen2.5"     // Primary baseline target for IRIS-I (ChatML template)
     case llama3  = "llama3"      // Engine verification & generic smoke test only
     case generic = "generic"
 }

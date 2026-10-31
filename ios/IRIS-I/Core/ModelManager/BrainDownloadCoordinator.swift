@@ -19,6 +19,12 @@ public final class BrainDownloadCoordinator: ObservableObject {
     @Published public var statusMessage: String = "Ready"
     @Published public var isModelInstalled: Bool = false
     @Published public var isModelActive: Bool = false
+    @Published public var activeManifest: ModelManifest {
+        didSet {
+            UserDefaults.standard.set(activeManifest.id, forKey: "iris_selected_model_id")
+            refreshState()
+        }
+    }
 
     private let catalog = ModelCatalog.shared
     private let storage = ModelStorageManager.shared
@@ -28,34 +34,50 @@ public final class BrainDownloadCoordinator: ObservableObject {
     private var downloadTask: Task<Void, Never>?
 
     private init() {
-        self.isModelInstalled = storage.isModelInstalled(catalog.baseline3B)
+        let savedId = UserDefaults.standard.string(forKey: "iris_selected_model_id")
+        let manifest = catalog.profile(for: savedId ?? "") ?? (storage.isModelInstalled(catalog.specialized0_8B) ? catalog.specialized0_8B : catalog.baseline3B)
+        self.activeManifest = manifest
+        self.isModelInstalled = storage.isModelInstalled(manifest)
         Task { @MainActor in
             await self.refreshStateAsync()
         }
     }
 
     public func refreshState() {
-        self.isModelInstalled = storage.isModelInstalled(catalog.baseline3B)
+        self.isModelInstalled = storage.isModelInstalled(activeManifest)
         Task { @MainActor in
             await self.refreshStateAsync()
         }
     }
 
     public func refreshStateAsync() async {
-        self.isModelInstalled = storage.isModelInstalled(catalog.baseline3B)
+        self.isModelInstalled = storage.isModelInstalled(activeManifest)
         let loaded = await runner.isModelLoaded
         let isMock = await runner.isUsingMockEngine
         self.isModelActive = loaded && !isMock
         if isModelActive {
-            self.statusMessage = "Brain Active (100% On-Device · Metal)"
+            self.statusMessage = "\(activeManifest.displayName) Active (100% On-Device · Metal)"
         } else if isModelInstalled {
-            self.statusMessage = "Model downloaded · Ready to activate"
+            self.statusMessage = "\(activeManifest.displayName) downloaded · Ready to activate"
         } else if !isDownloading {
-            self.statusMessage = "No local brain downloaded (2.10 GB)"
+            let sizeMB = activeManifest.estimatedSizeBytes / (1024 * 1024)
+            self.statusMessage = "No local brain downloaded (\(sizeMB) MB)"
         }
     }
 
-    /// Automatically provisions or activates the baseline brain on application launch
+    /// Safely switches the active model profile and activates it if already installed
+    public func selectModel(_ manifest: ModelManifest) async {
+        guard manifest.id != activeManifest.id else { return }
+        self.activeManifest = manifest
+        if storage.isModelInstalled(manifest) {
+            activateInstalledBrain(manifest: manifest)
+        } else {
+            await runner.unloadModel()
+            await refreshStateAsync()
+        }
+    }
+
+    /// Automatically provisions or activates the active brain on application launch
     public func autoProvisionOrActivateOnLaunch() async {
         // Do not auto-download or auto-activate during automated test execution
         if ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil ||
@@ -63,7 +85,7 @@ public final class BrainDownloadCoordinator: ObservableObject {
             return
         }
         await refreshStateAsync()
-        let manifest = catalog.baseline3B
+        let manifest = activeManifest
         if storage.isModelInstalled(manifest) {
             if !isModelActive {
                 activateInstalledBrain(manifest: manifest)
@@ -71,9 +93,9 @@ public final class BrainDownloadCoordinator: ObservableObject {
         }
     }
 
-    /// One-tap action: downloads the baseline GGUF model and immediately auto-activates it into memory.
+    /// One-tap action: downloads the active GGUF model and immediately auto-activates it into memory.
     public func downloadAndActivateBrain() {
-        let manifest = catalog.baseline3B
+        let manifest = activeManifest
 
         // If already installed, directly activate
         if storage.isModelInstalled(manifest) {

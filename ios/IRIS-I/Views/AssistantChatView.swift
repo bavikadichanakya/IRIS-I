@@ -55,8 +55,7 @@ public struct AssistantChatView: View {
     @State private var activeStreamingText: String = ""
     @State private var activeToolName: String? = nil
 
-    @State private var pendingTicket: ConfirmationTicket? = nil
-    @State private var isShowingConfirmation: Bool = false
+    @ObservedObject private var approvalCoordinator = ActionApprovalCoordinator.shared
     @State private var isShowingDrawerMenu: Bool = false
 
     @StateObject private var speechManager = SpeechManager.shared
@@ -234,22 +233,13 @@ public struct AssistantChatView: View {
                     .padding(.bottom, 96) // Space for floating tab bar
                 }
             }
-            .confirmationDialog(
-                "Action Authorization Required",
-                isPresented: $isShowingConfirmation,
-                titleVisibility: .visible
-            ) {
-                if let ticket = pendingTicket {
-                    Button("Authorize \(ticket.toolName)") {
-                        confirmAndExecute(ticket: ticket)
+            .sheet(isPresented: $approvalCoordinator.isPresentingApproval) {
+                if let ticket = approvalCoordinator.activeTicket {
+                    ActionApprovalView(ticket: ticket) { approvedParams in
+                        confirmAndExecute(ticket: ticket, customParams: approvedParams)
+                    } onReject: {
+                        approvalCoordinator.reject(ticket: ticket)
                     }
-                    Button("Cancel", role: .cancel) {
-                        pendingTicket = nil
-                    }
-                }
-            } message: {
-                if let ticket = pendingTicket {
-                    Text("Requires authorization for \(ticket.toolName).")
                 }
             }
             .sheet(isPresented: $isShowingDrawerMenu) {
@@ -428,19 +418,19 @@ public struct AssistantChatView: View {
 
             if response.requiresConfirmation, let ticket = response.pendingConfirmationTicket {
                 await MainActor.run {
-                    self.pendingTicket = ticket
-                    self.isShowingConfirmation = true
+                    self.approvalCoordinator.requestApproval(ticket: ticket)
                 }
             }
         }
     }
 
-    private func confirmAndExecute(ticket: ConfirmationTicket) {
+    private func confirmAndExecute(ticket: ConfirmationTicket, customParams: [String: Any]? = nil) {
+        let params = customParams ?? ticket.rawParameters
         Task {
             let start = CFAbsoluteTimeGetCurrent()
             let response = await orchestrator.executeConfirmedAction(
                 ticketId: ticket.ticketId,
-                parameters: ticket.rawParameters
+                parameters: params
             )
             let duration = (CFAbsoluteTimeGetCurrent() - start) * 1000.0
 
@@ -453,7 +443,7 @@ public struct AssistantChatView: View {
 
             await MainActor.run {
                 self.messages.append(assistantMessage)
-                self.pendingTicket = nil
+                self.approvalCoordinator.dismissAndProcessNext()
             }
         }
     }
