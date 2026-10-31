@@ -33,6 +33,19 @@ final class AppLaunchRegistryTests: XCTestCase {
         let instagram = await registry.descriptor(for: "instagram")
         XCTAssertNotNil(instagram)
         XCTAssertEqual(instagram?.urlScheme, "instagram:")
+
+        let safari = await registry.descriptor(for: "safari")
+        XCTAssertNotNil(safari)
+        let browser = await registry.descriptor(for: "browser")
+        XCTAssertNotNil(browser)
+
+        let calc = await registry.descriptor(for: "calc")
+        XCTAssertNotNil(calc)
+        XCTAssertEqual(calc?.appName, "Calculator")
+
+        let clock = await registry.descriptor(for: "clock")
+        XCTAssertNotNil(clock)
+        XCTAssertEqual(clock?.appName, "Clock")
     }
 
     func testUnregisteredAppThrowsUnsupportedWithoutSynthesizingScheme() async {

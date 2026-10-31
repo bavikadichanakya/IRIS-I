@@ -122,7 +122,12 @@ public struct FastIntentRouter: Sendable {
         "tiktok": "TikTok",
         "slack": "Slack",
         "discord": "Discord",
-        "reddit": "Reddit"
+        "reddit": "Reddit",
+        "safari": "Safari",
+        "calculator": "Calculator",
+        "calc": "Calculator",
+        "clock": "Clock",
+        "podcasts": "Podcasts"
     ]
 
     private static let wakeAndCourtesyPrefixes: [String] = [

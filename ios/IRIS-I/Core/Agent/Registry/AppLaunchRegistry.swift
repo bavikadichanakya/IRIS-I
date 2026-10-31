@@ -247,6 +247,38 @@ public actor AppLaunchRegistry {
             appStoreURL: URL(string: "https://apps.apple.com/app/discord/id985746746"),
             description: "Discord voice and chat"
         ))
+        register(AppLaunchDescriptor(
+            appName: "Safari",
+            urlScheme: "https://",
+            queryScheme: "http",
+            universalLinkURL: URL(string: "https://apple.com"),
+            description: "Apple Safari web browser"
+        ))
+        register(AppLaunchDescriptor(
+            appName: "Calculator",
+            urlScheme: "calc:",
+            queryScheme: "calc",
+            description: "Apple Calculator"
+        ))
+        register(AppLaunchDescriptor(
+            appName: "Clock",
+            urlScheme: "clock-timer:",
+            queryScheme: "clock-timer",
+            description: "Apple Clock & Timer"
+        ))
+        register(AppLaunchDescriptor(
+            appName: "App Store",
+            urlScheme: "itms-apps:",
+            queryScheme: "itms-apps",
+            universalLinkURL: URL(string: "https://apps.apple.com"),
+            description: "Apple App Store"
+        ))
+        register(AppLaunchDescriptor(
+            appName: "Podcasts",
+            urlScheme: "podcasts:",
+            queryScheme: "podcasts",
+            description: "Apple Podcasts"
+        ))
     }
 
     public func register(_ descriptor: AppLaunchDescriptor) {
@@ -266,6 +298,9 @@ public actor AppLaunchRegistry {
         let noSpace = key.replacingOccurrences(of: " ", with: "")
         if let d = registry[noSpace] { return d }
         if key == "x" { return registry["twitter"] }
+        if key == "browser" || key == "web browser" { return registry["safari"] }
+        if key == "store" { return registry["app store"] }
+        if key == "calc" { return registry["calculator"] }
         return nil
     }
 

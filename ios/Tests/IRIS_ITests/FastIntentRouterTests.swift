@@ -211,4 +211,18 @@ final class FastIntentRouterTests: XCTestCase {
             XCTAssertLessThan(routingDurationMs, 10.0, "Fall-through decision must complete in <10ms")
         }
     }
+
+    func testSafariAndCalculatorRoutingSpeed() {
+        for (query, expectedApp) in [("open safari", "Safari"), ("launch calculator", "Calculator"), ("open clock", "Clock")] {
+            let result = router.route(query: query)
+            switch result {
+            case .matched(let toolName, let args, let duration):
+                XCTAssertEqual(toolName, "AppOpenerTool")
+                XCTAssertEqual(args["app_name"] as? String, expectedApp)
+                XCTAssertLessThan(duration, 10.0)
+            case .unmatched:
+                XCTFail("Expected '\(query)' to match FastIntentRouter")
+            }
+        }
+    }
 }

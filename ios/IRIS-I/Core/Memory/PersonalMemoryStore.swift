@@ -130,6 +130,11 @@ public final class PersonalMemoryStore: @unchecked Sendable {
             execute(sql: createInteractionsSQL)
             execute(sql: createNotesSQL)
             execute(sql: createPreferencesSQL)
+
+            // Optimized indexes for high-speed prompt context injection
+            execute(sql: "CREATE INDEX IF NOT EXISTS idx_conversation_created ON conversation_records(created_at DESC);")
+            execute(sql: "CREATE INDEX IF NOT EXISTS idx_notes_importance ON personal_notes(importance DESC, updated_at DESC);")
+            execute(sql: "CREATE INDEX IF NOT EXISTS idx_preferences_category ON user_preferences(category);")
             // Rule: Clean startup. Never seed synthetic mock data into genuine user databases.
         }
     }

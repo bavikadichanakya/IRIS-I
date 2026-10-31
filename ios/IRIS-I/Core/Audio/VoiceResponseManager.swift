@@ -65,18 +65,32 @@ public final class VoiceResponseManager: NSObject, @unchecked Sendable {
         isCurrentlySpeaking = false
     }
 
+    private static let codeBlockRegex = try? NSRegularExpression(pattern: "```[\\s\\S]*?```")
+    private static let toolCallRegex = try? NSRegularExpression(pattern: "<tool_call>[\\s\\S]*?</tool_call>")
+    private static let thoughtRegex = try? NSRegularExpression(pattern: "<thought>[\\s\\S]*?</thought>")
+
     private func cleanTextForSpeech(_ text: String) -> String {
         var clean = text
+        let fullRange = NSRange(clean.startIndex..<clean.endIndex, in: clean)
+
+        // Strip internal thinking tags so IRIS never speaks CoT thoughts out loud
+        if let thoughtRegex = Self.thoughtRegex {
+            clean = thoughtRegex.stringByReplacingMatches(in: clean, range: NSRange(clean.startIndex..<clean.endIndex, in: clean), withTemplate: "")
+        }
         // Remove code blocks
-        clean = clean.replacingOccurrences(of: "```[\\s\\S]*?```", with: "", options: .regularExpression)
-        // Remove inline code ticks
+        if let codeRegex = Self.codeBlockRegex {
+            clean = codeRegex.stringByReplacingMatches(in: clean, range: NSRange(clean.startIndex..<clean.endIndex, in: clean), withTemplate: "")
+        }
+        // Remove tool tags
+        if let toolRegex = Self.toolCallRegex {
+            clean = toolRegex.stringByReplacingMatches(in: clean, range: NSRange(clean.startIndex..<clean.endIndex, in: clean), withTemplate: "")
+        }
+        // Remove inline code ticks & markdown styling
         clean = clean.replacingOccurrences(of: "`", with: "")
-        // Remove markdown symbols
         clean = clean.replacingOccurrences(of: "#", with: "")
         clean = clean.replacingOccurrences(of: "*", with: "")
         clean = clean.replacingOccurrences(of: "_", with: "")
-        // Remove tool tags
-        clean = clean.replacingOccurrences(of: "<tool_call>[\\s\\S]*?</tool_call>", with: "", options: .regularExpression)
+
         return clean.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 }
