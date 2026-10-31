@@ -43,9 +43,13 @@ final class PersonalMemoryStoreTests: XCTestCase {
 
     func testPromptContextInjection() {
         let store = PersonalMemoryStore.shared
+        let noteId = store.addNote(title: "Context Test Note", content: "Important user context", category: "Test", importance: 3)
+        defer { store.deleteNote(id: noteId) }
+
         let context = store.contextForPrompt("Hello assistant")
         XCTAssertFalse(context.isEmpty)
         XCTAssertTrue(context.contains("[PERSISTENT USER MEMORY & PREFERENCES]"))
+        XCTAssertTrue(context.contains("Context Test Note"))
     }
 
     func testInteractionSaving() {

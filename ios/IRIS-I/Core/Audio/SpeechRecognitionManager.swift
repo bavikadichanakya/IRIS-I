@@ -79,8 +79,8 @@ public final class SpeechRecognitionManager: NSObject, @unchecked Sendable {
     /// Validates that offline on-device speech recognition is available and supported.
     /// Throws an explicit error if unsupported or unavailable; never falls back to cloud.
     #if canImport(Speech)
-    public func validateOfflineCapability(for recognizer: SFSpeechRecognizer? = nil) throws {
-        let rec = recognizer ?? self.recognizer
+    public func validateOfflineCapability(for recognizer: SFSpeechRecognizer? = nil, allowDefaultFallback: Bool = true) throws {
+        let rec = allowDefaultFallback ? (recognizer ?? self.recognizer) : recognizer
         guard let rec = rec, rec.isAvailable else {
             throw NSError(
                 domain: "IRIS.Speech",
@@ -98,7 +98,7 @@ public final class SpeechRecognitionManager: NSObject, @unchecked Sendable {
         }
     }
     #else
-    public func validateOfflineCapability() throws {}
+    public func validateOfflineCapability(for recognizer: Any? = nil, allowDefaultFallback: Bool = true) throws {}
     #endif
 
     public func startRecognition() throws {

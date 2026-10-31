@@ -16,10 +16,10 @@ import AppIntents
 @available(iOS 16.0, macOS 13.0, watchOS 9.0, tvOS 16.0, *)
 public struct AskIRISIntent: AppIntent {
     public static var title: LocalizedStringResource = "Ask IRIS"
-    public static var description = IntentDescription("Wakes IRIS and begins listening for voice commands.")
+    public static var description = IntentDescription("Wakes IRIS and begins listening for voice commands in Dynamic Island.")
 
-    /// Brings app to foreground so iOS legitimately allows microphone audio capture
-    public static var openAppWhenRun: Bool = true
+    /// Runs directly in background so Action Button triggers Dynamic Island without launching app window
+    public static var openAppWhenRun: Bool = false
     public static var isDiscoverable: Bool = true
 
     public init() {}
@@ -102,7 +102,7 @@ public struct OpenAppWithIRISIntent: AppIntent {
 public struct StartIRISVoiceIntent: AppIntent {
     public static var title: LocalizedStringResource = "Wake IRIS Voice"
     public static var description = IntentDescription("Wakes IRIS and immediately begins listening for voice commands in the Dynamic Island.")
-    public static var openAppWhenRun: Bool = true
+    public static var openAppWhenRun: Bool = false
     public static var isDiscoverable: Bool = true
 
     public init() {}
@@ -118,10 +118,10 @@ public struct StartIRISVoiceIntent: AppIntent {
 @available(iOS 16.0, macOS 13.0, watchOS 9.0, tvOS 16.0, *)
 public struct StartListeningIntent: AppIntent {
     public static var title: LocalizedStringResource = "Start Iris Voice Agent"
-    public static var description = IntentDescription("Wakes IRIS and begins listening for voice commands.")
+    public static var description = IntentDescription("Wakes IRIS and begins listening for voice commands in Dynamic Island.")
 
     public static var isDiscoverable: Bool = true
-    public static var openAppWhenRun: Bool = true
+    public static var openAppWhenRun: Bool = false
 
     public init() {}
 

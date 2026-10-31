@@ -174,11 +174,36 @@ final class VoiceSessionCoordinatorTests: XCTestCase {
         }
 
         // Test nil recognizer throws unavailable error
-        XCTAssertThrowsError(try manager.validateOfflineCapability(for: nil)) { error in
+        XCTAssertThrowsError(try manager.validateOfflineCapability(for: nil, allowDefaultFallback: false)) { error in
             let nsError = error as NSError
             XCTAssertEqual(nsError.domain, "IRIS.Speech")
             XCTAssertEqual(nsError.code, -1)
         }
         #endif
+    }
+
+    @MainActor
+    func testContinuousListeningConfiguration() {
+        let coordinator = VoiceSessionCoordinator.shared
+        let original = coordinator.isContinuousListeningEnabled
+        defer { coordinator.isContinuousListeningEnabled = original }
+
+        coordinator.isContinuousListeningEnabled = true
+        XCTAssertTrue(coordinator.isContinuousListeningEnabled)
+
+        coordinator.isContinuousListeningEnabled = false
+        XCTAssertFalse(coordinator.isContinuousListeningEnabled)
+    }
+
+    @MainActor
+    func testExplicitVoiceSessionExitPhrases() {
+        let coordinator = VoiceSessionCoordinator.shared
+        coordinator.resetForTesting()
+
+        for phrase in ["stop", "cancel", "exit", "goodbye", "dismiss", "bye", "hey iris, stop listening"] {
+            coordinator.submitRecognizedCommand(phrase)
+            XCTAssertEqual(coordinator.state, .cancelled, "Phrase '\(phrase)' should cancel voice session")
+            coordinator.resetForTesting()
+        }
     }
 }

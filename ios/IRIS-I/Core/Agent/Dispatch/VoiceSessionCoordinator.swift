@@ -82,6 +82,11 @@ public final class VoiceSessionCoordinator: ObservableObject {
     @Published public private(set) var latestResponse: String = ""
     @Published public private(set) var currentAudioLevel: Float = 0.0
     @Published public private(set) var errorMessage: String? = nil
+    @Published public var isContinuousListeningEnabled: Bool = true {
+        didSet {
+            UserDefaults.standard.set(isContinuousListeningEnabled, forKey: "iris_continuous_listening")
+        }
+    }
 
     private let audioManager = AudioSessionManager.shared
     private let speechManager = SpeechRecognitionManager.shared
@@ -94,6 +99,9 @@ public final class VoiceSessionCoordinator: ObservableObject {
     private var isSubmittingCommand: Bool = false
 
     private init() {
+        if UserDefaults.standard.object(forKey: "iris_continuous_listening") != nil {
+            self.isContinuousListeningEnabled = UserDefaults.standard.bool(forKey: "iris_continuous_listening")
+        }
         audioManager.delegate = self
         speechManager.delegate = self
         responseManager.delegate = self
@@ -249,6 +257,14 @@ public final class VoiceSessionCoordinator: ObservableObject {
 
         let cleanQuery = VoiceSessionCoordinator.stripWakeWords(command)
         print("[VOICE_SESSION] wake_words_stripped from '\(command)' -> '\(cleanQuery)'")
+
+        let lower = cleanQuery.lowercased()
+        if lower == "stop" || lower == "cancel" || lower == "exit" || lower == "goodbye" || lower == "dismiss" || lower == "bye" || lower == "stop listening" {
+            print("[VOICE_SESSION] User explicitly ended continuous voice session: '\(cleanQuery)'")
+            self.isSubmittingCommand = false
+            self.cancelVoiceSession()
+            return
+        }
 
         guard !cleanQuery.isEmpty else {
             // User uttered wake word only ("Hey IRIS") -> respond with ready prompt and keep listening
@@ -414,12 +430,25 @@ extension VoiceSessionCoordinator: VoiceResponseManagerDelegate {
             self.state = .completed(summary: self.latestResponse)
             self.dynamicIsland.updateSessionState(.completedVerified, details: self.latestResponse)
             SpeechManager.shared.syncWithCoordinator(state: .idle)
-            Task {
-                try? await Task.sleep(nanoseconds: 1_800_000_000)
+
+            if self.isContinuousListeningEnabled {
+                // Multi-turn continuous voice in Dynamic Island:
+                // Allow audio hardware and echo cancellation to stabilize before re-opening mic
+                try? await Task.sleep(nanoseconds: 500_000_000)
                 if case .completed = self.state {
-                    print("[VOICE_SESSION] session_completed. Resetting to idle.")
-                    self.state = .idle
-                    self.dynamicIsland.endLiveActivity()
+                    print("[VOICE_SESSION] Continuous listening enabled: resuming voice capture in Dynamic Island.")
+                    self.activeTranscript = ""
+                    self.isSubmittingCommand = false
+                    await self.startVoiceSession()
+                }
+            } else {
+                Task {
+                    try? await Task.sleep(nanoseconds: 1_800_000_000)
+                    if case .completed = self.state {
+                        print("[VOICE_SESSION] session_completed. Resetting to idle.")
+                        self.state = .idle
+                        self.dynamicIsland.endLiveActivity()
+                    }
                 }
             }
         }
