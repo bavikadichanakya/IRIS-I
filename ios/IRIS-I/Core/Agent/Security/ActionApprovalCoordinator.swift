@@ -21,8 +21,8 @@ public final class ActionApprovalCoordinator: ObservableObject {
 
     private var approvalQueue: [ConfirmationTicket] = []
     private var countdownTimer: AnyCancellable?
-    private var continuations: [UUID: CheckedContinuation<OrchestratorResponse, Error>] = [:]
-    private var consumedTicketIds: Set<UUID> = []
+    private var continuations: [String: CheckedContinuation<OrchestratorResponse, Error>] = [:]
+    private var consumedTicketIds: Set<String> = []
 
     public init() {}
 

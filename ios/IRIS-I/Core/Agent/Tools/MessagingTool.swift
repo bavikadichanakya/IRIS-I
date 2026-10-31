@@ -126,17 +126,15 @@ public struct MessagingTool: IRISAgentTool {
 
         if opened {
             // External handoff: Messages app opened draft, internal user send action is unverifiable
-            return AgentExecutionResult(
-                success: true,
-                toolName: name,
-                outcome: .completedUnverified,
-                outputPayload: [
+            return AgentExecutionResult.success(
+                tool: name,
+                verified: false,
+                payload: [
                     "recipient": rawRecipient,
                     "resolved_number": cleanNumber.isEmpty ? resolvedNumber : cleanNumber,
                     "message": "Opened native Messages composer with draft: \"\(message)\". Review and tap Send."
                 ],
-                durationMs: duration,
-                verified: false
+                durationMs: duration
             )
         } else {
             return AgentExecutionResult.failure(
