@@ -48,6 +48,7 @@ public struct VoiceAgentView: View {
     @State private var isShowingConfirmation: Bool = false
     @State private var textInputQuery: String = ""
     @State private var isShowingKeyboardInput: Bool = false
+    @State private var isShowingDrawerMenu: Bool = false
 
     private let orchestrator = ReActOrchestrator.shared
 
@@ -156,6 +157,9 @@ public struct VoiceAgentView: View {
                     .navigationBarTitleDisplayMode(.inline)
                 }
                 .presentationDetents([.fraction(0.35)])
+            }
+            .sheet(isPresented: $isShowingDrawerMenu) {
+                QuickDrawerMenuSubsectionView()
             }
         }
     }
@@ -408,6 +412,7 @@ public struct VoiceAgentView: View {
             Button {
                 let generator = UIImpactFeedbackGenerator(style: .light)
                 generator.impactOccurred()
+                isShowingDrawerMenu = true
             } label: {
                 Image(systemName: "line.3.horizontal")
                     .font(.system(size: 18, weight: .semibold))

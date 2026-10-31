@@ -57,6 +57,7 @@ public struct AssistantChatView: View {
 
     @State private var pendingTicket: ConfirmationTicket? = nil
     @State private var isShowingConfirmation: Bool = false
+    @State private var isShowingDrawerMenu: Bool = false
 
     @StateObject private var speechManager = SpeechManager.shared
     @StateObject private var brainCoordinator = BrainDownloadCoordinator.shared
@@ -86,6 +87,7 @@ public struct AssistantChatView: View {
                         Button {
                             let generator = UIImpactFeedbackGenerator(style: .light)
                             generator.impactOccurred()
+                            isShowingDrawerMenu = true
                         } label: {
                             Image(systemName: "line.3.horizontal")
                                 .font(.system(size: 18, weight: .semibold))
@@ -249,6 +251,9 @@ public struct AssistantChatView: View {
                 if let ticket = pendingTicket {
                     Text("Requires authorization for \(ticket.toolName).")
                 }
+            }
+            .sheet(isPresented: $isShowingDrawerMenu) {
+                QuickDrawerMenuSubsectionView()
             }
         }
     }

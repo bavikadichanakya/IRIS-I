@@ -28,6 +28,8 @@ public struct ActionsCatalogView: View {
     @State private var feedbackMessage: String?
     @State private var isExecuting: Bool = false
     @State private var selectedAction: ActionItem?
+    @State private var isShowingAddAction: Bool = false
+    @State private var customActions: [ActionItem] = []
 
     private let allActions: [ActionItem] = [
         ActionItem(
@@ -112,11 +114,15 @@ public struct ActionsCatalogView: View {
         )
     ]
 
+    private var combinedActions: [ActionItem] {
+        allActions + customActions
+    }
+
     private var filteredActions: [ActionItem] {
         if searchText.trimmingCharacters(in: .whitespaces).isEmpty {
-            return allActions
+            return combinedActions
         }
-        return allActions.filter {
+        return combinedActions.filter {
             $0.title.localizedCaseInsensitiveContains(searchText) ||
             $0.subtitle.localizedCaseInsensitiveContains(searchText)
         }
@@ -143,6 +149,7 @@ public struct ActionsCatalogView: View {
                         Button {
                             let generator = UIImpactFeedbackGenerator(style: .light)
                             generator.impactOccurred()
+                            isShowingAddAction = true
                         } label: {
                             Image(systemName: "plus")
                                 .font(.system(size: 18, weight: .semibold))
@@ -211,12 +218,28 @@ public struct ActionsCatalogView: View {
                     }
                 }
             }
+            .sheet(item: $selectedAction) { item in
+                ActionDetailSubsectionView(action: item)
+            }
+            .sheet(isPresented: $isShowingAddAction) {
+                AddCustomActionSubsectionView { newAction in
+                    customActions.append(newAction)
+                    withAnimation {
+                        feedbackMessage = "Added '\(newAction.title)' to catalog"
+                    }
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 2.5) {
+                        withAnimation { feedbackMessage = nil }
+                    }
+                }
+            }
         }
     }
 
     private func actionRow(for item: ActionItem) -> some View {
         Button {
-            executeAction(item)
+            let generator = UIImpactFeedbackGenerator(style: .light)
+            generator.impactOccurred()
+            selectedAction = item
         } label: {
             HStack(spacing: 14) {
                 ZStack {
@@ -238,6 +261,16 @@ public struct ActionsCatalogView: View {
                 }
 
                 Spacer()
+
+                // Quick Run inline trigger
+                Button {
+                    executeAction(item)
+                } label: {
+                    Image(systemName: "play.circle.fill")
+                        .font(.system(size: 22))
+                        .foregroundColor(item.iconColor)
+                }
+                .buttonStyle(.plain)
 
                 Image(systemName: "chevron.right")
                     .font(.system(size: 14, weight: .semibold))

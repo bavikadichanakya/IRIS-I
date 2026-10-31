@@ -104,20 +104,34 @@ public struct SettingsView: View {
 
                             // Settings Group 1: Voice & Wake Word
                             VStack(spacing: 0) {
-                                settingsRow(
-                                    icon: "speaker.wave.2.fill",
-                                    iconColor: .blue,
-                                    title: "Voice",
-                                    value: selectedVoice
-                                )
+                                NavigationLink {
+                                    VoiceSettingsSubsectionView(selectedVoice: $selectedVoice)
+                                } label: {
+                                    settingsRow(
+                                        icon: "speaker.wave.2.fill",
+                                        iconColor: .blue,
+                                        title: "Voice",
+                                        value: selectedVoice
+                                    )
+                                }
+                                .buttonStyle(.plain)
+
                                 Divider().padding(.leading, 52)
-                                settingsRow(
-                                    icon: "waveform.circle.fill",
-                                    iconColor: .purple,
-                                    title: "Wake Word",
-                                    value: "Hey IRIS"
-                                )
+
+                                NavigationLink {
+                                    WakeWordSettingsSubsectionView()
+                                } label: {
+                                    settingsRow(
+                                        icon: "waveform.circle.fill",
+                                        iconColor: .purple,
+                                        title: "Wake Word",
+                                        value: "Hey IRIS"
+                                    )
+                                }
+                                .buttonStyle(.plain)
+
                                 Divider().padding(.leading, 52)
+
                                 settingsToggleRow(
                                     icon: "shield.lefthalf.filled",
                                     iconColor: .orange,
@@ -140,7 +154,9 @@ public struct SettingsView: View {
                                 .onChange(of: isBackgroundMode) { _, enabled in
                                     speechManager.isBackgroundWakeWordEnabled = enabled
                                 }
+
                                 Divider().padding(.leading, 52)
+
                                 Button {
                                     #if canImport(UIKit)
                                     if let url = URL(string: UIApplication.openSettingsURLString) {
@@ -155,13 +171,21 @@ public struct SettingsView: View {
                                         value: "Manage access"
                                     )
                                 }
+                                .buttonStyle(.plain)
+
                                 Divider().padding(.leading, 52)
-                                settingsRow(
-                                    icon: "square.2.layers.3d.top.filled",
-                                    iconColor: .pink,
-                                    title: "Shortcuts",
-                                    value: "Siri & App Intents"
-                                )
+
+                                NavigationLink {
+                                    ShortcutsSettingsSubsectionView()
+                                } label: {
+                                    settingsRow(
+                                        icon: "square.2.layers.3d.top.filled",
+                                        iconColor: .pink,
+                                        title: "Shortcuts",
+                                        value: "Siri & App Intents"
+                                    )
+                                }
+                                .buttonStyle(.plain)
                             }
                             .background(Color.white.opacity(0.92))
                             .cornerRadius(18)
@@ -169,20 +193,34 @@ public struct SettingsView: View {
 
                             // Settings Group 3: Appearance & Accounts
                             VStack(spacing: 0) {
-                                settingsRow(
-                                    icon: "paintbrush.fill",
-                                    iconColor: .cyan,
-                                    title: "Appearance",
-                                    value: "Liquid Glass"
-                                )
+                                NavigationLink {
+                                    AppearanceSettingsSubsectionView()
+                                } label: {
+                                    settingsRow(
+                                        icon: "paintbrush.fill",
+                                        iconColor: .cyan,
+                                        title: "Appearance",
+                                        value: "Liquid Glass"
+                                    )
+                                }
+                                .buttonStyle(.plain)
+
                                 Divider().padding(.leading, 52)
-                                settingsRow(
-                                    icon: "globe",
-                                    iconColor: .blue,
-                                    title: "Language",
-                                    value: "English (US)"
-                                )
+
+                                NavigationLink {
+                                    LanguageSettingsSubsectionView()
+                                } label: {
+                                    settingsRow(
+                                        icon: "globe",
+                                        iconColor: .blue,
+                                        title: "Language",
+                                        value: "English (US)"
+                                    )
+                                }
+                                .buttonStyle(.plain)
+
                                 Divider().padding(.leading, 52)
+
                                 Button {
                                     isShowingGmailConnector = true
                                 } label: {
@@ -193,6 +231,7 @@ public struct SettingsView: View {
                                         value: gmailStatus
                                     )
                                 }
+                                .buttonStyle(.plain)
                             }
                             .background(Color.white.opacity(0.92))
                             .cornerRadius(18)

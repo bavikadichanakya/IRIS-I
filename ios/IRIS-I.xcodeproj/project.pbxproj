@@ -7,6 +7,16 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		ASUB00012C00000100000001 /* VoiceSettingsSubsectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BSUB00012C00000100000001 /* VoiceSettingsSubsectionView.swift */; };
+		ASUB00022C00000100000001 /* WakeWordSettingsSubsectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BSUB00022C00000100000001 /* WakeWordSettingsSubsectionView.swift */; };
+		ASUB00032C00000100000001 /* ShortcutsSettingsSubsectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BSUB00032C00000100000001 /* ShortcutsSettingsSubsectionView.swift */; };
+		ASUB00042C00000100000001 /* AppearanceSettingsSubsectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BSUB00042C00000100000001 /* AppearanceSettingsSubsectionView.swift */; };
+		ASUB00052C00000100000001 /* LanguageSettingsSubsectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BSUB00052C00000100000001 /* LanguageSettingsSubsectionView.swift */; };
+		ASUB00062C00000100000001 /* ActionDetailSubsectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BSUB00062C00000100000001 /* ActionDetailSubsectionView.swift */; };
+		ASUB00072C00000100000001 /* AddCustomActionSubsectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BSUB00072C00000100000001 /* AddCustomActionSubsectionView.swift */; };
+		ASUB00082C00000100000001 /* MemoryDetailSubsectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BSUB00082C00000100000001 /* MemoryDetailSubsectionView.swift */; };
+		ASUB00092C00000100000001 /* AddMemoryNoteSubsectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BSUB00092C00000100000001 /* AddMemoryNoteSubsectionView.swift */; };
+		ASUB00102C00000100000001 /* QuickDrawerMenuSubsectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BSUB00102C00000100000001 /* QuickDrawerMenuSubsectionView.swift */; };
 		AVSC00012C00000100000001 /* VoiceSessionCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = BVSC00012C00000100000001 /* VoiceSessionCoordinator.swift */; };
 		AASM00012C00000100000001 /* AudioSessionManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = BASM00012C00000100000001 /* AudioSessionManager.swift */; };
 		ASRM00012C00000100000001 /* SpeechRecognitionManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = BSRM00012C00000100000001 /* SpeechRecognitionManager.swift */; };
@@ -133,6 +143,16 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		BSUB00012C00000100000001 /* VoiceSettingsSubsectionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceSettingsSubsectionView.swift; sourceTree = "<group>"; };
+		BSUB00022C00000100000001 /* WakeWordSettingsSubsectionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WakeWordSettingsSubsectionView.swift; sourceTree = "<group>"; };
+		BSUB00032C00000100000001 /* ShortcutsSettingsSubsectionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShortcutsSettingsSubsectionView.swift; sourceTree = "<group>"; };
+		BSUB00042C00000100000001 /* AppearanceSettingsSubsectionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppearanceSettingsSubsectionView.swift; sourceTree = "<group>"; };
+		BSUB00052C00000100000001 /* LanguageSettingsSubsectionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LanguageSettingsSubsectionView.swift; sourceTree = "<group>"; };
+		BSUB00062C00000100000001 /* ActionDetailSubsectionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActionDetailSubsectionView.swift; sourceTree = "<group>"; };
+		BSUB00072C00000100000001 /* AddCustomActionSubsectionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddCustomActionSubsectionView.swift; sourceTree = "<group>"; };
+		BSUB00082C00000100000001 /* MemoryDetailSubsectionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemoryDetailSubsectionView.swift; sourceTree = "<group>"; };
+		BSUB00092C00000100000001 /* AddMemoryNoteSubsectionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddMemoryNoteSubsectionView.swift; sourceTree = "<group>"; };
+		BSUB00102C00000100000001 /* QuickDrawerMenuSubsectionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuickDrawerMenuSubsectionView.swift; sourceTree = "<group>"; };
 		BVSC00012C00000100000001 /* VoiceSessionCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceSessionCoordinator.swift; sourceTree = "<group>"; };
 		BASM00012C00000100000001 /* AudioSessionManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AudioSessionManager.swift; sourceTree = "<group>"; };
 		BSRM00012C00000100000001 /* SpeechRecognitionManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeechRecognitionManager.swift; sourceTree = "<group>"; };
@@ -399,6 +419,7 @@
 		G10000052C00000100000001 /* Views */ = {
 			isa = PBXGroup;
 			children = (
+				GSUB00002C00000100000001 /* Subsections */,
 				B100009C2C00000100000001 /* IRISShortcutSnippetView.swift */,
 				B100009B2C00000100000001 /* DynamicIslandPillView.swift */,
 				GLGK00012C00000100000001 /* LiquidGlassKit */,
@@ -416,6 +437,23 @@
 				B10000152C00000100000001 /* DiagnosticConsoleView.swift */,
 			);
 			path = Views;
+			sourceTree = "<group>";
+		};
+				GSUB00002C00000100000001 /* Subsections */ = {
+			isa = PBXGroup;
+			children = (
+				BSUB00012C00000100000001 /* VoiceSettingsSubsectionView.swift */,
+				BSUB00022C00000100000001 /* WakeWordSettingsSubsectionView.swift */,
+				BSUB00032C00000100000001 /* ShortcutsSettingsSubsectionView.swift */,
+				BSUB00042C00000100000001 /* AppearanceSettingsSubsectionView.swift */,
+				BSUB00052C00000100000001 /* LanguageSettingsSubsectionView.swift */,
+				BSUB00062C00000100000001 /* ActionDetailSubsectionView.swift */,
+				BSUB00072C00000100000001 /* AddCustomActionSubsectionView.swift */,
+				BSUB00082C00000100000001 /* MemoryDetailSubsectionView.swift */,
+				BSUB00092C00000100000001 /* AddMemoryNoteSubsectionView.swift */,
+				BSUB00102C00000100000001 /* QuickDrawerMenuSubsectionView.swift */,
+			);
+			path = Subsections;
 			sourceTree = "<group>";
 		};
 		G10000062C00000100000001 /* Bridge */ = {
@@ -812,6 +850,16 @@ G100003C2C00000100000001 /* Intents */ = {
 				A10000462C00000100000001 /* AssistantChatView.swift in Sources */,
 				A10000472C00000100000001 /* GmailConnectionView.swift in Sources */,
 				A10000482C00000100000001 /* SettingsView.swift in Sources */,
+				ASUB00012C00000100000001 /* VoiceSettingsSubsectionView.swift in Sources */,
+				ASUB00022C00000100000001 /* WakeWordSettingsSubsectionView.swift in Sources */,
+				ASUB00032C00000100000001 /* ShortcutsSettingsSubsectionView.swift in Sources */,
+				ASUB00042C00000100000001 /* AppearanceSettingsSubsectionView.swift in Sources */,
+				ASUB00052C00000100000001 /* LanguageSettingsSubsectionView.swift in Sources */,
+				ASUB00062C00000100000001 /* ActionDetailSubsectionView.swift in Sources */,
+				ASUB00072C00000100000001 /* AddCustomActionSubsectionView.swift in Sources */,
+				ASUB00082C00000100000001 /* MemoryDetailSubsectionView.swift in Sources */,
+				ASUB00092C00000100000001 /* AddMemoryNoteSubsectionView.swift in Sources */,
+				ASUB00102C00000100000001 /* QuickDrawerMenuSubsectionView.swift in Sources */,
 								A10000882C00000100000001 /* SpeechManager.swift in Sources */,
 				AVSC00012C00000100000001 /* VoiceSessionCoordinator.swift in Sources */,
 				AASM00012C00000100000001 /* AudioSessionManager.swift in Sources */,

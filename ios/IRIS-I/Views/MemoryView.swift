@@ -19,9 +19,11 @@ public struct MemoryItem: Identifiable, Sendable {
 
 public struct MemoryView: View {
     @State private var selectedSegment: Int = 0 // 0: Recent, 1: Notes, 2: Preferences
+    @State private var selectedMemory: MemoryItem? = nil
+    @State private var isShowingAddNote: Bool = false
     private let segments = ["Recent", "Notes", "Preferences"]
 
-    private let recentHistory: [MemoryItem] = [
+    @State private var recentHistory: [MemoryItem] = [
         MemoryItem(
             title: "Opened Instagram",
             timestamp: "Today, 9:54 AM",
@@ -66,7 +68,7 @@ public struct MemoryView: View {
         )
     ]
 
-    private let sampleNotes: [String] = [
+    @State private var sampleNotes: [String] = [
         "Prefers Apple Music over Spotify for Siri commands.",
         "Set daily reminder for standup meeting at 10:00 AM.",
         "Default location: Cupertino / San Francisco."
@@ -93,6 +95,7 @@ public struct MemoryView: View {
                         Button {
                             let generator = UIImpactFeedbackGenerator(style: .light)
                             generator.impactOccurred()
+                            isShowingAddNote = true
                         } label: {
                             Image(systemName: "plus")
                                 .font(.system(size: 18, weight: .semibold))
@@ -153,42 +156,59 @@ public struct MemoryView: View {
                     }
                 }
             }
+            .sheet(item: $selectedMemory) { item in
+                MemoryDetailSubsectionView(item: item) { idToDelete in
+                    recentHistory.removeAll(where: { $0.id == idToDelete })
+                }
+            }
+            .sheet(isPresented: $isShowingAddNote) {
+                AddMemoryNoteSubsectionView { newNote in
+                    sampleNotes.insert(newNote, at: 0)
+                }
+            }
         }
     }
 
     private var recentTimelineView: some View {
         LazyVStack(spacing: 10) {
             ForEach(recentHistory) { item in
-                HStack(spacing: 14) {
-                    ZStack {
-                        Circle()
-                            .fill(item.iconColor.opacity(0.12))
-                            .frame(width: 42, height: 42)
-                        Image(systemName: item.icon)
-                            .font(.system(size: 18, weight: .semibold))
-                            .foregroundColor(item.iconColor)
+                Button {
+                    let generator = UIImpactFeedbackGenerator(style: .light)
+                    generator.impactOccurred()
+                    selectedMemory = item
+                } label: {
+                    HStack(spacing: 14) {
+                        ZStack {
+                            Circle()
+                                .fill(item.iconColor.opacity(0.12))
+                                .frame(width: 42, height: 42)
+                            Image(systemName: item.icon)
+                                .font(.system(size: 18, weight: .semibold))
+                                .foregroundColor(item.iconColor)
+                        }
+
+                        VStack(alignment: .leading, spacing: 3) {
+                            Text(item.title)
+                                .font(.system(size: 15, weight: .semibold))
+                                .foregroundColor(.black)
+                            Text(item.timestamp)
+                                .font(.system(size: 12))
+                                .foregroundColor(Color(white: 0.40))
+                        }
+
+                        Spacer()
+
+                        Image(systemName: "chevron.right")
+                            .font(.system(size: 13, weight: .semibold))
+                            .foregroundColor(Color(white: 0.60))
                     }
-
-                    VStack(alignment: .leading, spacing: 3) {
-                        Text(item.title)
-                            .font(.system(size: 15, weight: .semibold))
-                            .foregroundColor(.black)
-                        Text(item.timestamp)
-                            .font(.system(size: 12))
-                            .foregroundColor(Color(white: 0.40))
-                    }
-
-                    Spacer()
-
-                    Image(systemName: "chevron.right")
-                        .font(.system(size: 13, weight: .semibold))
-                        .foregroundColor(Color(white: 0.60))
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 12)
+                    .background(Color.white)
+                    .cornerRadius(16)
+                    .shadow(color: Color.black.opacity(0.03), radius: 6, y: 2)
                 }
-                .padding(.horizontal, 16)
-                .padding(.vertical, 12)
-                .background(Color.white)
-                .cornerRadius(16)
-                .shadow(color: Color.black.opacity(0.03), radius: 6, y: 2)
+                .buttonStyle(.plain)
             }
         }
     }
