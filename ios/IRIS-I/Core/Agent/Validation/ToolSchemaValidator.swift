@@ -47,6 +47,39 @@ public enum ToolValidationResult: Sendable {
         return false
     }
 
+    public var errors: [ToolValidationError] {
+        if case .invalid(let errs) = self { return errs }
+        return []
+    }
+
+    public var missingRequired: [String] {
+        errors.compactMap {
+            if case .missingRequired(let field, _) = $0 { return field }
+            return nil
+        }
+    }
+
+    public var invalidTypes: [String] {
+        errors.compactMap {
+            if case .typeMismatch(let field, _, _, _) = $0 { return field }
+            return nil
+        }
+    }
+
+    public var enumViolations: [String] {
+        errors.compactMap {
+            if case .invalidEnumValue(let field, _, _, _) = $0 { return field }
+            return nil
+        }
+    }
+
+    public var unexpectedProperties: [String] {
+        errors.compactMap {
+            if case .unexpectedProperty(let field, _) = $0 { return field }
+            return nil
+        }
+    }
+
     public var feedbackJsonString: String {
         switch self {
         case .valid:
