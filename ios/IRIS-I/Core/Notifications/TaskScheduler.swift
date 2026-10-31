@@ -38,8 +38,9 @@ public final class TaskScheduler: @unchecked Sendable {
             greeting = "Good evening"
         }
 
-        let battery = await HardwareTelemetry.shared.getTelemetry()
-        let batteryDesc = "\(Int(battery.batteryLevel * 100))% (\(battery.batteryState))"
+        let systemInfoTool = SystemInfoTool()
+        let batteryResult = await systemInfoTool.execute(arguments: ["action": "battery"])
+        let batteryDesc = (batteryResult.outputPayload["message"] as? String) ?? "Battery normal"
 
         // Query upcoming events
         let eventsResult = await eventKitTool.execute(arguments: ["action": "list_events"])

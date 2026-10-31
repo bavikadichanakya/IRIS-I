@@ -114,7 +114,7 @@ public final class ActionApprovalCoordinator: ObservableObject {
         dismissAndProcessNext()
     }
 
-    private func dismissAndProcessNext() {
+    public func dismissAndProcessNext() {
         countdownTimer?.cancel()
         countdownTimer = nil
         self.activeTicket = nil
