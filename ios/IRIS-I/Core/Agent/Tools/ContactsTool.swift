@@ -154,3 +154,4 @@ public struct ContactsTool: IRISAgentTool {
         }
     }
 }
+

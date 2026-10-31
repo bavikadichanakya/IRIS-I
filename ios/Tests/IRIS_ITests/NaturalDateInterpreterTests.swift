@@ -61,3 +61,4 @@ final class NaturalDateInterpreterTests: XCTestCase {
         XCTAssertEqual(parsed?.dateComponents.minute, 30)
     }
 }
+

@@ -86,3 +86,4 @@ public final class NotificationManager: @unchecked Sendable {
         center.removePendingNotificationRequests(withIdentifiers: [identifier])
     }
 }
+

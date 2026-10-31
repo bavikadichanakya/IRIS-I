@@ -428,3 +428,4 @@ public final class PersonalMemoryStore: @unchecked Sendable {
         return lines.joined(separator: "\n")
     }
 }
+

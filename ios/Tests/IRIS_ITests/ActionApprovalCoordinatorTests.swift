@@ -41,3 +41,4 @@ final class ActionApprovalCoordinatorTests: XCTestCase {
         XCTAssertNotEqual(digest1, alteredDigest)
     }
 }
+

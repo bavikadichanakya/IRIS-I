@@ -48,3 +48,4 @@ final class ModelIntegrityQuarantineTests: XCTestCase {
         XCTAssertTrue(catalog.allProfiles.contains { $0.id == catalog.baseline3B.id })
     }
 }
+

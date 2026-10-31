@@ -13,7 +13,7 @@ final class ToolSchemaValidatorTests: XCTestCase {
 
     func testAppOpenerToolValidationSuccess() {
         let tool = AppOpenerTool()
-        let validArgs: [String: Any] = ["target": "youtube"]
+        let validArgs: [String: Any] = ["app_name": "youtube"]
         let result = ToolSchemaValidator.validate(tool: tool, arguments: validArgs)
 
         XCTAssertTrue(result.isValid)
@@ -28,16 +28,16 @@ final class ToolSchemaValidatorTests: XCTestCase {
         let result = ToolSchemaValidator.validate(tool: tool, arguments: emptyArgs)
 
         XCTAssertFalse(result.isValid)
-        XCTAssertTrue(result.missingRequired.contains("target"))
+        XCTAssertTrue(result.missingRequired.contains("app_name"))
     }
 
     func testInvalidTypeRejection() {
         let tool = AppOpenerTool()
-        let badTypeArgs: [String: Any] = ["target": 12345] // Number instead of String
+        let badTypeArgs: [String: Any] = ["app_name": 12345] // Number instead of String
         let result = ToolSchemaValidator.validate(tool: tool, arguments: badTypeArgs)
 
         XCTAssertFalse(result.isValid)
-        XCTAssertTrue(result.invalidTypes.contains("target"))
+        XCTAssertTrue(result.invalidTypes.contains("app_name"))
     }
 
     func testEnumConstraintViolation() {
@@ -55,7 +55,7 @@ final class ToolSchemaValidatorTests: XCTestCase {
     func testUnexpectedParameterRejection() {
         let tool = AppOpenerTool()
         let unexpectedArgs: [String: Any] = [
-            "target": "music",
+            "app_name": "music",
             "hallucinated_param": "test"
         ]
         let result = ToolSchemaValidator.validate(tool: tool, arguments: unexpectedArgs)
@@ -64,3 +64,4 @@ final class ToolSchemaValidatorTests: XCTestCase {
         XCTAssertTrue(result.unexpectedProperties.contains("hallucinated_param"))
     }
 }
+

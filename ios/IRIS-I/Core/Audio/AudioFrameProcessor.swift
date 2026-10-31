@@ -126,3 +126,4 @@ public final class AudioFrameProcessor: @unchecked Sendable {
         lock.unlock()
     }
 }
+
