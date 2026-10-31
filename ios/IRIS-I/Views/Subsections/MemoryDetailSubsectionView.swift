@@ -218,3 +218,4 @@ public struct MemoryDetailSubsectionView: View {
         }
     }
 }
+

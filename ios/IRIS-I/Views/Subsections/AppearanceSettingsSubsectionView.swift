@@ -260,3 +260,4 @@ public struct AppearanceSettingsSubsectionView: View {
         .padding(16)
     }
 }
+
