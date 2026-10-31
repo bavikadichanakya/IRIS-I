@@ -286,7 +286,7 @@ public actor ReActOrchestrator {
         conversationMessages.append(ChatMessage(role: "user", content: userPrompt))
 
         let availableTools = await toolRegistry.toolDefinitions()
-        let activeManifest = await runner.currentManifest ?? BrainDownloadCoordinator.shared.activeManifest
+        let activeManifest = await runner.currentManifest ?? (await MainActor.run { BrainDownloadCoordinator.shared.activeManifest })
         let formatter = PromptTemplateFormatterFactory.formatter(for: activeManifest)
 
         var executedToolNames: [String] = []
@@ -577,15 +577,16 @@ public actor ReActOrchestrator {
             )
         }
 
+        let responseSnapshot = finalAssistantText
         await MainActor.run {
             #if canImport(ActivityKit)
             switch loopRecord.executionState {
             case .completedVerified:
-                IRISDynamicIslandManager.shared.updateSessionState(.completedVerified, details: finalAssistantText)
+                IRISDynamicIslandManager.shared.updateSessionState(.completedVerified, details: responseSnapshot)
             case .completedUnverified:
-                IRISDynamicIslandManager.shared.updateSessionState(.completedUnverified, details: finalAssistantText)
+                IRISDynamicIslandManager.shared.updateSessionState(.completedUnverified, details: responseSnapshot)
             case .failed, .unsupported:
-                IRISDynamicIslandManager.shared.updateSessionState(.failed, details: finalAssistantText)
+                IRISDynamicIslandManager.shared.updateSessionState(.failed, details: responseSnapshot)
             case .cancelled:
                 IRISDynamicIslandManager.shared.updateSessionState(.cancelled)
             default:
