@@ -286,7 +286,13 @@ public actor ReActOrchestrator {
         conversationMessages.append(ChatMessage(role: "user", content: userPrompt))
 
         let availableTools = await toolRegistry.toolDefinitions()
-        let activeManifest = await runner.currentManifest ?? (await MainActor.run { BrainDownloadCoordinator.shared.activeManifest })
+        let loadedManifest = await runner.currentManifest
+        let activeManifest: ModelManifest
+        if let loaded = loadedManifest {
+            activeManifest = loaded
+        } else {
+            activeManifest = await MainActor.run { BrainDownloadCoordinator.shared.activeManifest }
+        }
         let formatter = PromptTemplateFormatterFactory.formatter(for: activeManifest)
 
         var executedToolNames: [String] = []
