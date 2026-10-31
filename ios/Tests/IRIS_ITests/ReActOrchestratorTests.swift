@@ -98,13 +98,11 @@ final class ReActOrchestratorTests: XCTestCase {
     }
 
     func testOneSuccessfulToolCallExecutionRecord() {
-        let successResult = AgentExecutionResult(
-            success: true,
-            toolName: "SystemInfoTool",
-            outcome: .completedVerified,
-            outputPayload: ["time": "18:30:00"],
-            durationMs: 5.0,
-            verified: true
+        let successResult = AgentExecutionResult.success(
+            tool: "SystemInfoTool",
+            verified: true,
+            payload: ["time": "18:30:00"],
+            durationMs: 5.0
         )
 
         let record = ReActOrchestrator.aggregateExecutionRecord(
@@ -117,7 +115,7 @@ final class ReActOrchestratorTests: XCTestCase {
 
         XCTAssertEqual(record.selectedTool, "SystemInfoTool")
         XCTAssertEqual(record.executionState, .completedVerified)
-        XCTAssertEqual(record.toolOutcome, .completedVerified)
+        XCTAssertEqual(record.toolOutcome, ToolExecutionOutcome.completedVerified)
         XCTAssertTrue(record.isVerified)
         XCTAssertEqual(record.resultPayload["time"], "18:30:00")
     }
@@ -139,19 +137,17 @@ final class ReActOrchestratorTests: XCTestCase {
 
         XCTAssertEqual(record.selectedTool, "WeatherTool")
         XCTAssertEqual(record.executionState, .failed)
-        XCTAssertEqual(record.toolOutcome, .failed)
+        XCTAssertEqual(record.toolOutcome, ToolExecutionOutcome.failed)
         XCTAssertFalse(record.isVerified)
         XCTAssertEqual(record.errorDetails, "Service unavailable")
     }
 
     func testMultipleToolsWithMixedOutcomesPrioritizesFailure() {
-        let successResult = AgentExecutionResult(
-            success: true,
-            toolName: "SystemInfoTool",
-            outcome: .completedVerified,
-            outputPayload: ["battery": "80%"],
-            durationMs: 4.0,
-            verified: true
+        let successResult = AgentExecutionResult.success(
+            tool: "SystemInfoTool",
+            verified: true,
+            payload: ["battery": "80%"],
+            durationMs: 4.0
         )
         let failedResult = AgentExecutionResult.failure(
             tool: "MessagingTool",
@@ -174,18 +170,16 @@ final class ReActOrchestratorTests: XCTestCase {
 
         XCTAssertEqual(record.selectedTool, "MessagingTool")
         XCTAssertEqual(record.executionState, .failed, "Mixed outcome with a failure must not report false success")
-        XCTAssertEqual(record.toolOutcome, .failed)
+        XCTAssertEqual(record.toolOutcome, ToolExecutionOutcome.failed)
         XCTAssertFalse(record.isVerified)
     }
 
     func testExternalAppHandoffExecutionRecord() {
-        let handoffResult = AgentExecutionResult(
-            success: true,
-            toolName: "AppOpenerTool",
-            outcome: .completedUnverified,
-            outputPayload: ["opened": "YouTube"],
-            durationMs: 12.0,
-            verified: false
+        let handoffResult = AgentExecutionResult.success(
+            tool: "AppOpenerTool",
+            verified: false,
+            payload: ["opened": "YouTube"],
+            durationMs: 12.0
         )
 
         let record = ReActOrchestrator.aggregateExecutionRecord(
@@ -198,7 +192,7 @@ final class ReActOrchestratorTests: XCTestCase {
 
         XCTAssertEqual(record.selectedTool, "AppOpenerTool")
         XCTAssertEqual(record.executionState, .completedUnverified)
-        XCTAssertEqual(record.toolOutcome, .completedUnverified)
+        XCTAssertEqual(record.toolOutcome, ToolExecutionOutcome.completedUnverified)
         XCTAssertFalse(record.isVerified, "External app handoff must remain unverified")
     }
 }
