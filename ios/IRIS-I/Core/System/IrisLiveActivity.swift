@@ -325,6 +325,7 @@ public struct IrisLiveActivity: Widget {
                 PearlOrbDynamicIslandView(size: 14)
             }
             .keylineTint(Color.white.opacity(0.3))
+            .widgetURL(context.state.targetURL.flatMap { URL(string: $0) })
         }
     }
 }

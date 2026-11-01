@@ -27,29 +27,15 @@ public struct AskIRISIntent: AppIntent {
     @MainActor
     public func perform() async throws -> some IntentResult {
         print("[INTENT] intent_received: AskIRISIntent")
-        var bgTaskId: UIBackgroundTaskIdentifier = .invalid
-        #if canImport(UIKit)
-        bgTaskId = UIApplication.shared.beginBackgroundTask(withName: "AskIRISIntentSession") {
-            if bgTaskId != .invalid {
-                UIApplication.shared.endBackgroundTask(bgTaskId)
-                bgTaskId = .invalid
-            }
-        }
-        #endif
-
         VoiceSessionCoordinator.shared.isContinuousListeningEnabled = true
-        await BrainDownloadCoordinator.shared.autoProvisionOrActivateOnLaunch()
+
+        // 1. Immediately request Live Activity & start voice engine (< 50ms)
         await VoiceSessionCoordinator.shared.startVoiceSession()
 
-        // Allow audio engine to stabilize background capture before intent completion
-        try? await Task.sleep(nanoseconds: 200_000_000)
-
-        #if canImport(UIKit)
-        if bgTaskId != .invalid {
-            UIApplication.shared.endBackgroundTask(bgTaskId)
-            bgTaskId = .invalid
+        // 2. Concurrently warm neural model in background without blocking intent completion
+        Task.detached(priority: .userInitiated) {
+            await BrainDownloadCoordinator.shared.autoProvisionOrActivateOnLaunch()
         }
-        #endif
 
         return .result()
     }
@@ -133,28 +119,15 @@ public struct StartIRISVoiceIntent: AppIntent {
     @MainActor
     public func perform() async throws -> some IntentResult {
         print("[INTENT] intent_received: StartIRISVoiceIntent")
-        var bgTaskId: UIBackgroundTaskIdentifier = .invalid
-        #if canImport(UIKit)
-        bgTaskId = UIApplication.shared.beginBackgroundTask(withName: "StartIRISVoiceIntentSession") {
-            if bgTaskId != .invalid {
-                UIApplication.shared.endBackgroundTask(bgTaskId)
-                bgTaskId = .invalid
-            }
-        }
-        #endif
-
         VoiceSessionCoordinator.shared.isContinuousListeningEnabled = true
-        await BrainDownloadCoordinator.shared.autoProvisionOrActivateOnLaunch()
+
+        // 1. Immediately request Live Activity & start voice engine (< 50ms)
         await VoiceSessionCoordinator.shared.startVoiceSession()
 
-        try? await Task.sleep(nanoseconds: 200_000_000)
-
-        #if canImport(UIKit)
-        if bgTaskId != .invalid {
-            UIApplication.shared.endBackgroundTask(bgTaskId)
-            bgTaskId = .invalid
+        // 2. Concurrently warm neural model in background without blocking intent completion
+        Task.detached(priority: .userInitiated) {
+            await BrainDownloadCoordinator.shared.autoProvisionOrActivateOnLaunch()
         }
-        #endif
 
         return .result()
     }
@@ -173,28 +146,15 @@ public struct StartListeningIntent: AppIntent {
     @MainActor
     public func perform() async throws -> some IntentResult {
         print("[INTENT] intent_received: StartListeningIntent")
-        var bgTaskId: UIBackgroundTaskIdentifier = .invalid
-        #if canImport(UIKit)
-        bgTaskId = UIApplication.shared.beginBackgroundTask(withName: "StartListeningIntentSession") {
-            if bgTaskId != .invalid {
-                UIApplication.shared.endBackgroundTask(bgTaskId)
-                bgTaskId = .invalid
-            }
-        }
-        #endif
-
         VoiceSessionCoordinator.shared.isContinuousListeningEnabled = true
-        await BrainDownloadCoordinator.shared.autoProvisionOrActivateOnLaunch()
+
+        // 1. Immediately request Live Activity & start voice engine (< 50ms)
         await VoiceSessionCoordinator.shared.startVoiceSession()
 
-        try? await Task.sleep(nanoseconds: 200_000_000)
-
-        #if canImport(UIKit)
-        if bgTaskId != .invalid {
-            UIApplication.shared.endBackgroundTask(bgTaskId)
-            bgTaskId = .invalid
+        // 2. Concurrently warm neural model in background without blocking intent completion
+        Task.detached(priority: .userInitiated) {
+            await BrainDownloadCoordinator.shared.autoProvisionOrActivateOnLaunch()
         }
-        #endif
 
         return .result()
     }

@@ -10,6 +10,9 @@
 import Foundation
 import SwiftUI
 import AVFoundation
+#if canImport(UIKit)
+import UIKit
+#endif
 
 public enum VoiceSessionState: Equatable, Sendable {
     case idle
@@ -98,6 +101,29 @@ public final class VoiceSessionCoordinator: ObservableObject {
     private var isStartingSession: Bool = false
     private var isSubmittingCommand: Bool = false
 
+    #if canImport(UIKit)
+    private var backgroundTaskID: UIBackgroundTaskIdentifier = .invalid
+
+    private func acquireBackgroundTask() {
+        if backgroundTaskID == .invalid {
+            backgroundTaskID = UIApplication.shared.beginBackgroundTask(withName: "IRISContinuousVoiceSession") { [weak self] in
+                Task { @MainActor in
+                    self?.endBackgroundTask()
+                }
+            }
+            print("[VOICE_SESSION] Acquired UIBackgroundTaskIdentifier: \(backgroundTaskID)")
+        }
+    }
+
+    private func endBackgroundTask() {
+        if backgroundTaskID != .invalid {
+            print("[VOICE_SESSION] Ending UIBackgroundTaskIdentifier: \(backgroundTaskID)")
+            UIApplication.shared.endBackgroundTask(backgroundTaskID)
+            backgroundTaskID = .invalid
+        }
+    }
+    #endif
+
     private init() {
         if UserDefaults.standard.object(forKey: "iris_continuous_listening") != nil {
             self.isContinuousListeningEnabled = UserDefaults.standard.bool(forKey: "iris_continuous_listening")
@@ -135,6 +161,10 @@ public final class VoiceSessionCoordinator: ObservableObject {
         let newSessionId = UUID()
         self.activeSessionId = newSessionId
         print("[VOICE_SESSION] session_created: \(newSessionId.uuidString)")
+
+        #if canImport(UIKit)
+        acquireBackgroundTask()
+        #endif
 
         self.state = .preparing
         self.activeTranscript = ""
@@ -245,6 +275,9 @@ public final class VoiceSessionCoordinator: ObservableObject {
         self.state = .cancelled
         self.dynamicIsland.updateSessionState(.cancelled)
         SpeechManager.shared.syncWithCoordinator(state: .idle)
+        #if canImport(UIKit)
+        endBackgroundTask()
+        #endif
         Task {
             try? await Task.sleep(nanoseconds: 800_000_000)
             if self.state == .cancelled {

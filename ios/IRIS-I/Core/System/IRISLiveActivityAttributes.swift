@@ -15,6 +15,7 @@ public struct IRISLiveActivityAttributes: ActivityAttributes {
         public var isListening: Bool
         public var audioLevel: Float
         public var transcript: String?
+        public var targetURL: String?
 
         public var status: String {
             get { statusText }
@@ -25,12 +26,14 @@ public struct IRISLiveActivityAttributes: ActivityAttributes {
             statusText: String = "Listening...",
             isListening: Bool = true,
             audioLevel: Float = 0.0,
-            transcript: String? = nil
+            transcript: String? = nil,
+            targetURL: String? = nil
         ) {
             self.statusText = statusText
             self.isListening = isListening
             self.audioLevel = audioLevel
             self.transcript = transcript
+            self.targetURL = targetURL
         }
 
         public init(status: String) {
@@ -38,6 +41,7 @@ public struct IRISLiveActivityAttributes: ActivityAttributes {
             self.isListening = true
             self.audioLevel = 0.2
             self.transcript = nil
+            self.targetURL = nil
         }
     }
 

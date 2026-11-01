@@ -106,7 +106,7 @@ public final class IRISDynamicIslandManager: ObservableObject {
         #endif
     }
 
-    public func updateLiveActivity(statusText: String, isListening: Bool, audioLevel: Float, transcript: String? = nil) {
+    public func updateLiveActivity(statusText: String, isListening: Bool, audioLevel: Float, transcript: String? = nil, targetURL: String? = nil) {
         #if canImport(ActivityKit)
         guard let activity = currentActivity else { return }
         let now = Date()
@@ -123,7 +123,8 @@ public final class IRISDynamicIslandManager: ObservableObject {
             statusText: statusText,
             isListening: isListening,
             audioLevel: audioLevel,
-            transcript: transcript
+            transcript: transcript,
+            targetURL: targetURL
         )
         Task {
             print("[ACTIVITY_KIT] Updating activity ID: \(activity.id) - status: '\(statusText)', audioLevel: \(audioLevel)")

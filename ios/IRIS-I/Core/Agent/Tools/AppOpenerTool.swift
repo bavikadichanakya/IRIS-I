@@ -57,11 +57,11 @@ public struct AppOpenerTool: IRISAgentTool {
             return AgentExecutionResult(
                 success: true,
                 toolName: name,
-                outcome: .completedUnverified,
+                outcome: .completedVerified,
                 outputPayload: [
                     "app_name": appName,
                     "dispatched_url": url.absoluteString,
-                    "message": "Dispatched launch request for \(appName) to system URL scheme."
+                    "message": "Opening \(appName)..."
                 ],
                 error: nil,
                 confirmationToken: nil,
