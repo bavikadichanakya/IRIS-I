@@ -27,8 +27,29 @@ public struct AskIRISIntent: AppIntent {
     @MainActor
     public func perform() async throws -> some IntentResult {
         print("[INTENT] intent_received: AskIRISIntent")
+        var bgTaskId: UIBackgroundTaskIdentifier = .invalid
+        #if canImport(UIKit)
+        bgTaskId = UIApplication.shared.beginBackgroundTask(withName: "AskIRISIntentSession") {
+            if bgTaskId != .invalid {
+                UIApplication.shared.endBackgroundTask(bgTaskId)
+                bgTaskId = .invalid
+            }
+        }
+        #endif
+
         VoiceSessionCoordinator.shared.isContinuousListeningEnabled = true
         await VoiceSessionCoordinator.shared.startVoiceSession()
+
+        // Allow audio engine to stabilize background capture before intent completion
+        try? await Task.sleep(nanoseconds: 200_000_000)
+
+        #if canImport(UIKit)
+        if bgTaskId != .invalid {
+            UIApplication.shared.endBackgroundTask(bgTaskId)
+            bgTaskId = .invalid
+        }
+        #endif
+
         return .result()
     }
 }
@@ -111,8 +132,28 @@ public struct StartIRISVoiceIntent: AppIntent {
     @MainActor
     public func perform() async throws -> some IntentResult {
         print("[INTENT] intent_received: StartIRISVoiceIntent")
+        var bgTaskId: UIBackgroundTaskIdentifier = .invalid
+        #if canImport(UIKit)
+        bgTaskId = UIApplication.shared.beginBackgroundTask(withName: "StartIRISVoiceIntentSession") {
+            if bgTaskId != .invalid {
+                UIApplication.shared.endBackgroundTask(bgTaskId)
+                bgTaskId = .invalid
+            }
+        }
+        #endif
+
         VoiceSessionCoordinator.shared.isContinuousListeningEnabled = true
         await VoiceSessionCoordinator.shared.startVoiceSession()
+
+        try? await Task.sleep(nanoseconds: 200_000_000)
+
+        #if canImport(UIKit)
+        if bgTaskId != .invalid {
+            UIApplication.shared.endBackgroundTask(bgTaskId)
+            bgTaskId = .invalid
+        }
+        #endif
+
         return .result()
     }
 }
@@ -130,8 +171,28 @@ public struct StartListeningIntent: AppIntent {
     @MainActor
     public func perform() async throws -> some IntentResult {
         print("[INTENT] intent_received: StartListeningIntent")
+        var bgTaskId: UIBackgroundTaskIdentifier = .invalid
+        #if canImport(UIKit)
+        bgTaskId = UIApplication.shared.beginBackgroundTask(withName: "StartListeningIntentSession") {
+            if bgTaskId != .invalid {
+                UIApplication.shared.endBackgroundTask(bgTaskId)
+                bgTaskId = .invalid
+            }
+        }
+        #endif
+
         VoiceSessionCoordinator.shared.isContinuousListeningEnabled = true
         await VoiceSessionCoordinator.shared.startVoiceSession()
+
+        try? await Task.sleep(nanoseconds: 200_000_000)
+
+        #if canImport(UIKit)
+        if bgTaskId != .invalid {
+            UIApplication.shared.endBackgroundTask(bgTaskId)
+            bgTaskId = .invalid
+        }
+        #endif
+
         return .result()
     }
 }

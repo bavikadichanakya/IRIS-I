@@ -142,15 +142,15 @@ public final class VoiceSessionCoordinator: ObservableObject {
         self.errorMessage = nil
         self.isSubmittingCommand = false
 
-        // Step 1: Ensure Permissions
+        // Step 1: Ensure Permissions (avoid async prompt suspension if already granted)
         self.state = .requestingPermissions
-        let micAllowed = await audioManager.requestMicrophonePermission()
+        let micAllowed = audioManager.isMicrophoneAuthorized ? true : await audioManager.requestMicrophonePermission()
         guard micAllowed else {
             handleSessionError("Microphone access is required for IRIS voice assistant.")
             return
         }
 
-        let speechAllowed = await speechManager.requestSpeechAuthorization()
+        let speechAllowed = speechManager.isSpeechAuthorized ? true : await speechManager.requestSpeechAuthorization()
         guard speechAllowed else {
             handleSessionError("Speech Recognition authorization is required for voice commands.")
             return
