@@ -38,6 +38,7 @@ public struct AskIRISIntent: AppIntent {
         #endif
 
         VoiceSessionCoordinator.shared.isContinuousListeningEnabled = true
+        await BrainDownloadCoordinator.shared.autoProvisionOrActivateOnLaunch()
         await VoiceSessionCoordinator.shared.startVoiceSession()
 
         // Allow audio engine to stabilize background capture before intent completion
@@ -143,6 +144,7 @@ public struct StartIRISVoiceIntent: AppIntent {
         #endif
 
         VoiceSessionCoordinator.shared.isContinuousListeningEnabled = true
+        await BrainDownloadCoordinator.shared.autoProvisionOrActivateOnLaunch()
         await VoiceSessionCoordinator.shared.startVoiceSession()
 
         try? await Task.sleep(nanoseconds: 200_000_000)
@@ -182,6 +184,7 @@ public struct StartListeningIntent: AppIntent {
         #endif
 
         VoiceSessionCoordinator.shared.isContinuousListeningEnabled = true
+        await BrainDownloadCoordinator.shared.autoProvisionOrActivateOnLaunch()
         await VoiceSessionCoordinator.shared.startVoiceSession()
 
         try? await Task.sleep(nanoseconds: 200_000_000)

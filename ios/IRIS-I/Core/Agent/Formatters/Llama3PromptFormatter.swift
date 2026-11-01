@@ -31,17 +31,14 @@ public struct Llama3PromptFormatter: PromptTemplateFormatter {
             systemContent += "\n\nTo use a tool, respond with: {\"name\": \"ToolName\", \"arguments\": {...}}\n"
         }
 
-        var hasSystem = false
-        for msg in messages {
-            if msg.role == "system" {
-                hasSystem = true
-                formatted += "<|start_header_id|>system<|end_header_id|>\n\n\(msg.content)<|eot_id|>"
+        var extraContext = ""
+        for msg in messages where msg.role == "system" {
+            if !msg.content.isEmpty {
+                extraContext += "\n\nUser Context:\n" + msg.content
             }
         }
 
-        if !hasSystem {
-            formatted += "<|start_header_id|>system<|end_header_id|>\n\n\(systemContent)<|eot_id|>"
-        }
+        formatted += "<|start_header_id|>system<|end_header_id|>\n\n\(systemContent)\(extraContext)<|eot_id|>"
 
         for msg in messages {
             if msg.role == "system" { continue }

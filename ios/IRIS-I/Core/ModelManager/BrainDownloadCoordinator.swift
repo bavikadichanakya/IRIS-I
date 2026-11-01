@@ -35,11 +35,24 @@ public final class BrainDownloadCoordinator: ObservableObject {
 
     private init() {
         let savedId = UserDefaults.standard.string(forKey: "iris_selected_model_id")
-        let manifest = catalog.profile(for: savedId ?? "") ?? (storage.isModelInstalled(catalog.specialized0_8B) ? catalog.specialized0_8B : catalog.baseline3B)
+        let savedManifest = catalog.profile(for: savedId ?? "")
+        let manifest: ModelManifest
+        if let saved = savedManifest, storage.isModelInstalled(saved) {
+            manifest = saved
+        } else if storage.isModelInstalled(catalog.baseline3B) {
+            manifest = catalog.baseline3B
+        } else if storage.isModelInstalled(catalog.specialized0_8B) {
+            manifest = catalog.specialized0_8B
+        } else {
+            manifest = savedManifest ?? catalog.baseline3B
+        }
         self.activeManifest = manifest
         self.isModelInstalled = storage.isModelInstalled(manifest)
         Task { @MainActor in
             await self.refreshStateAsync()
+            if self.isModelInstalled && !self.isModelActive {
+                self.activateInstalledBrain(manifest: manifest)
+            }
         }
     }
 
@@ -84,12 +97,21 @@ public final class BrainDownloadCoordinator: ObservableObject {
            NSClassFromString("XCTestCase") != nil {
             return
         }
+        let manifest: ModelManifest
+        if storage.isModelInstalled(activeManifest) {
+            manifest = activeManifest
+        } else if storage.isModelInstalled(catalog.baseline3B) {
+            manifest = catalog.baseline3B
+            self.activeManifest = manifest
+        } else if storage.isModelInstalled(catalog.specialized0_8B) {
+            manifest = catalog.specialized0_8B
+            self.activeManifest = manifest
+        } else {
+            return
+        }
         await refreshStateAsync()
-        let manifest = activeManifest
-        if storage.isModelInstalled(manifest) {
-            if !isModelActive {
-                activateInstalledBrain(manifest: manifest)
-            }
+        if !isModelActive {
+            activateInstalledBrain(manifest: manifest)
         }
     }
 

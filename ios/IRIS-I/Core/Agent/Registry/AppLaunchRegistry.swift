@@ -355,26 +355,42 @@ public actor AppLaunchRegistry {
         }
 
         #if canImport(UIKit)
-        // Phase 1: Try Native URL Scheme if canOpenURL allows it
-        if let schemeURL = URL(string: targetString) {
-            let canOpen = UIApplication.shared.canOpenURL(schemeURL)
-            print("[APP_LAUNCH] Trying native URL scheme: \(schemeURL.absoluteString) (canOpenURL: \(canOpen))")
-            if canOpen {
-                let opened = await UIApplication.shared.open(schemeURL, options: [:])
-                print("[APP_LAUNCH] UIApplication.shared.open result: \(opened)")
-                if opened {
-                    return schemeURL
-                }
+        // Phase 1: Try Native URL Schemes
+        var candidates: [URL] = []
+        if let baseScheme = descriptor.urlScheme {
+            let cleanParam = parameter?.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
+            if baseScheme.hasSuffix("://") {
+                if let u = URL(string: baseScheme + cleanParam) { candidates.append(u) }
+            } else if baseScheme.hasSuffix(":") {
+                let bare = String(baseScheme.dropLast())
+                // Try hierarchical slashes first (e.g. youtube://), then bare (e.g. youtube:)
+                if let u = URL(string: "\(bare)://\(cleanParam)") { candidates.append(u) }
+                if let u = URL(string: "\(bare):\(cleanParam)") { candidates.append(u) }
+            } else {
+                if let u = URL(string: baseScheme) { candidates.append(u) }
+            }
+        }
+
+        for schemeURL in candidates {
+            print("[APP_LAUNCH] Attempting native URL scheme: \(schemeURL.absoluteString)")
+            let opened = await UIApplication.shared.open(schemeURL, options: [:])
+            print("[APP_LAUNCH] UIApplication.shared.open result: \(opened) for \(schemeURL.absoluteString)")
+            if opened {
+                return schemeURL
             }
         }
 
         // Phase 2: Try Universal Link with .universalLinksOnly: true
-        // Official iOS public API: launches the native app if installed, failing cleanly if not installed
         if let universalBase = descriptor.universalLinkURL {
             print("[APP_LAUNCH] Trying universal link: \(universalBase.absoluteString)")
             let openedNative = await UIApplication.shared.open(universalBase, options: [.universalLinksOnly: true])
             print("[APP_LAUNCH] Universal link open result: \(openedNative)")
             if openedNative {
+                return universalBase
+            }
+            // Fallback to opening universal link directly so user is never told app not installed
+            let openedWeb = await UIApplication.shared.open(universalBase, options: [:])
+            if openedWeb {
                 return universalBase
             }
         }

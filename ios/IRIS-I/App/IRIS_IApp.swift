@@ -18,6 +18,9 @@ struct IRIS_IApp: App {
             IRISAppShortcutsProvider.updateAppShortcutParameters()
         }
         #endif
+        Task {
+            await BrainDownloadCoordinator.shared.autoProvisionOrActivateOnLaunch()
+        }
     }
 
     var body: some Scene {

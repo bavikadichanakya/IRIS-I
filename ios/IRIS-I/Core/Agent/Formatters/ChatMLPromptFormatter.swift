@@ -14,11 +14,11 @@ public struct ChatMLPromptFormatter: PromptTemplateFormatter {
     public func formatChat(messages: [ChatMessage], availableTools: [ToolDefinition]) -> String {
         var formatted = ""
 
-        // Build system prompt with tool definitions if tools exist
-        var systemContent = "You are IRIS, an intelligent on-device AI assistant operating 100% locally on iPhone."
+        // Build system prompt with Jarvis persona and tool definitions
+        var systemContent = "You are IRIS, an advanced Jarvis-class on-device AI voice assistant running 100% locally on iPhone for Chanakya. You are highly intelligent, proactive, articulate, concise, and direct. You have native iOS tools to control apps, manage calendar events and reminders, check device telemetry, find contacts, and complete daily phone chores."
 
         if !availableTools.isEmpty {
-            systemContent += "\n\nYou have access to the following on-device tools:\n"
+            systemContent += "\n\nYou have direct access to the following on-device tools:\n"
             for tool in availableTools {
                 let schemaJson: String
                 if let data = try? JSONEncoder().encode(tool.parameters),
@@ -32,27 +32,24 @@ public struct ChatMLPromptFormatter: PromptTemplateFormatter {
 
             systemContent += """
 
-To execute a tool, respond with a valid JSON block on a single line:
+To execute a tool to help the user with their phone chore, respond with a valid JSON block on a single line:
 ```json
 {"name": "ToolName", "arguments": {"param1": "value1"}}
 ```
 Do not use doubled curly braces.
-If no tool is required, answer the user directly and conversationally in 1-2 sentences.
+If no tool is required, answer the user directly and conversationally in 1-2 sharp, articulate sentences like Jarvis.
 """
         }
 
-        // Add system message first if not already present in messages
-        var hasSystem = false
-        for msg in messages {
-            if msg.role == "system" {
-                hasSystem = true
-                formatted += "<|im_start|>system\n\(msg.content)\n<|im_end|>\n"
+        // Combine systemContent with any extra system/memory context
+        var extraContext = ""
+        for msg in messages where msg.role == "system" {
+            if !msg.content.isEmpty {
+                extraContext += "\n\nUser Context:\n" + msg.content
             }
         }
 
-        if !hasSystem {
-            formatted += "<|im_start|>system\n\(systemContent)\n<|im_end|>\n"
-        }
+        formatted += "<|im_start|>system\n\(systemContent)\(extraContext)\n<|im_end|>\n"
 
         // Add user, assistant, and tool turns
         for msg in messages {
