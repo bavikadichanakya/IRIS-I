@@ -357,18 +357,17 @@ public actor AppLaunchRegistry {
         #if canImport(UIKit)
         // Phase 1: Try Native URL Schemes
         var candidates: [URL] = []
-        if let baseScheme = descriptor.urlScheme {
-            let cleanParam = parameter?.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
-            if baseScheme.hasSuffix("://") {
-                if let u = URL(string: baseScheme + cleanParam) { candidates.append(u) }
-            } else if baseScheme.hasSuffix(":") {
-                let bare = String(baseScheme.dropLast())
-                // Try hierarchical slashes first (e.g. youtube://), then bare (e.g. youtube:)
-                if let u = URL(string: "\(bare)://\(cleanParam)") { candidates.append(u) }
-                if let u = URL(string: "\(bare):\(cleanParam)") { candidates.append(u) }
-            } else {
-                if let u = URL(string: baseScheme) { candidates.append(u) }
-            }
+        let baseScheme = descriptor.urlScheme
+        let cleanParam = parameter?.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
+        if baseScheme.hasSuffix("://") {
+            if let u = URL(string: baseScheme + cleanParam) { candidates.append(u) }
+        } else if baseScheme.hasSuffix(":") {
+            let bare = String(baseScheme.dropLast())
+            // Try hierarchical slashes first (e.g. youtube://), then bare (e.g. youtube:)
+            if let u = URL(string: "\(bare)://\(cleanParam)") { candidates.append(u) }
+            if let u = URL(string: "\(bare):\(cleanParam)") { candidates.append(u) }
+        } else {
+            if let u = URL(string: baseScheme) { candidates.append(u) }
         }
 
         for schemeURL in candidates {
