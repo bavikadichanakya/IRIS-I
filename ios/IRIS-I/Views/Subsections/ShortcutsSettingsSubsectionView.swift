@@ -109,13 +109,13 @@ public struct ShortcutsSettingsSubsectionView: View {
                         )
                         guideStepRow(
                             step: 3,
-                            title: "Choose IRIS",
-                            detail: "Tap the shortcut selector and select 'IRIS' or 'Start Listening'."
+                            title: "Choose App Intent 'Ask IRIS'",
+                            detail: "Tap the shortcut selector, search for IRIS-I, and select 'Ask IRIS' or 'Start Iris Voice Agent'. (Do not choose 'Open App', choose the 'Ask IRIS' Intent)."
                         )
                         guideStepRow(
                             step: 4,
-                            title: "One-Press Activation",
-                            detail: "Press and hold the Action Button anytime to launch IRIS with Dynamic Island."
+                            title: "Background Dynamic Island Session",
+                            detail: "Press the Action Button anytime. The Dynamic Island starts listening in the background without opening the app window."
                         )
                     }
 

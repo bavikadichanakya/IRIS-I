@@ -211,17 +211,28 @@ public final class VoiceSessionCoordinator: ObservableObject {
             candidate = ""
         }
 
-        cleanupAudioPipeline()
-
         let trimmed = candidate.trimmingCharacters(in: .whitespacesAndNewlines)
         print("[VOICE_SESSION] stopVoiceSession resolved transcript: '\(trimmed)'")
 
         if trimmed.isEmpty {
-            print("[VOICE_SESSION] Empty transcript resolved, resetting to idle")
-            self.state = .idle
-            self.dynamicIsland.endLiveActivity()
-            SpeechManager.shared.syncWithCoordinator(state: .idle, audioLevel: 0.0)
+            if self.isContinuousListeningEnabled {
+                print("[VOICE_SESSION] Empty transcript in persistent mode: maintaining Dynamic Island listening session.")
+                self.activeTranscript = ""
+                self.isSubmittingCommand = false
+                Task {
+                    if case .idle = self.state {
+                        await self.startVoiceSession()
+                    }
+                }
+            } else {
+                cleanupAudioPipeline()
+                print("[VOICE_SESSION] Empty transcript resolved, resetting to idle")
+                self.state = .idle
+                self.dynamicIsland.endLiveActivity()
+                SpeechManager.shared.syncWithCoordinator(state: .idle, audioLevel: 0.0)
+            }
         } else {
+            cleanupAudioPipeline()
             submitRecognizedCommand(trimmed)
         }
     }
@@ -405,7 +416,18 @@ extension VoiceSessionCoordinator: SpeechRecognitionManagerDelegate {
     nonisolated public func speechRecognitionManager(_ manager: SpeechRecognitionManager, didFailWithError error: Error) {
         let nsError = error as NSError
         if nsError.code == 203 || nsError.domain == "kAFAssistantErrorDomain" || nsError.domain == "kLSRErrorDomain" {
-            // Ignore benign cancellation errors
+            // Benign cancellation or silence timeout: if persistent session is active, renew recognition seamlessly
+            Task { @MainActor in
+                if self.isContinuousListeningEnabled && self.state != .cancelled {
+                    print("[VOICE_SESSION] Speech timeout in persistent mode: renewing speech capture in Dynamic Island.")
+                    self.activeTranscript = ""
+                    self.isSubmittingCommand = false
+                    try? await Task.sleep(nanoseconds: 200_000_000)
+                    if case .listening = self.state {
+                        await self.startVoiceSession()
+                    }
+                }
+            }
             return
         }
         print("[VOICE_SESSION] Speech recognition error: \(error.localizedDescription)")

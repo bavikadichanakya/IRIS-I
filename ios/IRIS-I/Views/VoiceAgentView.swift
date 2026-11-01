@@ -472,36 +472,46 @@ public struct VoiceAgentView: View {
                 }
                 .buttonStyle(ScaleOnPressStyle())
             } else if speechManager.state == .listening || speechManager.state == .processing {
-                // Listening Controls: Cancel [X] and Stop [■]
-                HStack(spacing: 40) {
-                    Button {
-                        speechManager.stopListeningInternal()
-                        resetToIdle()
-                    } label: {
-                        Image(systemName: "xmark")
-                            .font(.system(size: 18, weight: .bold))
-                            .foregroundColor(Color(white: 0.35))
-                            .frame(width: 52, height: 52)
-                            .background(Color.white)
-                            .clipShape(Circle())
-                            .shadow(color: Color.black.opacity(0.04), radius: 6, y: 2)
-                    }
-
-                    Button {
-                        speechManager.stopListeningInternal()
-                        if !speechManager.recognizedText.isEmpty {
-                            triggerVoiceQuery(speechManager.recognizedText)
-                        } else {
+                // Persistent Session Controls: Stop Listening & Send Query
+                VStack(spacing: 14) {
+                    HStack(spacing: 20) {
+                        Button {
+                            speechManager.stopListeningInternal()
                             resetToIdle()
+                        } label: {
+                            HStack(spacing: 8) {
+                                Image(systemName: "stop.fill")
+                                    .font(.system(size: 13, weight: .bold))
+                                Text("Stop Listening")
+                                    .font(.system(size: 14, weight: .bold))
+                            }
+                            .foregroundColor(.white)
+                            .padding(.horizontal, 20)
+                            .padding(.vertical, 12)
+                            .background(Color.red)
+                            .clipShape(Capsule())
+                            .shadow(color: Color.red.opacity(0.3), radius: 6, y: 2)
                         }
-                    } label: {
-                        RoundedRectangle(cornerRadius: 6)
-                            .fill(Color.black)
-                            .frame(width: 18, height: 18)
-                            .frame(width: 52, height: 52)
-                            .background(Color.white)
-                            .clipShape(Circle())
-                            .shadow(color: Color.black.opacity(0.04), radius: 6, y: 2)
+
+                        if !speechManager.recognizedText.isEmpty {
+                            Button {
+                                let query = speechManager.recognizedText
+                                triggerVoiceQuery(query)
+                            } label: {
+                                HStack(spacing: 6) {
+                                    Image(systemName: "arrow.up.circle.fill")
+                                        .font(.system(size: 14, weight: .bold))
+                                    Text("Send")
+                                        .font(.system(size: 14, weight: .bold))
+                                }
+                                .foregroundColor(.black)
+                                .padding(.horizontal, 20)
+                                .padding(.vertical, 12)
+                                .background(Color.white)
+                                .clipShape(Capsule())
+                                .shadow(color: Color.black.opacity(0.06), radius: 6, y: 2)
+                            }
+                        }
                     }
                 }
             } else {

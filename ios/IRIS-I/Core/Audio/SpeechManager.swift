@@ -77,7 +77,7 @@ public final class SpeechManager: NSObject, ObservableObject, @unchecked Sendabl
     }
 
     public func stopListeningInternal() {
-        VoiceSessionCoordinator.shared.stopVoiceSession()
+        VoiceSessionCoordinator.shared.cancelVoiceSession()
     }
 
     @discardableResult

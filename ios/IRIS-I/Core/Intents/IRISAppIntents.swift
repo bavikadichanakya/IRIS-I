@@ -27,6 +27,7 @@ public struct AskIRISIntent: AppIntent {
     @MainActor
     public func perform() async throws -> some IntentResult {
         print("[INTENT] intent_received: AskIRISIntent")
+        VoiceSessionCoordinator.shared.isContinuousListeningEnabled = true
         await VoiceSessionCoordinator.shared.startVoiceSession()
         return .result()
     }
@@ -110,6 +111,7 @@ public struct StartIRISVoiceIntent: AppIntent {
     @MainActor
     public func perform() async throws -> some IntentResult {
         print("[INTENT] intent_received: StartIRISVoiceIntent")
+        VoiceSessionCoordinator.shared.isContinuousListeningEnabled = true
         await VoiceSessionCoordinator.shared.startVoiceSession()
         return .result()
     }
@@ -128,6 +130,7 @@ public struct StartListeningIntent: AppIntent {
     @MainActor
     public func perform() async throws -> some IntentResult {
         print("[INTENT] intent_received: StartListeningIntent")
+        VoiceSessionCoordinator.shared.isContinuousListeningEnabled = true
         await VoiceSessionCoordinator.shared.startVoiceSession()
         return .result()
     }
