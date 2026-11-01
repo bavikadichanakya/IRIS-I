@@ -263,7 +263,12 @@ public final class VoiceSessionCoordinator: ObservableObject {
         }
         isSubmittingCommand = true
 
-        cleanupAudioPipeline()
+        if isContinuousListeningEnabled {
+            // Pause recognition only; preserve AVAudioEngine to maintain iOS background audio mode
+            speechManager.stopRecognition()
+        } else {
+            cleanupAudioPipeline()
+        }
         self.activeTranscript = command
 
         let cleanQuery = VoiceSessionCoordinator.stripWakeWords(command)

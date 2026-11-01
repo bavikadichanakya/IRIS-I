@@ -52,14 +52,21 @@ public final class IRISDynamicIslandManager: ObservableObject {
             return
         }
 
-        // Reuse existing active activity if one is already present
-        if let existing = currentActivity ?? Activity<IRISLiveActivityAttributes>.activities.first {
-            self.currentActivity = existing
+        // Reuse existing active activity if one is genuinely active in the system
+        if let existing = currentActivity, existing.activityState == .active {
             self.isLiveActivityActive = true
-            print("[ACTIVITY_KIT] Reusing existing Live Activity with ID: \(existing.id)")
+            print("[ACTIVITY_KIT] Reusing active Live Activity with ID: \(existing.id)")
             updateLiveActivity(statusText: "Listening...", isListening: true, audioLevel: 0.2)
             return
         }
+        if let activeSystem = Activity<IRISLiveActivityAttributes>.activities.first(where: { $0.activityState == .active }) {
+            self.currentActivity = activeSystem
+            self.isLiveActivityActive = true
+            print("[ACTIVITY_KIT] Reusing system active Live Activity with ID: \(activeSystem.id)")
+            updateLiveActivity(statusText: "Listening...", isListening: true, audioLevel: 0.2)
+            return
+        }
+        self.currentActivity = nil
 
         let attributes = IRISLiveActivityAttributes(title: "Hey IRIS")
         let initialState = IRISLiveActivityAttributes.ContentState(
@@ -160,12 +167,14 @@ public final class IRISDynamicIslandManager: ObservableObject {
 
         updateLiveActivity(statusText: text, isListening: isListening, audioLevel: audioLevel)
 
-        // Automatically end terminal activities after brief visual feedback
-        if state == .completedVerified || state == .completedUnverified || state == .failed || state == .cancelled {
-            Task {
-                try? await Task.sleep(nanoseconds: 3_500_000_000)
-                if self.currentActivity != nil && !isListening {
-                    self.endLiveActivity()
+        // Automatically end terminal activities after brief visual feedback ONLY when continuous listening is disabled
+        if !VoiceSessionCoordinator.shared.isContinuousListeningEnabled {
+            if state == .completedVerified || state == .completedUnverified || state == .failed || state == .cancelled {
+                Task {
+                    try? await Task.sleep(nanoseconds: 3_500_000_000)
+                    if self.currentActivity != nil && !isListening && !VoiceSessionCoordinator.shared.isContinuousListeningEnabled {
+                        self.endLiveActivity()
+                    }
                 }
             }
         }
