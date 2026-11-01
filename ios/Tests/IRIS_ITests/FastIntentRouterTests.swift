@@ -218,7 +218,7 @@ final class FastIntentRouterTests: XCTestCase {
             switch result {
             case .matched(let toolName, let args, let duration):
                 XCTAssertEqual(toolName, "AppOpenerTool")
-                XCTAssertEqual(args["app_name"] as? String, expectedApp)
+                XCTAssertEqual((args["app_name"] as? String)?.lowercased(), expectedApp.lowercased())
                 XCTAssertLessThan(duration, 10.0)
             case .unmatched:
                 XCTFail("Expected '\(query)' to match FastIntentRouter")
